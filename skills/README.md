@@ -47,8 +47,46 @@ Git tracks and clones symlinks natively on Linux/macOS, so once
 `.claude/skills` and `.opencode/skills` are committed, a fresh clone
 already has both harness-native paths resolving to this directory.
 
+## Stubs, and why they say so out loud
+
+Most skills here ship as **stubs**: the parts that are true regardless of
+which business, tracker, channel or host a deployment uses are written out
+in full, and every business-specific gap is marked with a literal
+`TODO(specialize)` line. Such a file opens with a `Status:` heading saying
+so, which is removed once no markers remain in it.
+
+That's deliberate, per this repo's "no state that isn't real right now"
+principle: a plausible-looking placeholder value is indistinguishable from
+a real one until something acts on it, whereas a marker is honest about
+being unanswered. Converting those markers into real answers is a concrete
+first-boot step, not an implied one — see
+[`specialize-skills`](./specialize-skills/SKILL.md), which
+[`../STARTUP.md`](../STARTUP.md) invokes as the last step of its flow.
+
 ## Current skills
+
+Visible to both harnesses via the whole-folder symlinks above.
 
 - [`product-tech-stack`](./product-tech-stack/SKILL.md) — the required
   technology stack when building a product for a non-technical end-user.
-  Visible to both harnesses via the whole-folder symlinks above.
+  The one finished, fully opinionated skill here; nothing in it needs
+  specializing.
+- [`specialize-skills`](./specialize-skills/SKILL.md) — the one-time pass
+  that turns the stubs below into this deployment's real instructions,
+  using the first-boot interview answers.
+- [`work-tracker`](./work-tracker/SKILL.md) — *stub.* Reading and writing
+  work items in whichever tracker the owner chose: the tracker-agnostic
+  operation contract, the pipeline state machine, and the label vocabulary
+  the stages depend on.
+- [`git-pr-conventions`](./git-pr-conventions/SKILL.md) — *stub.* The
+  branch/commit/PR/self-merge shipping loop, plus the worktree-isolation
+  and shared-ref hazards of running unattended alongside a human.
+- [`comms-channel`](./comms-channel/SKILL.md) — *stub.* Talking to the
+  owner over whichever channel they chose: who may instruct this agent,
+  the prompt-injection boundary, interrupt versus digest, and how to write.
+- [`work-pipeline`](./work-pipeline/SKILL.md) — *stub.* The stage chain
+  (refine → critique → implement → review → merge), what each stage owns,
+  and why the reviewing session must not be the implementing one.
+- [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* How a
+  merged change reaches the running product, how the agent knows it's
+  healthy, and what it may fix unattended.

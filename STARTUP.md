@@ -76,20 +76,38 @@ building any product code until all of it is done.
    source of truth — point at it rather than re-deriving these answers from
    this conversation again.
 
-6. Give me the self-provisioning shopping list from AGENTS.md (my own email
+6. Now specialize the skill stubs. Read skills/specialize-skills/SKILL.md
+   and follow it. The skills under skills/ ship deliberately generic, with
+   an explicit `TODO(specialize)` marker everywhere a real answer depends
+   on my tracker, my comms channel, my host or my product — the answers you
+   just collected in steps 1-5 are exactly what those markers are waiting
+   for. Work through every stub that SKILL lists, in the order it gives.
+
+   Two things I care about here: don't invent a specific to make a file look
+   finished (a marker that still says "unknown" is better than a confident
+   wrong value), and don't leave a marker unanswered that you could have
+   answered by just running a command and checking. Where something is
+   genuinely blocked on an account I haven't created yet, leave the marker,
+   name the blocker in one line, and carry it into step 7.
+
+7. Give me the self-provisioning shopping list from AGENTS.md (my own email
    address, a comms channel account, a GitHub account, a work-tracker
    account/integration, and anything else needed for the tools we
    discussed) so I can go create those accounts and paste the resulting
    secrets into `.env` myself. Don't try to register for any of them
-   yourself.
+   yourself. Fold in the blockers from step 6, and tell me which skill
+   stubs are still incomplete because of them — I'd rather know that now
+   than find out when a stage silently does the wrong thing.
 ```
 
 ---
 
 That's the whole first-boot flow: read `AGENTS.md`, interview, defer to the
 stack SKILL if relevant, agree on an autonomy model, write `.env`, generate
-the conventions doc, hand back a provisioning list. Everything after that —
-actually wiring up the chosen work tracker and comms channel, writing
-product code, setting up scheduling — is follow-on work once the human has
-provisioned what's on that list and pasted the resulting secrets into
-`.env`.
+the conventions doc, specialize the skill stubs, hand back a provisioning
+list. Everything after that — actually wiring up the chosen work tracker and
+comms channel, writing product code, setting up scheduling — is follow-on
+work once the human has provisioned what's on that list and pasted the
+resulting secrets into `.env`. Step 6 is expected to be re-run, scoped to a
+single file, each time one of those provisioning blockers clears and a
+`TODO(specialize)` marker becomes answerable.

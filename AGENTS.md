@@ -91,9 +91,17 @@ for the shopping list to be filled in; don't fill it in yourself.
   back into this directory (not a directory of per-skill symlinks), so
   Claude Code and OpenCode can each discover the same skills natively
   with no per-skill wiring — see [`skills/README.md`](./skills/README.md)
-  for how that's wired.
-- `skills/product-tech-stack/SKILL.md` — the one current opinionated
-  skill: the required stack when building for a non-technical end-user.
+  for how that's wired. That file's "Current skills" list is the one home
+  for what exists there — it isn't restated here.
+
+Most of those skills ship as **stubs**: generic where a fact is genuinely
+universal, and marked with an explicit `TODO(specialize)` wherever a real
+answer depends on this deployment's own tracker, comms channel, host or
+product. Turning those markers into real answers is a required first-boot
+step, driven by `skills/specialize-skills/SKILL.md` and invoked from
+`STARTUP.md`'s flow. Do not treat a stub as finished instructions, and do
+not fill one in with a guessed specific — an invented value reads exactly
+like a verified one to the next session.
 
 Scheduling (cron, systemd `--user` timers, or whatever your host offers)
 is deliberately **not** standardized by this repo — only the skills being
