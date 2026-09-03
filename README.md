@@ -66,11 +66,20 @@ choice this repo asks you to make, not something it assumes for you.
 5. **Run `./install.sh`.** It installs the three hard requirements above —
    nothing else. It asks no questions and writes no config.
 6. **What `install.sh` actually sets up:**
+   - A sanity check, before anything is installed, that the
+     `.claude/skills`/`.opencode/skills` symlinks resolved correctly (they
+     only break if you got this repo via a ZIP download instead of
+     `git clone`).
    - Docker, uv, and the GitHub CLI (installed if missing, skipped if
-     already present).
-   - A sanity check that the `.claude/skills`/`.opencode/skills` symlinks
-     resolved correctly (they only break if you got this repo via a ZIP
-     download instead of `git clone`).
+     already present), plus the apt packages needed to fetch them at all
+     (`curl`, a CA bundle, `git`) on an image minimal enough not to have
+     them.
+   - Adding the invoking user to the `docker` group, and a check that the
+     docker daemon is actually reachable — not just that the binary exists.
+     It runs as root or under `sudo`, and stops immediately if it has
+     neither.
+
+   It's safe to re-run: every step is skipped if it's already done.
 7. **Run your chosen agentic harness in this checkout and tell it to read
    [`STARTUP.md`](./STARTUP.md).** That's where the actual first-boot flow
    lives now: the interview (your technical level, who the product is for,
