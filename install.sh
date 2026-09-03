@@ -106,22 +106,21 @@ log "All three hard requirements are present: docker, uv, gh."
 # Skill symlinks sanity check
 # ---------------------------------------------------------------------------
 #
-# .claude/skills/<name> and .opencode/skills/<name> are symlinks committed
-# straight into git, pointing back at the canonical skills/<name>/ — git
-# tracks and clones symlinks natively on Linux/macOS, so a normal `git
-# clone` needs no extra step here. This only guards against the one way
-# that silently breaks: a GitHub "Download ZIP" (or any non-git copy)
-# turns each symlink into a plain text file containing its target path,
-# which is invisible in an `ls` but leaves the harness reading nothing.
+# .claude/skills and .opencode/skills are each a single whole-folder
+# symlink committed straight into git, pointing back at the canonical
+# skills/ directory — git tracks and clones symlinks natively on
+# Linux/macOS, so a normal `git clone` needs no extra step here. This only
+# guards against the one way that silently breaks: a GitHub "Download
+# ZIP" (or any non-git copy) turns each symlink into a plain text file
+# containing its target path, which is invisible in an `ls` but leaves
+# the harness reading nothing.
 
-for harness_dir in .claude/skills .opencode/skills; do
-	while IFS= read -r -d '' skill_link; do
-		if [[ ! -L "$skill_link" ]] || [[ ! -e "$skill_link" ]]; then
-			fail "${skill_link} is not a working symlink into skills/. If you got this repo via a ZIP download instead of 'git clone', symlinks don't survive that — re-clone with git instead."
-		fi
-	done < <(find "$SCRIPT_DIR/$harness_dir" -mindepth 1 -maxdepth 1 -not -name README.md -print0 2>/dev/null)
+for harness_skills_dir in .claude/skills .opencode/skills; do
+	if [[ ! -L "$SCRIPT_DIR/$harness_skills_dir" ]] || [[ ! -d "$SCRIPT_DIR/$harness_skills_dir" ]]; then
+		fail "${harness_skills_dir} is not a working symlink into skills/. If you got this repo via a ZIP download instead of 'git clone', symlinks don't survive that — re-clone with git instead."
+	fi
 done
-log "Skill symlinks in .claude/skills/ and .opencode/skills/ resolve correctly."
+log ".claude/skills and .opencode/skills resolve correctly."
 
 # ---------------------------------------------------------------------------
 # Interview
