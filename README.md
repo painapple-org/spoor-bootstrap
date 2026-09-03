@@ -102,14 +102,23 @@ choice this repo asks you to make, not something it assumes for you.
 5. **Run `./install.sh`.** It installs the three hard requirements above —
    nothing else. It asks no questions and writes no config. Concretely, it
    sets up:
+   - A sanity check, before anything is installed, that the
+     `.claude/skills`/`.opencode/skills` symlinks resolved correctly — see
+     [`skills/README.md`](./skills/README.md) for what they are and the one
+     thing that breaks them.
    - Docker, uv, and the GitHub CLI (installed if missing, skipped if
-     already present).
-   - A sanity check that the `.claude/skills`/`.opencode/skills` symlinks
-     resolved correctly — see [`skills/README.md`](./skills/README.md) for
-     what they are and the one thing that breaks them.
+     already present), plus the apt packages needed to fetch them at all
+     (`curl`, a CA bundle, `git`) on an image minimal enough not to have
+     them.
    - A check that `origin` isn't still pointing at the upstream
      `painapple-org/spoor-bootstrap`, since the agent can't open PRs
      against a repo you don't control.
+   - Adding the invoking user to the `docker` group, and a check that the
+     docker daemon is actually reachable — not just that the binary exists.
+     It runs as root or under `sudo`, and stops immediately if it has
+     neither.
+
+   It's safe to re-run: every step is skipped if it's already done.
 6. **Run your chosen agentic harness in this checkout and tell it to read
    [`STARTUP.md`](./STARTUP.md).** That's where the actual first-boot flow
    lives now: the interview (whose questions are enumerated in
