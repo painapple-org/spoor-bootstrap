@@ -46,13 +46,23 @@ silently replaces it. That list isn't restated here; go read it there.
 
 ## Hard requirements
 
-Only three things are non-negotiable, and `install.sh` sets all three up:
+These are the three things that must exist **on the box, for the agent
+itself to operate**, and `install.sh` sets all three up:
 
 - **Docker** — everything the agent builds and runs is containerized.
 - **uv** — Python dependency management for whatever tooling the agent
   writes for itself.
 - **GitHub CLI (`gh`)** — the agent operates through branches, PRs, and the
   GitHub API; `gh` is how it authenticates and acts.
+
+This is the agent's own host tooling, not a statement about what the
+product it builds is written in. That's a separate decision with its own
+home in
+[`skills/product-tech-stack/SKILL.md`](./skills/product-tech-stack/SKILL.md),
+which applies only when the product targets a non-technical end-user. Some
+entries appear in both because the agent needs them locally *and* that
+stack requires them for the product — the overlap is real, not a copy of
+one list into the other.
 
 Everything else — which agentic harness you run, which work tracker you
 use, which chat platform you wire up, which email provider you pick — is a
@@ -86,34 +96,29 @@ choice this repo asks you to make, not something it assumes for you.
    something else — this repo doesn't prefer one. See
    [`AGENTS.md`](./AGENTS.md) for the harness-agnostic instructions every
    harness should be pointed at, and [`skills/`](./skills/README.md) for
-   the portable skill definitions — `.claude/skills` and
-   `.opencode/skills` are each a single whole-folder symlink back at that
-   same directory, so there's exactly one copy of each skill's content
-   regardless of which harness you picked, and a new skill added under
-   `skills/` needs no extra wiring to show up in either harness.
+   the portable skill definitions; that file's "How harnesses discover
+   these" section explains how the same skill content reaches whichever
+   harness you picked.
 5. **Run `./install.sh`.** It installs the three hard requirements above —
    nothing else. It asks no questions and writes no config. Concretely, it
    sets up:
    - Docker, uv, and the GitHub CLI (installed if missing, skipped if
      already present).
    - A sanity check that the `.claude/skills`/`.opencode/skills` symlinks
-     resolved correctly (they only break if you got this repo via a ZIP
-     download instead of `git clone`).
+     resolved correctly — see [`skills/README.md`](./skills/README.md) for
+     what they are and the one thing that breaks them.
    - A check that `origin` isn't still pointing at the upstream
      `painapple-org/spoor-bootstrap`, since the agent can't open PRs
      against a repo you don't control.
 6. **Run your chosen agentic harness in this checkout and tell it to read
    [`STARTUP.md`](./STARTUP.md).** That's where the actual first-boot flow
-   lives now: the interview (your technical level, who the product is for,
-   work tracker, comms channel, autonomy model), writing `.env`, generating
-   this deployment's own conventions doc (its path recorded once in
-   `CONVENTIONS_DOC_PATH` in `.env`, which is what every skill resolves it
-   from), specializing the skill stubs in
-   [`skills/`](./skills/README.md) against your actual answers, and — if
-   you're building for a non-technical end-user — a pointer to the
-   opinionated stack in
-   [`skills/product-tech-stack/SKILL.md`](./skills/product-tech-stack/SKILL.md).
-   The agent hands you a self-provisioning shopping list at the end.
+   lives now: the interview (whose questions are enumerated in
+   [`AGENTS.md`](./AGENTS.md)), agreeing on an autonomy model, writing
+   `.env`, generating this deployment's own conventions doc (its path
+   recorded once in `CONVENTIONS_DOC_PATH` in `.env`, which is what every
+   skill resolves it from), and specializing the skill stubs in
+   [`skills/`](./skills/README.md) against your actual answers. The agent
+   hands you a self-provisioning shopping list at the end.
 
 Everything past that point — actually wiring up the work tracker, the comms
 channel, deploy automation, scheduling — is deliberately left to you and the
@@ -124,39 +129,34 @@ agent.
 ## What the skills are, and what "stub" means here
 
 [`skills/`](./skills/README.md) holds the portable, harness-agnostic
-instructions this agent operates from. Only one of them
-(`product-tech-stack`) is finished; the rest ship as **stubs** — written out
-in full wherever a fact is genuinely universal (how a work-tracker state
-machine has to behave, why an unattended run must never touch the primary
-git checkout, who is allowed to instruct an agent with real tool access),
-and marked with a literal `TODO(specialize)` everywhere the real answer
-depends on *your* tracker, channel, host and product.
+instructions this agent operates from. Most ship as **stubs**: generic
+where a fact is universal, and marked with a literal `TODO(specialize)`
+everywhere the real answer depends on *your* tracker, channel, host and
+product. Nothing here guesses those answers on your behalf, and the
+reasoning for that is stated once, in
+[`skills/specialize-skills`](./skills/specialize-skills/SKILL.md)'s "Why
+the stubs exist in this shape".
 
-Nothing here guesses those answers on your behalf, which is the point: a
-plausible-looking placeholder is indistinguishable from a verified value
-until something acts on it. Filling them in is a concrete step in
-[`STARTUP.md`](./STARTUP.md)'s flow, driven by
-[`skills/specialize-skills`](./skills/specialize-skills/SKILL.md), and it
-runs off the interview answers rather than asking you to edit markdown by
-hand. Expect to re-run it, one file at a time, as you provision the
-accounts on the shopping list below and more of the markers become
-answerable. See [`skills/README.md`](./skills/README.md) for the current
-list.
+Filling them in is a concrete step in [`STARTUP.md`](./STARTUP.md)'s flow,
+driven by that same SKILL, and it runs off the interview answers rather
+than asking you to edit markdown by hand. Expect to re-run it, one file at
+a time, as you provision the accounts on the shopping list below and more
+of the markers become answerable. See
+[`skills/README.md`](./skills/README.md) for which skills exist and which
+of them are stubs.
 
 ## Self-provisioning: what the agent needs, and who sets it up
 
 Once running, the agent instance you've bootstrapped will need its own
-identity, separate from yours: its own email address, ideally a real-time
-comms channel, its own GitHub account, and its own account on whatever work
-tracker and other platforms you've chosen to give it access to.
+identity on several platforms, separate from yours — and **a human
+provisions those; the agent does not register itself for them.** It's a
+shopping list handed to you at the end of the first boot, not a capability
+the agent exercises on its own.
 
-**A human provisions these — the agent does not register itself for
-them.** This is a shopping list handed to you, not a capability the agent
-exercises on its own. The reason the identity has to be the agent's own,
-rather than reused from your personal accounts, is RBAC: a platform can
-only scope what an agent instance is allowed to touch if that instance has
-its own account with its own permissions, distinct from yours. See
-[`AGENTS.md`](./AGENTS.md) for how this is worded to the agent itself.
+What's actually on that list, and why the identity has to be the agent's
+own rather than reused from your personal accounts, is stated once in
+[`AGENTS.md`](./AGENTS.md)'s "Self-provisioning: the shopping list" — the
+same wording the agent itself reads.
 
 ## Status
 

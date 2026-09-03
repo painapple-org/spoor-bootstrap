@@ -124,6 +124,16 @@ assume:
 4. **Which comms channel** the human wants you reachable on (a real-time
    channel is preferred over email-only, but the choice is theirs).
 
+5. **Where the target product repo lives** — an existing repo, or a brand
+   new one you'll create — and, if there's a live product already, where
+   its own content/docs live. Both are needed by later steps of the
+   first-boot flow: the conventions doc gets written into that repo, and a
+   proactive ideation stage can't propose anything non-generic without a
+   pointer to the business's own context.
+
+This list is the complete set of what the interview covers; `STARTUP.md`
+points here for it rather than re-listing it.
+
 See [`STARTUP.md`](./STARTUP.md) for the full first-boot flow this interview
 sits inside — it also covers agreeing on an autonomy model, writing `.env`,
 and generating this deployment's own conventions doc. Do not proceed to
@@ -131,6 +141,9 @@ build product features until that whole flow is done — the interview is the
 point of the first run, not a preamble to skip.
 
 ## Self-provisioning: the shopping list
+
+This is the one home for the shopping list and the reasoning behind it;
+`README.md` and `STARTUP.md` point here rather than restating either.
 
 Once the interview is done, you will need your own identity on several
 platforms, distinct from your owner's personal accounts:
@@ -157,13 +170,9 @@ for the shopping list to be filled in; don't fill it in yourself.
 - [`skills/`](./skills/README.md) — portable, harness-agnostic skill
   definitions (prompt + instructions only, no scheduling mechanics).
   Anything opinionated and reusable belongs here, referenced from
-  wherever it's needed, not copied. `.claude/skills` and
-  `.opencode/skills` are each themselves a single whole-folder symlink
-  back into this directory (not a directory of per-skill symlinks), so
-  Claude Code and OpenCode can each discover the same skills natively
-  with no per-skill wiring — see [`skills/README.md`](./skills/README.md)
-  for how that's wired. That file's "Current skills" list is the one home
-  for what exists there — it isn't restated here.
+  wherever it's needed, not copied. That file is the one home for both how
+  the harness-native symlinks are wired and, in its "Current skills" list,
+  what exists there — neither is restated here.
 - **This deployment's own conventions doc** — everything specific to this
   owner, product and host: the autonomy model they actually agreed to,
   their git/PR conventions, their vocabulary. It lives outside this repo
@@ -175,14 +184,14 @@ for the shopping list to be filled in; don't fill it in yourself.
   extends and tightens the default guardrails above; it does not replace
   them.
 
-Most of those skills ship as **stubs**: generic where a fact is genuinely
-universal, and marked with an explicit `TODO(specialize)` wherever a real
-answer depends on this deployment's own tracker, comms channel, host or
-product. Turning those markers into real answers is a required first-boot
-step, driven by `skills/specialize-skills/SKILL.md` and invoked from
-`STARTUP.md`'s flow. Do not treat a stub as finished instructions, and do
-not fill one in with a guessed specific — an invented value reads exactly
-like a verified one to the next session.
+Most of those skills ship as **stubs**, carrying an explicit
+`TODO(specialize)` marker wherever a real answer depends on this
+deployment's own tracker, comms channel, host or product. Turning those
+markers into real answers is a required first-boot step, driven by
+[`skills/specialize-skills/SKILL.md`](./skills/specialize-skills/SKILL.md)
+and invoked from `STARTUP.md`'s flow; that SKILL's "Why the stubs exist in
+this shape" section is the one home for the reasoning. Do not treat a stub
+as finished instructions, and do not fill one in with a guessed specific.
 
 Scheduling (cron, systemd `--user` timers, or whatever your host offers)
 is deliberately **not** standardized by this repo — only the skills being
