@@ -63,26 +63,28 @@ choice this repo asks you to make, not something it assumes for you.
    regardless of which harness you picked, and a new skill added under
    `skills/` needs no extra wiring to show up in either harness.
 4. **Clone this repo** onto the VPS (or wherever your harness runs from).
-5. **Run `./install.sh`.** It installs the three hard requirements above
-   and then walks you through a short interview.
+5. **Run `./install.sh`.** It installs the three hard requirements above —
+   nothing else. It asks no questions and writes no config.
 6. **What `install.sh` actually sets up:**
    - Docker, uv, and the GitHub CLI (installed if missing, skipped if
      already present).
-   - An interactive interview: your own technical experience level, who
-     the product you're building is for (a technical or non-technical
-     end-user), which work tracker you want to use, and which comms
-     channel you want the agent reachable on.
-   - A generated `.env` (from `.env.example`) recording your answers.
-   - A summary of what got installed and what to do next — including, if
-     you told it you're building for a non-technical end-user, a pointer
-     to the opinionated stack in
-     [`skills/product-tech-stack/SKILL.md`](./skills/product-tech-stack/SKILL.md).
+   - A sanity check that the `.claude/skills`/`.opencode/skills` symlinks
+     resolved correctly (they only break if you got this repo via a ZIP
+     download instead of `git clone`).
+7. **Run your chosen agentic harness in this checkout and tell it to read
+   [`STARTUP.md`](./STARTUP.md).** That's where the actual first-boot flow
+   lives now: the interview (your technical level, who the product is for,
+   work tracker, comms channel, autonomy model), writing `.env`, generating
+   this deployment's own conventions doc, and — if you're building for a
+   non-technical end-user — a pointer to the opinionated stack in
+   [`skills/product-tech-stack/SKILL.md`](./skills/product-tech-stack/SKILL.md).
+   The agent hands you a self-provisioning shopping list at the end.
 
 Everything past that point — actually wiring up the work tracker, the comms
-channel, deploy automation, scheduling — is deliberately left to you and to
-the skill/harness you chose. This repo gets you to a box with the right
-tools installed and a documented starting point; it doesn't hand you a
-finished agent.
+channel, deploy automation, scheduling — is deliberately left to you and the
+agent you're running. This repo gets you to a box with the right tools
+installed and a documented starting point; it doesn't hand you a finished
+agent.
 
 ## Self-provisioning: what the agent needs, and who sets it up
 
