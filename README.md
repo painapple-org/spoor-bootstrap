@@ -26,7 +26,7 @@ It is explicitly **not**:
   instances that started from the same seed and grew differently based on
   what their product and owner needed.
 
-If you know [OpenClaw](https://github.com/) or similar "give an agent a
+If you know [OpenClaw](https://github.com/openclaw/openclaw) or similar "give an agent a
 computer" projects, the shape will feel familiar. The two differences that
 matter: this is oriented around operating a *product* on a VPS (deploys,
 infra, a real running service with real users), not around being a
@@ -53,7 +53,8 @@ choice this repo asks you to make, not something it assumes for you.
    OVHcloud; that's not a requirement here, just one data point.
 2. **Set up SSH access** to that VPS for yourself and, eventually, for
    whatever automation needs to reach it (CI runners, deploy hooks).
-3. **Pick an agentic harness.** Claude Code, OpenCode, Codex CLI, or
+3. **Clone this repo** onto the VPS (or wherever your harness runs from).
+4. **Pick an agentic harness.** Claude Code, OpenCode, Codex CLI, or
    something else — this repo doesn't prefer one. See
    [`AGENTS.md`](./AGENTS.md) for the harness-agnostic instructions every
    harness should be pointed at, and [`skills/`](./skills/README.md) for
@@ -62,7 +63,6 @@ choice this repo asks you to make, not something it assumes for you.
    same directory, so there's exactly one copy of each skill's content
    regardless of which harness you picked, and a new skill added under
    `skills/` needs no extra wiring to show up in either harness.
-4. **Clone this repo** onto the VPS (or wherever your harness runs from).
 5. **Run `./install.sh`.** It installs the three hard requirements above
    and then walks you through a short interview.
 6. **What `install.sh` actually sets up:**

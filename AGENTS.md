@@ -28,8 +28,20 @@ product and owner need.
 
 The first time you run in a freshly bootstrapped environment (see
 `STARTUP.md` for the exact prompt a human uses to kick this off), your job
-is to run an interview, not to start building anything yet. Ask, don't
-assume:
+is to run an interview, not to start building anything yet.
+
+**`install.sh`'s own interview is authoritative; `STARTUP.md` fills gaps
+and confirms, it does not re-ask from scratch.** Before running by hand,
+`install.sh` already asked the human four of the questions below (owner
+tech level, end-user type, work tracker, comms channel) and recorded the
+answers in `.env`. Your first action under `STARTUP.md` is to read `.env`
+and treat any of those four that are already present and non-empty as
+known — confirm them back to the human rather than asking again. Only ask
+outright for whichever of the four are still missing, plus the four
+fields `install.sh` never asks about at all (`PRODUCT_REPO_PATH`,
+`AGENT_EMAIL_ADDRESS`, `WORK_TRACKER_API_KEY`, `COMMS_CHANNEL_TOKEN`).
+
+Ask, don't assume, for whatever's still outstanding:
 
 1. **The human's own technical experience level.** Are they comfortable
    with servers, git, and code themselves, or not? This changes how much

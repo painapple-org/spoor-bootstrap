@@ -151,18 +151,37 @@ fi
 ENV_FILE="${SCRIPT_DIR}/.env"
 ENV_EXAMPLE="${SCRIPT_DIR}/.env.example"
 
+# Escapes a value for safe use as the replacement side of a sed s|||
+# substitution (backslash, ampersand, and the | delimiter itself).
+sed_escape_replacement() {
+	printf '%s' "$1" | sed -e 's/[\&|]/\\&/g'
+}
+
 if [[ -f "$ENV_FILE" ]]; then
 	log ".env already exists at ${ENV_FILE}; leaving it untouched. Edit it by hand to update these answers."
 else
 	[[ -f "$ENV_EXAMPLE" ]] || fail ".env.example is missing from ${SCRIPT_DIR}; can't generate .env without it."
 	cp "$ENV_EXAMPLE" "$ENV_FILE"
+
+	# WORK_TRACKER and COMMS_CHANNEL already exist as empty placeholder
+	# lines in .env.example — update those lines in place instead of
+	# appending a second definition, so each key ends up defined exactly
+	# once in the generated .env.
+	WORK_TRACKER_ESCAPED="$(sed_escape_replacement "$WORK_TRACKER")"
+	COMMS_CHANNEL_ESCAPED="$(sed_escape_replacement "$COMMS_CHANNEL")"
+	sed -i \
+		-e "s|^WORK_TRACKER=.*|WORK_TRACKER=\"${WORK_TRACKER_ESCAPED}\"|" \
+		-e "s|^COMMS_CHANNEL=.*|COMMS_CHANNEL=\"${COMMS_CHANNEL_ESCAPED}\"|" \
+		"$ENV_FILE"
+
+	# OWNER_TECH_LEVEL and END_USER_TYPE have no placeholder line in
+	# .env.example, so those are genuinely new keys — appending is correct
+	# for these two.
 	{
 		echo ""
 		echo "# --- recorded by install.sh's interview ---"
 		echo "OWNER_TECH_LEVEL=\"${OWNER_TECH_LEVEL}\""
 		echo "END_USER_TYPE=\"${END_USER_TYPE}\""
-		echo "WORK_TRACKER=\"${WORK_TRACKER}\""
-		echo "COMMS_CHANNEL=\"${COMMS_CHANNEL}\""
 	} >> "$ENV_FILE"
 	log "Wrote interview answers to ${ENV_FILE}."
 fi
