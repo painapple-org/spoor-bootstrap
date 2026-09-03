@@ -73,9 +73,10 @@ then point an AI agent at that box. What that actually involves:
   than guessing at another package manager. On another OS, install the three
   requirements below by hand and skip straight to
   [`STARTUP.md`](./STARTUP.md).
-- **It needs root**, via `sudo` (apt installs, plus adding your own user to
-  the `docker` group — which it reads from `SUDO_USER`).
-- **It pipes two official upstream installers into a shell** — Docker's
+- **It needs root**, either as root directly or via `sudo` (apt installs,
+  plus adding your own user to the `docker` group). It stops immediately if
+  it has neither.
+- **It runs two official upstream installers** — Docker's
   (`get.docker.com`) and `uv`'s (`astral.sh`) — and adds GitHub's own apt
   repository for `gh`. Those, plus the apt repos your box already trusts,
   are the only network calls this repo makes. Nothing here phones home and
@@ -137,9 +138,12 @@ choice this repo asks you to make, not something it assumes for you.
 3. **Read, then run, `sudo ./install.sh`** ([source](./install.sh)) — see
    [Before you run `install.sh`](#before-you-run-installsh) above for what
    it does to the box. It installs Docker, uv and `gh` (skipping any already
-   present), and refuses to continue on two things it can't fix for you: an
-   `origin` still pointing at upstream, and skill symlinks broken by a ZIP
-   download.
+   present), plus the apt packages needed to fetch them at all (`curl`, a CA
+   bundle, `git`) on an image minimal enough not to have them, and checks
+   that the docker daemon actually came up. It refuses to continue on two
+   things it can't fix for you: an `origin` still pointing at upstream, and
+   skill symlinks broken by a ZIP download. Re-running it is safe — every
+   step is skipped if it's already done.
 
 4. **Pick and install an agentic harness.** Claude Code, OpenCode, Codex
    CLI, or something else — this repo doesn't prefer one.

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 #
 # install.sh — pure OS-level bootstrap for a spoor-bootstrap instance:
-# installs the three hard requirements (docker, uv, gh cli) and sanity-checks
-# the skill symlinks. Nothing else.
+# sanity-checks the skill symlinks, installs the three hard requirements
+# (docker, uv, gh cli) plus the handful of apt packages they need to be
+# fetchable at all, and verifies the docker daemon actually came up. Nothing
+# else.
 #
 # Scope, deliberately narrow: this script is purely mechanical OS/dependency
 # setup. It asks no questions and writes no config — the first-boot
@@ -42,90 +44,7 @@ if ! command -v apt-get >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
-# origin must be a repo you can push to
-# ---------------------------------------------------------------------------
-#
-# This checkout is not a one-shot installer that gets thrown away: the agent
-# keeps opening PRs against it for work items targeting its own tooling (see
-# skills/git-pr-conventions and skills/work-tracker). That only works if
-# `origin` is a fork or mirror the adopter controls. Cloning upstream
-# directly leaves `origin` unpushable, and the failure would otherwise stay
-# invisible until the agent's first push, long after setup.
-
-if origin_url="$(git -C "$SCRIPT_DIR" remote get-url origin 2>/dev/null)"; then
-	if [[ "$origin_url" == *"painapple-org/spoor-bootstrap"* ]]; then
-		fail "origin still points at the upstream repo (${origin_url}), which you almost certainly cannot push to. Fork painapple-org/spoor-bootstrap on GitHub and clone your fork instead, or repoint this checkout with 'git remote set-url origin <your-repo-url>', then re-run this script. See the 'Path to a running instance' section in README.md."
-	fi
-	log "origin is ${origin_url} (not the upstream repo)."
-fi
-
-# ---------------------------------------------------------------------------
-# docker
-# ---------------------------------------------------------------------------
-
-if command -v docker >/dev/null 2>&1; then
-	log "docker already installed ($(docker --version)); skipping."
-else
-	log "Installing docker via get.docker.com..."
-	curl -fsSL https://get.docker.com -o /tmp/get-docker.sh \
-		|| fail "Failed to download the docker install script."
-	sh /tmp/get-docker.sh || fail "docker install script exited non-zero."
-	rm -f /tmp/get-docker.sh
-	command -v docker >/dev/null 2>&1 || fail "docker install ran but 'docker' is still not on PATH."
-
-	if [[ -n "${SUDO_USER:-}" ]]; then
-		if usermod -aG docker "$SUDO_USER" 2>/dev/null; then
-			log "Added ${SUDO_USER} to the docker group (log out/in for it to take effect)."
-		else
-			log "Could not add ${SUDO_USER} to the docker group automatically; add manually with 'usermod -aG docker ${SUDO_USER}' if you want to run docker without sudo."
-		fi
-	fi
-	log "docker installed ($(docker --version))."
-fi
-
-# ---------------------------------------------------------------------------
-# uv
-# ---------------------------------------------------------------------------
-
-if command -v uv >/dev/null 2>&1; then
-	log "uv already installed ($(uv --version)); skipping."
-else
-	log "Installing uv..."
-	curl -LsSf https://astral.sh/uv/install.sh | sh \
-		|| fail "uv install script failed."
-	export PATH="$HOME/.local/bin:$PATH"
-	command -v uv >/dev/null 2>&1 \
-		|| fail "uv install script ran but 'uv' is still not on PATH. It's usually installed to ~/.local/bin — make sure that's on PATH in your shell profile, then re-run this script."
-	log "uv installed ($(uv --version))."
-fi
-
-# ---------------------------------------------------------------------------
-# gh cli
-# ---------------------------------------------------------------------------
-
-if command -v gh >/dev/null 2>&1; then
-	log "gh cli already installed ($(gh --version | head -n1)); skipping."
-else
-	log "Installing gh cli via the official apt repo..."
-	sudo mkdir -p -m 755 /etc/apt/keyrings \
-		|| fail "Could not create /etc/apt/keyrings."
-	curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-		| sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null \
-		|| fail "Failed to fetch/install the gh cli apt keyring."
-	sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-	echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-		| sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null \
-		|| fail "Failed to write the gh cli apt source."
-	sudo apt-get update -y || fail "apt-get update failed."
-	sudo apt-get install -y gh || fail "apt-get install gh failed."
-	command -v gh >/dev/null 2>&1 || fail "gh install completed but 'gh' is still not on PATH."
-	log "gh cli installed ($(gh --version | head -n1))."
-fi
-
-log "All three hard requirements are present: docker, uv, gh."
-
-# ---------------------------------------------------------------------------
-# Skill symlinks sanity check
+# Skill symlinks sanity check (before anything gets installed)
 # ---------------------------------------------------------------------------
 #
 # Checks that each harness-native skills path is still a symlink resolving
@@ -141,6 +60,209 @@ done
 log ".claude/skills and .opencode/skills resolve correctly."
 
 # ---------------------------------------------------------------------------
+# Privilege escalation
+# ---------------------------------------------------------------------------
+#
+# Every install step below writes outside $HOME (apt packages, /etc/apt,
+# /usr/local/bin), so this script needs root one way or another. Resolve how
+# once, here, instead of hardcoding `sudo` in some steps and bare commands in
+# others: as root there is nothing to escalate to (and a bare-metal/container
+# root shell frequently has no sudo installed at all), while as a normal user
+# sudo is required and its absence is a hard stop, not something to discover
+# halfway through a partial install.
+
+SUDO=""
+if [[ "$(id -u)" -ne 0 ]]; then
+	command -v sudo >/dev/null 2>&1 \
+		|| fail "This script needs root to install packages, but you are running as $(id -un) and sudo is not installed. Re-run it as root, or install sudo first."
+	SUDO="sudo"
+	# Prove sudo actually works before the first install step, so a missing
+	# sudoers entry stops the script here instead of halfway through. `sudo -n`
+	# first (passwordless or a cached timestamp), then a plain `sudo` which
+	# prompts if there's a terminal to prompt on; `sudo -v` is deliberately not
+	# used, since it insists on a password even for a NOPASSWD user.
+	if ! sudo -n true 2>/dev/null; then
+		sudo true \
+			|| fail "sudo is installed but could not authenticate $(id -un) (no sudoers entry, or no terminal to ask for a password on). Re-run this script as root, or grant this user sudo access first."
+	fi
+fi
+
+# ---------------------------------------------------------------------------
+# apt prerequisites
+# ---------------------------------------------------------------------------
+#
+# Every remaining step fetches something over HTTPS, and a minimal Ubuntu/
+# Debian image (docker's `ubuntu:24.04`, a stripped VPS template) ships with
+# neither curl nor a CA bundle. Install them up front rather than letting the
+# first curl call die with "command not found" three steps in.
+
+APT_PREREQS=()
+command -v curl >/dev/null 2>&1 || APT_PREREQS+=("curl")
+command -v git >/dev/null 2>&1 || APT_PREREQS+=("git")
+[[ -e /etc/ssl/certs/ca-certificates.crt ]] || APT_PREREQS+=("ca-certificates")
+
+if [[ ${#APT_PREREQS[@]} -gt 0 ]]; then
+	log "Installing apt prerequisites: ${APT_PREREQS[*]}..."
+	$SUDO apt-get update -y || fail "apt-get update failed."
+	DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y "${APT_PREREQS[@]}" \
+		|| fail "Failed to install apt prerequisites: ${APT_PREREQS[*]}."
+	for prereq in curl git; do
+		command -v "$prereq" >/dev/null 2>&1 \
+			|| fail "apt reported success but '${prereq}' is still not on PATH."
+	done
+	log "apt prerequisites installed."
+else
+	log "apt prerequisites (curl, git, ca-certificates) already present; skipping."
+fi
+
+# ---------------------------------------------------------------------------
+# origin must be a repo you can push to
+# ---------------------------------------------------------------------------
+#
+# This checkout is not a one-shot installer that gets thrown away: the agent
+# keeps opening PRs against it for work items targeting its own tooling (see
+# skills/git-pr-conventions and skills/work-tracker). That only works if
+# `origin` is a fork or mirror the adopter controls. Cloning upstream
+# directly leaves `origin` unpushable, and the failure would otherwise stay
+# invisible until the agent's first push, long after setup.
+#
+# Runs after the apt prerequisites above rather than with the other
+# pre-install checks: it shells out to git, and on an image minimal enough not
+# to ship git, an earlier "command not found" here would make this guard
+# silently skip itself.
+
+# `git -c safe.directory` is passed per invocation, without writing to any git
+# config: git refuses to read a repository owned by a different user than the
+# one running it, which is exactly the case under `sudo ./install.sh` — a
+# root-run git against a checkout owned by the human. Without the override the
+# git call just errors, the check quietly passes over itself, and the guard is
+# missing precisely when the documented invocation is used.
+git_origin_error=""
+if ! origin_url="$(git -c safe.directory="$SCRIPT_DIR" -C "$SCRIPT_DIR" remote get-url origin 2>&1)"; then
+	git_origin_error="$origin_url"
+	origin_url=""
+fi
+
+if [[ -n "$origin_url" ]]; then
+	if [[ "$origin_url" == *"painapple-org/spoor-bootstrap"* ]]; then
+		fail "origin still points at the upstream repo (${origin_url}), which you almost certainly cannot push to. Fork painapple-org/spoor-bootstrap on GitHub and clone your fork instead, or repoint this checkout with 'git remote set-url origin <your-repo-url>', then re-run this script. See the 'Path to a running instance' section in README.md."
+	fi
+	log "origin is ${origin_url} (not the upstream repo)."
+else
+	log "NOT VERIFIED: could not read an 'origin' remote for ${SCRIPT_DIR}, so the upstream-remote check above did not run (git said: ${git_origin_error:-no origin remote configured}). Check yourself that this checkout's origin is a repo you can push to before letting the agent open PRs against it."
+fi
+
+# ---------------------------------------------------------------------------
+# docker
+# ---------------------------------------------------------------------------
+
+if command -v docker >/dev/null 2>&1; then
+	log "docker already installed ($(docker --version)); skipping."
+else
+	log "Installing docker via get.docker.com..."
+	get_docker="$(mktemp)"
+	curl -fsSL https://get.docker.com -o "$get_docker" \
+		|| fail "Failed to download the docker install script."
+	$SUDO sh "$get_docker" || fail "docker install script exited non-zero."
+	rm -f "$get_docker"
+	command -v docker >/dev/null 2>&1 || fail "docker install ran but 'docker' is still not on PATH."
+	log "docker installed ($(docker --version))."
+fi
+
+# The account that runs the agent has to reach the docker socket without sudo,
+# which means being in the docker group. Checked on every run, not only after a
+# fresh install: a box that already had docker installed can just as easily have
+# an invoking user who was never added.
+#
+# The user in question is whoever invoked this script: SUDO_USER when it was
+# escalated with sudo, otherwise the current user — skipped entirely for a plain
+# root shell, where root already reaches the socket.
+docker_group_user="${SUDO_USER:-}"
+if [[ -z "$docker_group_user" && "$(id -u)" -ne 0 ]]; then
+	docker_group_user="$(id -un)"
+fi
+if [[ -n "$docker_group_user" ]]; then
+	if ! getent group docker >/dev/null 2>&1; then
+		log "NOT VERIFIED: there is no 'docker' group on this box, so ${docker_group_user} could not be added to it. That's expected for a rootless docker install; otherwise confirm 'docker info' works as ${docker_group_user} before relying on this instance."
+	elif [[ " $(id -nG "$docker_group_user") " == *" docker "* ]]; then
+		log "${docker_group_user} is already in the docker group."
+	else
+		$SUDO usermod -aG docker "$docker_group_user" \
+			|| fail "Could not add ${docker_group_user} to the docker group. Fix that (or add them manually with 'usermod -aG docker ${docker_group_user}') and re-run this script — without it, every docker command from that account needs sudo."
+		log "Added ${docker_group_user} to the docker group (log out/in for it to take effect)."
+	fi
+fi
+
+# A docker binary on PATH says nothing about whether the daemon is actually
+# running, and "installed but the daemon never came up" is exactly the kind of
+# half-finished bootstrap that only surfaces later, at the first deploy. Check
+# it here. On a box without systemd (a container, or an unusual init) there is
+# nothing this script can start, so say that plainly instead of pretending the
+# check passed.
+if $SUDO docker info >/dev/null 2>&1; then
+	log "docker daemon is reachable."
+elif [[ -d /run/systemd/system ]]; then
+	$SUDO systemctl enable --now docker.service \
+		|| fail "The docker daemon is not reachable and 'systemctl enable --now docker.service' failed. Check 'systemctl status docker' and 'journalctl -u docker' before continuing — docker is a hard requirement here."
+	$SUDO docker info >/dev/null 2>&1 \
+		|| fail "Started docker.service, but 'docker info' still fails. Check 'journalctl -u docker'."
+	log "docker daemon started via systemd and is reachable."
+else
+	log "NOT VERIFIED: docker is installed but its daemon is not reachable, and this box has no systemd to start it with (typical inside a container). Start dockerd with whatever init this host uses and confirm 'docker info' works before relying on this instance."
+fi
+
+# ---------------------------------------------------------------------------
+# uv
+# ---------------------------------------------------------------------------
+
+if command -v uv >/dev/null 2>&1; then
+	log "uv already installed ($(uv --version)); skipping."
+else
+	# Installed system-wide into UV_INSTALL_DIR rather than the installer's
+	# default ~/.local/bin: with sudo, $HOME is root's, so the default would
+	# hide uv from the account that actually runs the agent, and ~/.local/bin
+	# is only on PATH for interactive login shells anyway — which a cron job
+	# or a systemd unit is not. INSTALLER_NO_MODIFY_PATH keeps it from
+	# editing shell profiles it doesn't need to touch.
+	UV_INSTALL_DIR="/usr/local/bin"
+	log "Installing uv into ${UV_INSTALL_DIR}..."
+	curl -LsSf https://astral.sh/uv/install.sh \
+		| $SUDO env UV_INSTALL_DIR="$UV_INSTALL_DIR" INSTALLER_NO_MODIFY_PATH=1 sh \
+		|| fail "uv install script failed."
+	hash -r
+	command -v uv >/dev/null 2>&1 \
+		|| fail "uv install script ran but 'uv' is still not on PATH, despite being installed into ${UV_INSTALL_DIR}. Make sure ${UV_INSTALL_DIR} is on PATH, then re-run this script."
+	log "uv installed ($(uv --version))."
+fi
+
+# ---------------------------------------------------------------------------
+# gh cli
+# ---------------------------------------------------------------------------
+
+if command -v gh >/dev/null 2>&1; then
+	log "gh cli already installed ($(gh --version | sed -n 1p)); skipping."
+else
+	log "Installing gh cli via the official apt repo..."
+	$SUDO mkdir -p -m 755 /etc/apt/keyrings \
+		|| fail "Could not create /etc/apt/keyrings."
+	keyring_tmp="$(mktemp)"
+	curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o "$keyring_tmp" \
+		|| fail "Failed to fetch the gh cli apt keyring."
+	$SUDO install -m 644 "$keyring_tmp" /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+		|| fail "Failed to install the gh cli apt keyring into /etc/apt/keyrings."
+	rm -f "$keyring_tmp"
+	echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+		| $SUDO tee /etc/apt/sources.list.d/github-cli.list >/dev/null \
+		|| fail "Failed to write the gh cli apt source."
+	$SUDO apt-get update -y || fail "apt-get update failed."
+	DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y gh || fail "apt-get install gh failed."
+	command -v gh >/dev/null 2>&1 || fail "gh install completed but 'gh' is still not on PATH."
+	log "gh cli installed ($(gh --version | sed -n 1p))."
+fi
+
+log "All three hard requirements are present: docker, uv, gh."
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 
@@ -153,7 +275,7 @@ cat <<SUMMARY
 Installed / verified:
   - docker: $(docker --version 2>/dev/null || echo "not found")
   - uv:     $(uv --version 2>/dev/null || echo "not found")
-  - gh:     $(gh --version 2>/dev/null | head -n1 || echo "not found")
+  - gh:     $(gh --version 2>/dev/null | sed -n 1p || echo "not found")
 
 This script does not ask you anything and has not written a .env — that
 all happens next, driven by the agent itself.
