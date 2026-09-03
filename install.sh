@@ -103,6 +103,26 @@ fi
 log "All three hard requirements are present: docker, uv, gh."
 
 # ---------------------------------------------------------------------------
+# Skill symlinks sanity check
+# ---------------------------------------------------------------------------
+#
+# .claude/skills and .opencode/skills are each a single whole-folder
+# symlink committed straight into git, pointing back at the canonical
+# skills/ directory — git tracks and clones symlinks natively on
+# Linux/macOS, so a normal `git clone` needs no extra step here. This only
+# guards against the one way that silently breaks: a GitHub "Download
+# ZIP" (or any non-git copy) turns each symlink into a plain text file
+# containing its target path, which is invisible in an `ls` but leaves
+# the harness reading nothing.
+
+for harness_skills_dir in .claude/skills .opencode/skills; do
+	if [[ ! -L "$SCRIPT_DIR/$harness_skills_dir" ]] || [[ ! -d "$SCRIPT_DIR/$harness_skills_dir" ]]; then
+		fail "${harness_skills_dir} is not a working symlink into skills/. If you got this repo via a ZIP download instead of 'git clone', symlinks don't survive that — re-clone with git instead."
+	fi
+done
+log ".claude/skills and .opencode/skills resolve correctly."
+
+# ---------------------------------------------------------------------------
 # Interview
 # ---------------------------------------------------------------------------
 

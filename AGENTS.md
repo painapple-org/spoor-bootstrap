@@ -85,7 +85,12 @@ for the shopping list to be filled in; don't fill it in yourself.
 - [`skills/`](./skills/README.md) — portable, harness-agnostic skill
   definitions (prompt + instructions only, no scheduling mechanics).
   Anything opinionated and reusable belongs here, referenced from
-  wherever it's needed, not copied.
+  wherever it's needed, not copied. `.claude/skills` and
+  `.opencode/skills` are each themselves a single whole-folder symlink
+  back into this directory (not a directory of per-skill symlinks), so
+  Claude Code and OpenCode can each discover the same skills natively
+  with no per-skill wiring — see [`skills/README.md`](./skills/README.md)
+  for how that's wired.
 - `skills/product-tech-stack/SKILL.md` — the one current opinionated
   skill: the required stack when building for a non-technical end-user.
 

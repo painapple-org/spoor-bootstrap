@@ -1,11 +1,15 @@
 # skills/
 
 This directory holds the harness-agnostic skill definitions for a
-spoor-bootstrap deployment. It's the top-level, portable counterpart to
-whatever harness-specific skill directory your agentic tool also reads
-(e.g. Claude Code's `.claude/skills/`) — see [`../CLAUDE.md`](../CLAUDE.md)
-and [`../.claude/skills/README.md`](../.claude/skills/README.md) for why
-those stay thin pointers into here instead of duplicating content.
+spoor-bootstrap deployment. It's the top-level, portable, canonical
+source of truth. Each harness that wants to discover these natively gets
+there via a single whole-folder symlink pointing back at this directory
+— `.claude/skills` -> `../skills` for Claude Code, `.opencode/skills` ->
+`../skills` for OpenCode — never a copy, and never a per-skill symlink.
+Because the entire folder is symlinked, anything added here is
+automatically visible at both harness-native paths with no extra wiring
+per skill. See [`../CLAUDE.md`](../CLAUDE.md) and
+[`../AGENTS.md`](../AGENTS.md) for why editing happens here, not there.
 
 ## What belongs in a SKILL here
 
@@ -34,7 +38,17 @@ something else needs to point at it. Don't copy its content elsewhere —
 everything that needs it should link to this file, per this repo's own
 "every fact has exactly one home" convention.
 
+That's the whole step. `.claude/skills` and `.opencode/skills` are each a
+single symlink pointing at this directory (not a directory containing one
+symlink per skill), so a new subdirectory here is picked up by both
+harnesses immediately — there's no per-skill `ln -s` to remember to run.
+
+Git tracks and clones symlinks natively on Linux/macOS, so once
+`.claude/skills` and `.opencode/skills` are committed, a fresh clone
+already has both harness-native paths resolving to this directory.
+
 ## Current skills
 
 - [`product-tech-stack`](./product-tech-stack/SKILL.md) — the required
   technology stack when building a product for a non-technical end-user.
+  Visible to both harnesses via the whole-folder symlinks above.
