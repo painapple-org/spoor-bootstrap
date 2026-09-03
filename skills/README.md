@@ -2,14 +2,30 @@
 
 This directory holds the harness-agnostic skill definitions for a
 spoor-bootstrap deployment. It's the top-level, portable, canonical
-source of truth. Each harness that wants to discover these natively gets
-there via a single whole-folder symlink pointing back at this directory
-— `.claude/skills` -> `../skills` for Claude Code, `.opencode/skills` ->
-`../skills` for OpenCode — never a copy, and never a per-skill symlink.
-Because the entire folder is symlinked, anything added here is
-automatically visible at both harness-native paths with no extra wiring
-per skill. See [`../CLAUDE.md`](../CLAUDE.md) and
-[`../AGENTS.md`](../AGENTS.md) for why editing happens here, not there.
+source of truth. See [`../CLAUDE.md`](../CLAUDE.md) and
+[`../AGENTS.md`](../AGENTS.md) for why editing happens here, not at a
+harness-native path.
+
+## How harnesses discover these
+
+This section is the one home for how the skills wiring works; everywhere
+else in this repo points here rather than re-explaining it.
+
+Each harness that wants to discover these natively gets there via a
+single whole-folder symlink pointing back at this directory —
+`.claude/skills` -> `../skills` for Claude Code, `.opencode/skills` ->
+`../skills` for OpenCode — never a copy, and never a directory of
+per-skill symlinks. Because the entire folder is symlinked, anything
+added here is automatically visible at both harness-native paths with no
+extra wiring per skill, and there is exactly one copy of each skill's
+content regardless of which harness you picked.
+
+Git tracks and clones symlinks natively on Linux/macOS, so once
+`.claude/skills` and `.opencode/skills` are committed, a fresh clone
+already has both harness-native paths resolving to this directory. The
+one way this silently breaks is a non-git copy (a GitHub "Download ZIP"),
+which turns each symlink into a plain text file containing its target
+path; `install.sh` sanity-checks for exactly that.
 
 ## What belongs in a SKILL here
 
@@ -38,34 +54,26 @@ something else needs to point at it. Don't copy its content elsewhere —
 everything that needs it should link to this file, per this repo's own
 "every fact has exactly one home" convention.
 
-That's the whole step. `.claude/skills` and `.opencode/skills` are each a
-single symlink pointing at this directory (not a directory containing one
-symlink per skill), so a new subdirectory here is picked up by both
-harnesses immediately — there's no per-skill `ln -s` to remember to run.
-
-Git tracks and clones symlinks natively on Linux/macOS, so once
-`.claude/skills` and `.opencode/skills` are committed, a fresh clone
-already has both harness-native paths resolving to this directory.
+That's the whole step — a new subdirectory here is picked up by both
+harnesses immediately, per "How harnesses discover these" above. Add it to
+the "Current skills" list below.
 
 ## Stubs, and why they say so out loud
 
-Most skills here ship as **stubs**: the parts that are true regardless of
-which business, tracker, channel or host a deployment uses are written out
-in full, and every business-specific gap is marked with a literal
-`TODO(specialize)` line. Such a file opens with a `Status:` heading saying
-so, which is removed once no markers remain in it.
+Most skills here ship as **stubs**, marked with a literal
+`TODO(specialize)` line at every business-specific gap, and opening with a
+`Status:` heading that is removed once no markers remain in the file.
 
-That's deliberate, per this repo's "no state that isn't real right now"
-principle: a plausible-looking placeholder value is indistinguishable from
-a real one until something acts on it, whereas a marker is honest about
-being unanswered. Converting those markers into real answers is a concrete
-first-boot step, not an implied one — see
-[`specialize-skills`](./specialize-skills/SKILL.md), which
-[`../STARTUP.md`](../STARTUP.md) invokes as the last step of its flow.
+Why they're shaped that way, and how a marker gets turned into a real
+answer, lives in [`specialize-skills`](./specialize-skills/SKILL.md) — the
+one home for that rationale. [`../STARTUP.md`](../STARTUP.md) invokes it as
+a step of the first-boot flow.
 
 ## Current skills
 
-Visible to both harnesses via the whole-folder symlinks above.
+This list is the one enumeration of what exists here; nothing else in this
+repo re-lists them. Every entry is visible to both harnesses via the
+whole-folder symlinks described above.
 
 - [`product-tech-stack`](./product-tech-stack/SKILL.md) — the required
   technology stack when building a product for a non-technical end-user.
@@ -88,8 +96,9 @@ Visible to both harnesses via the whole-folder symlinks above.
   owner over whichever channel they chose: who may instruct this agent,
   the prompt-injection boundary, interrupt versus digest, and how to write.
 - [`work-pipeline`](./work-pipeline/SKILL.md) — *stub.* The stage chain
-  (refine → critique → implement → review → merge), what each stage owns,
-  and why the reviewing session must not be the implementing one.
+  (refine → critique → resolve-critique → implement → review), what each
+  stage owns, and why the reviewing session must not be the implementing
+  one.
 - [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* How a
   merged change reaches the running product, how the agent knows it's
   healthy, and what it may fix unattended.
