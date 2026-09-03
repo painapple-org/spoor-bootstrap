@@ -97,6 +97,16 @@ document in the deployment conventions doc.
 
 ## How to actually call the tracker
 
+Start from [`adapters/`](./adapters/README.md) if the owner named one of the
+trackers it covers. Those files are pre-written reference notes on how the
+contract above lands in a specific tracker's API — the endpoints, the
+state-model mismatch, the gotchas — so the specialization pass has something
+concrete to verify against instead of researching from scratch. They are
+reference material, not a substitute for the markers below: an adapter
+cannot know this deployment's state names, label names, scope identifier or
+agent account. Verify what an adapter claims against the tracker's own docs
+and, where one command can settle it, against the real instance.
+
 `TODO(specialize)` — fill in, for the chosen tracker:
 
 - **Access mechanism**: an MCP server, an official SDK, a CLI, or raw HTTP.
