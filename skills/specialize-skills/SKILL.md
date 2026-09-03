@@ -7,10 +7,11 @@ description: The one-time pass that turns this repo's generic skill stubs into t
 
 ## When to run this
 
-Once, as the final step of the first-boot flow in
+Once, near the end of the first-boot flow in
 [`STARTUP.md`](../../STARTUP.md) — after the interview, after `.env` is
-written, after this deployment's conventions doc exists, and **before** any
-product feature work begins.
+written, after a git identity has been verified against a real push, after
+this deployment's conventions doc exists and shipped through its own PR,
+and **before** any product feature work begins.
 
 Also run it again, scoped to one file, whenever a `TODO(specialize)` marker
 somewhere becomes answerable — e.g. the owner has now provisioned the
@@ -53,9 +54,12 @@ Work through them in order; later ones depend on earlier answers:
    to delete the adapters this deployment didn't use once the SKILL is
    specialized.
 2. [`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md) — the
-   default branch and naming convention, the push/auth invocation that
-   actually works from an unattended session on this host, the pushing
-   identity, any protected branches.
+   default branch and naming convention, any protected branches. Its
+   `Auth` section is **not** part of this pass: it's answered earlier, at
+   [`STARTUP.md`](../../STARTUP.md) step 5, because the first push this
+   flow makes happens before this pass runs and cannot wait on it. If you
+   find that section still carrying a marker, the fix is to go verify a
+   real push, not to fill it in here from what you assume worked.
 3. [`skills/comms-channel`](../comms-channel/SKILL.md) — the channel's send
    and receive mechanisms, the literal allowlist of who may instruct this
    agent, the single alert destination, and the interrupt-versus-digest
@@ -78,8 +82,8 @@ For each `TODO(specialize)` marker:
 1. **Answer it from a real source** — an interview answer, a value in
    `.env`, the conventions doc at `CONVENTIONS_DOC_PATH`, or something you
    verified by running a command against the actual host or API. Verifying
-   beats assuming: if the question is "which push protocol works from an
-   unattended session here", try it and record what actually worked.
+   beats assuming: if the question is "does this deploy command actually
+   work on this host", run it and record what actually happened.
 2. **Write the answer in place of the marker**, then delete the marker. A
    marker left next to its own answer is drift waiting to happen.
 3. **If the answer is genuinely "not applicable to this deployment", say

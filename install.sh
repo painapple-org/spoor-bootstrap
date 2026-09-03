@@ -238,6 +238,24 @@ fi
 # ---------------------------------------------------------------------------
 # gh cli
 # ---------------------------------------------------------------------------
+#
+# Binary only: this script deliberately does not run `gh auth login` and does
+# not check `gh auth status`. Three reasons, all of them structural rather
+# than stylistic:
+#
+#   - Under the documented `sudo ./install.sh` invocation, both the login and
+#     the status check would resolve against root's config, not that of the
+#     account the agent actually runs as. A login here would land the token in
+#     the wrong home directory, and a status check here would report on the
+#     wrong account — a confidently wrong answer, which is worse than no
+#     answer.
+#   - Authenticating is a decision (which account, which protocol), not a
+#     mechanical step, and this script asks no questions by design.
+#   - The first-boot flow needs to verify a real push against the actual
+#     product repo anyway, which this script has no knowledge of.
+#
+# So auth belongs to the agent, with the human present: STARTUP.md step 5,
+# ahead of the first push in step 6.
 
 if command -v gh >/dev/null 2>&1; then
 	log "gh cli already installed ($(gh --version | sed -n 1p)); skipping."
@@ -278,13 +296,16 @@ Installed / verified:
   - gh:     $(gh --version 2>/dev/null | sed -n 1p || echo "not found")
 
 This script does not ask you anything and has not written a .env — that
-all happens next, driven by the agent itself.
+all happens next, driven by the agent itself. Note that gh is installed
+but NOT logged in: getting a git identity that can actually push is part
+of the first-boot flow below, not of this script.
 
 Next step:
   Run your chosen agentic harness (Claude Code, OpenCode, Codex CLI, or
   another) in this checkout and tell it to read STARTUP.md. It will run
-  the first-boot interview, write .env, generate this deployment's
-  conventions doc, and hand you the self-provisioning shopping list.
+  the first-boot interview, write .env, walk you through authenticating
+  gh and verify a push works, generate this deployment's conventions doc
+  through its first PR, and hand you the self-provisioning shopping list.
 
 ============================================================
 SUMMARY

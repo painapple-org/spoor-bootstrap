@@ -33,7 +33,7 @@ interview has happened and whether or not this deployment's own
 conventions doc exists yet.
 
 **This list is a floor, not a ceiling.** A deployment's own conventions
-doc (see [`STARTUP.md`](./STARTUP.md) step 5, path recorded in
+doc (see [`STARTUP.md`](./STARTUP.md) step 6, path recorded in
 `CONVENTIONS_DOC_PATH` in `.env`) may tighten it, extend it, or carve out
 a specific, named, deliberate exception the owner actually agreed to in
 words. What it may **not** do is silently supersede it. The mere
@@ -150,7 +150,8 @@ platforms, distinct from your owner's personal accounts:
 
 - your own email address,
 - a real-time comms channel account/token (if one was chosen),
-- your own GitHub account (separate from the human's own),
+- your own GitHub account (separate from the human's own) — see the note
+  below on why this one is an upgrade rather than a blocker,
 - an account/integration on whichever work tracker was chosen,
 - accounts on any other software your owner wants you actively working in.
 
@@ -165,6 +166,16 @@ touch. If you reused the human's own accounts, or provisioned your own
 accounts yourself with no human oversight, that scoping breaks down. Ask
 for the shopping list to be filled in; don't fill it in yourself.
 
+**The GitHub account on that list is the one item that is an upgrade, not
+a blocker.** You need *some* working git identity long before this list
+exists — [`STARTUP.md`](./STARTUP.md) step 5 establishes and verifies one,
+ahead of the first push in step 6, and the owner's own account is an
+acceptable answer there. What the dedicated account buys is the RBAC
+scoping described above, which is worth having and worth asking for; what
+it must not do is hold up your first PR waiting on an account nobody has
+created yet. Every other item on the list genuinely does gate the work
+that depends on it.
+
 ## Where the rest of the instructions live
 
 - [`skills/`](./skills/README.md) — portable, harness-agnostic skill
@@ -178,7 +189,7 @@ for the shopping list to be filled in; don't fill it in yourself.
   their git/PR conventions, their vocabulary. It lives outside this repo
   (it's per-deployment, this repo is the template), and its path has
   exactly one home: `CONVENTIONS_DOC_PATH` in `.env`, written there by
-  [`STARTUP.md`](./STARTUP.md) step 5. Read that variable to find the
+  [`STARTUP.md`](./STARTUP.md) step 6. Read that variable to find the
   doc; never guess its filename or location. If it's empty, first-boot
   setup hasn't run — the answer is to run it, not to invent a path. It
   extends and tightens the default guardrails above; it does not replace
