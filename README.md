@@ -116,6 +116,15 @@ choice this repo asks you to make, not something it assumes for you.
 
 ## Path to a running instance
 
+**See a worked example first, if you'd rather read than run:**
+[`docs/example-walkthrough.md`](./docs/example-walkthrough.md) takes one
+fictional small business — a five-person coffee roastery with an inherited,
+half-maintained wholesale ordering portal — through the whole of step 5
+below: the interview with plausible answers, the autonomy negotiation, the
+resulting `.env`, an excerpt of the conventions doc it produces, and one
+skill stub shown before and after specialization. It's illustrative, not a
+default; every file it quotes remains the home for its own content.
+
 1. **Get a VPS you can SSH into**, running Ubuntu or Debian. Any provider
    works. Painapple's own instance runs on OVHcloud; that's not a
    requirement here, just one data point.
