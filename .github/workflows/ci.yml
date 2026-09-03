@@ -34,6 +34,42 @@ jobs:
           printf 'Checking: %s\n' "${scripts[@]}"
           shellcheck --severity=style "${scripts[@]}"
 
+  # shellcheck above only reads install.sh; nothing there notices a change that
+  # is valid shell but a broken bootstrap on a fresh box (a missing apt
+  # prerequisite, an installer invoked in a way that leaves its binary off
+  # PATH). This job actually executes it in a fresh ubuntu:24.04 container,
+  # once per privilege shape install.sh supports, and asserts the result. The
+  # assertions and the reason the docker daemon is out of scope live in the
+  # test script itself.
+  install-execution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [root, sudo-user]
+    steps:
+      # persist-credentials: false because the checkout's .git is mounted into
+      # the test container; there is no reason for a real token to be in it.
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      # install.sh refuses to run against a checkout whose origin is upstream,
+      # since an adopter is meant to work from their own fork — and a CI
+      # checkout is upstream by definition. Repoint origin at a stand-in URL so
+      # the guard's pass path is what gets exercised. Nothing ever contacts it;
+      # the check only reads the remote's string.
+      - name: Point origin at a stand-in fork
+        run: git remote set-url origin https://github.com/spoor-bootstrap-ci/stand-in-fork.git
+
+      - name: Execute install.sh in a fresh ubuntu:24.04 container
+        run: |
+          docker run --rm \
+            -v "$PWD:/src:ro" \
+            ubuntu:24.04 \
+            bash /src/.github/ci/install-smoke-test.sh '${{ matrix.mode }}'
+
   links:
     runs-on: ubuntu-latest
     steps:
