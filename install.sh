@@ -42,6 +42,24 @@ if ! command -v apt-get >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
+# origin must be a repo you can push to
+# ---------------------------------------------------------------------------
+#
+# This checkout is not a one-shot installer that gets thrown away: the agent
+# keeps opening PRs against it for work items targeting its own tooling (see
+# skills/git-pr-conventions and skills/work-tracker). That only works if
+# `origin` is a fork or mirror the adopter controls. Cloning upstream
+# directly leaves `origin` unpushable, and the failure would otherwise stay
+# invisible until the agent's first push, long after setup.
+
+if origin_url="$(git -C "$SCRIPT_DIR" remote get-url origin 2>/dev/null)"; then
+	if [[ "$origin_url" == *"painapple-org/spoor-bootstrap"* ]]; then
+		fail "origin still points at the upstream repo (${origin_url}), which you almost certainly cannot push to. Fork painapple-org/spoor-bootstrap on GitHub and clone your fork instead, or repoint this checkout with 'git remote set-url origin <your-repo-url>', then re-run this script. See the 'Path to a running instance' section in README.md."
+	fi
+	log "origin is ${origin_url} (not the upstream repo)."
+fi
+
+# ---------------------------------------------------------------------------
 # docker
 # ---------------------------------------------------------------------------
 

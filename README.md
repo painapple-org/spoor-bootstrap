@@ -26,7 +26,7 @@ It is explicitly **not**:
   instances that started from the same seed and grew differently based on
   what their product and owner needed.
 
-If you know [OpenClaw](https://github.com/) or similar "give an agent a
+If you know [OpenClaw](https://github.com/openclaw/openclaw) or similar "give an agent a
 computer" projects, the shape will feel familiar. The two differences that
 matter: this is oriented around operating a *product* on a VPS (deploys,
 infra, a real running service with real users), not around being a
@@ -53,7 +53,25 @@ choice this repo asks you to make, not something it assumes for you.
    OVHcloud; that's not a requirement here, just one data point.
 2. **Set up SSH access** to that VPS for yourself and, eventually, for
    whatever automation needs to reach it (CI runners, deploy hooks).
-3. **Pick an agentic harness.** Claude Code, OpenCode, Codex CLI, or
+3. **Fork `painapple-org/spoor-bootstrap` on GitHub first, then clone your
+   own fork** onto the VPS (or wherever your harness runs from). Do not
+   clone `painapple-org/spoor-bootstrap` directly: this checkout is a repo
+   the agent keeps maintaining after setup — it opens PRs against it for
+   work items that target its own tooling, per
+   [`skills/git-pr-conventions`](./skills/git-pr-conventions/SKILL.md) and
+   [`skills/work-tracker`](./skills/work-tracker/SKILL.md) — and it can only
+   do that if `origin` is a repo you can push to. Cloning upstream directly
+   leaves `origin` pointing somewhere you have no write access, and the
+   failure only surfaces later, the first time the agent tries to push a
+   branch.
+
+   Clone with `git`, not a "Download ZIP": the `.claude/skills` and
+   `.opencode/skills` symlinks don't survive a ZIP, and `install.sh` will
+   refuse to continue if they're broken.
+
+   If you'd rather not fork, any remote you control works — create an empty
+   repo, clone this one, and repoint `origin` at yours before going further.
+4. **Pick an agentic harness.** Claude Code, OpenCode, Codex CLI, or
    something else — this repo doesn't prefer one. See
    [`AGENTS.md`](./AGENTS.md) for the harness-agnostic instructions every
    harness should be pointed at, and [`skills/`](./skills/README.md) for
@@ -62,16 +80,18 @@ choice this repo asks you to make, not something it assumes for you.
    same directory, so there's exactly one copy of each skill's content
    regardless of which harness you picked, and a new skill added under
    `skills/` needs no extra wiring to show up in either harness.
-4. **Clone this repo** onto the VPS (or wherever your harness runs from).
 5. **Run `./install.sh`.** It installs the three hard requirements above —
-   nothing else. It asks no questions and writes no config.
-6. **What `install.sh` actually sets up:**
+   nothing else. It asks no questions and writes no config. Concretely, it
+   sets up:
    - Docker, uv, and the GitHub CLI (installed if missing, skipped if
      already present).
    - A sanity check that the `.claude/skills`/`.opencode/skills` symlinks
      resolved correctly (they only break if you got this repo via a ZIP
      download instead of `git clone`).
-7. **Run your chosen agentic harness in this checkout and tell it to read
+   - A check that `origin` isn't still pointing at the upstream
+     `painapple-org/spoor-bootstrap`, since the agent can't open PRs
+     against a repo you don't control.
+6. **Run your chosen agentic harness in this checkout and tell it to read
    [`STARTUP.md`](./STARTUP.md).** That's where the actual first-boot flow
    lives now: the interview (your technical level, who the product is for,
    work tracker, comms channel, autonomy model), writing `.env`, generating
