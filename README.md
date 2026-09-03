@@ -57,7 +57,10 @@ choice this repo asks you to make, not something it assumes for you.
    something else — this repo doesn't prefer one. See
    [`AGENTS.md`](./AGENTS.md) for the harness-agnostic instructions every
    harness should be pointed at, and [`skills/`](./skills/README.md) for
-   the portable skill definitions.
+   the portable skill definitions — Claude Code and OpenCode each get a
+   symlinked view of that same directory at their own native skill path
+   (`.claude/skills/`, `.opencode/skills/`), so there's exactly one copy
+   of each skill's content regardless of which harness you picked.
 4. **Clone this repo** onto the VPS (or wherever your harness runs from).
 5. **Run `./install.sh`.** It installs the three hard requirements above
    and then walks you through a short interview.
