@@ -20,21 +20,12 @@ the source of truth for what you are and what the first-boot interview
 covers. Then come back here and do the following, in order. Don't start
 building any product code until all of it is done.
 
-1. Run the first-boot interview AGENTS.md describes: my own technical
-   experience level, who the end product is for (a technical or
-   non-technical end-user), which work tracker I want to use, and which
-   comms channel I want you reachable on. Ask one at a time, don't assume
-   answers, and push back gently on a vague answer the way you would in any
-   planning conversation — a one-word answer isn't enough to write a real
-   .env or conventions doc from.
-
-   If I tell you the product is for a non-technical end-user, read
-   skills/product-tech-stack/SKILL.md and follow the stack it requires —
-   don't decide a stack yourself.
-
-   Also ask where the target product repo lives (existing repo or a brand
-   new one to create) and, if there's a live product already, where its own
-   content/docs live — you'll need both for the steps below.
+1. Run the first-boot interview exactly as AGENTS.md's "The first-boot
+   interview" section lists it — that section is the complete set of
+   questions, so work from it rather than from any list here. Ask one at a
+   time, don't assume answers, and push back gently on a vague answer the
+   way you would in any planning conversation — a one-word answer isn't
+   enough to write a real .env or conventions doc from.
 
 2. Ask about autonomy and stop-and-ask. You've already read the default
    guardrail list in AGENTS.md's "Default guardrails" section — that list
@@ -137,12 +128,12 @@ building any product code until all of it is done.
    genuinely blocked on an account I haven't created yet, leave the marker,
    name the blocker in one line, and carry it into step 7.
 
-7. Give me the self-provisioning shopping list from AGENTS.md (my own email
-   address, a comms channel account, a GitHub account, a work-tracker
-   account/integration, and anything else needed for the tools we
-   discussed) so I can go create those accounts and paste the resulting
-   secrets into `.env` myself. Don't try to register for any of them
-   yourself. Fold in the blockers from step 6, and tell me which skill
+7. Give me the self-provisioning shopping list exactly as AGENTS.md's
+   "Self-provisioning: the shopping list" section defines it — that section
+   owns what's on it and why, so don't work from a list restated here — so
+   I can go create those accounts and paste the resulting secrets into
+   `.env` myself. Don't try to register for any of them yourself, per that
+   same section. Fold in the blockers from step 6, and tell me which skill
    stubs are still incomplete because of them — I'd rather know that now
    than find out when a stage silently does the wrong thing.
 ```

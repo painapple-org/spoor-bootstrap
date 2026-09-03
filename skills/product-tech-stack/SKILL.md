@@ -48,9 +48,17 @@ This stack is boring on purpose: every piece is mainstream, well-
 documented, and has a large enough ecosystem that a future maintainer (AI
 or human) can get unstuck without depending on this SKILL's author.
 
-This is the **one place** this stack is stated. If you find this list
-duplicated elsewhere in this repo or in a deployment built from it, that's
-drift — point back here instead of copying the list again.
+This is the **one place** the *product's* stack is stated. If you find this
+list duplicated elsewhere in this repo or in a deployment built from it,
+that's drift — point back here instead of copying the list again.
+
+One thing that is deliberately not drift: `README.md`'s "Hard
+requirements" also names Docker and uv, and `install.sh` installs them.
+Those are a different claim — the tooling the *agent* needs present on its
+own host to operate at all, whatever the product turns out to be, and
+required even when this SKILL doesn't apply. This SKILL is the only home
+for what the product is built in; that section is the only home for what
+the operator's box needs. The overlap between them is real, not a copy.
 
 ## What this SKILL does not cover
 

@@ -1,6 +1,6 @@
 ---
 name: work-pipeline
-description: The stage chain this agent instance moves work through — refine, critique, implement, review, merge — and what each stage is responsible for. Read when acting as any one of those stages, or when deciding whether a request should become a tracked work item at all. Ships as a stub for the per-stage prompts and their triggers.
+description: The stage chain this agent instance moves work through — refine, critique, resolve-critique, implement, review — and what each stage is responsible for. Read when acting as any one of those stages, or when deciding whether a request should become a tracked work item at all. Ships as a stub for the per-stage prompts and their triggers.
 ---
 
 # work-pipeline

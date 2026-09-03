@@ -23,6 +23,10 @@ plausible answers is the exact failure this step exists to prevent.
 
 ## Why the stubs exist in this shape
 
+This section is the one home for this rationale — `README.md`, `AGENTS.md`
+and [`skills/README.md`](../README.md) all point here rather than restating
+it.
+
 This repo cannot know the owner's tracker, comms channel, host, or product,
 so it ships the parts of each skill that are true regardless (the contract,
 the state machine, the concurrency hazards, the writing rules) and marks
@@ -36,7 +40,10 @@ it with a reason.
 
 ## The stubs to specialize
 
-Work through these in order — later ones depend on earlier answers:
+What each of these skills *is* isn't restated here — that's the "Current
+skills" list in [`skills/README.md`](../README.md). What follows is only
+the specialization order and what each file is waiting for an answer to.
+Work through them in order; later ones depend on earlier answers:
 
 1. [`skills/work-tracker`](../work-tracker/SKILL.md) — the chosen tracker's
    access mechanism, the state-name mapping, the label names, the agent's
