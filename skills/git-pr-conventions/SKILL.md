@@ -5,7 +5,7 @@ description: How this agent instance ships code — branch, commit, push, PR, se
 
 # git-pr-conventions
 
-## Status: partially generic, partially STUB
+## Status: PARTIAL STUB — needs specialization
 
 Most of this SKILL is real right now: the branch/PR/merge shape and the
 concurrency hazards are properties of git and of running unattended, not of

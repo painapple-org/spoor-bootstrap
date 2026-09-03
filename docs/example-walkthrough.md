@@ -63,7 +63,7 @@ from [`../STARTUP.md`](../STARTUP.md). What follows starts after the agent
 has read [`../AGENTS.md`](../AGENTS.md).
 
 > **Agent:** I've read AGENTS.md. Before I touch anything I need to
-> interview you — five questions from that file, then autonomy, then
+> interview you — the questions from that file, then autonomy, then
 > anything specific to your business. First one, and I'm asking rather
 > than guessing: how comfortable are you with servers, git and code
 > yourself? This changes how much I explain, not what I'm allowed to do.
@@ -533,11 +533,11 @@ actually bite:
   specific" doesn't forbid recording a decision — it forbids manufacturing
   one. The distinction is whether a human said it.
 - **The unused adapters got deleted.** Northlight uses GitHub, so
-  `adapters/linear.md`, `adapters/jira.md` and `adapters/README.md` were
-  removed in the same PR, per that directory's own instruction. Git holds
-  them if Priya ever migrates. Keeping notes for two trackers she doesn't
-  use is exactly the "no state that isn't real right now" rule this repo
-  applies to itself.
+  `adapters/linear.md` and `adapters/jira.md` were removed in the same PR,
+  and their bullets came out of `adapters/README.md`'s index, per that
+  directory's own instruction. Git holds them if Priya ever migrates.
+  Keeping notes for two trackers she doesn't use is exactly the "no state
+  that isn't real right now" rule this repo applies to itself.
 
 ---
 

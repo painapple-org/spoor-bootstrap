@@ -10,9 +10,9 @@
 # setup. It asks no questions and writes no config — the first-boot
 # interview, .env generation, and this deployment's conventions doc are all
 # driven by the agent itself, per STARTUP.md, once this script hands off.
-# That keeps the interview logic (which needs real back-and-forth judgment,
-# not a fixed `read -p` script) in one place instead of split across a shell
-# script and a doc.
+# The interview needs real back-and-forth judgment rather than a fixed
+# `read -p` script, so STARTUP.md is its one home and this script has no
+# say in it.
 #
 # Fails loudly on anything it can't handle: an unsupported OS, a failed
 # install, or a missing prerequisite stops the script with a clear message
@@ -175,8 +175,10 @@ fi
 # an invoking user who was never added.
 #
 # The user in question is whoever invoked this script: SUDO_USER when it was
-# escalated with sudo, otherwise the current user — skipped entirely for a plain
-# root shell, where root already reaches the socket.
+# escalated with sudo, otherwise the current user. A plain root shell has no
+# invoking user to infer and root already reaches the socket, so this is skipped
+# there — README.md's "Before you run install.sh" says what the human has to do
+# by hand in that case for the account that will actually run the agent.
 docker_group_user="${SUDO_USER:-}"
 if [[ -z "$docker_group_user" && "$(id -u)" -ne 0 ]]; then
 	docker_group_user="$(id -un)"

@@ -124,7 +124,18 @@ assume:
 4. **Which comms channel** the human wants you reachable on (a real-time
    channel is preferred over email-only, but the choice is theirs).
 
-5. **Where the target product repo lives** — an existing repo, or a brand
+5. **The single destination for urgent alerts** on that channel — one
+   chat, user or channel id, or an email address if no real-time channel
+   was chosen. Ask for it outright rather than deriving it from the
+   channel answer: the skills that escalate need exactly one unambiguous
+   target, not a group to guess within.
+
+6. **This agent instance's own email address**, if one exists yet. An
+   email address isn't a secret, so ask for it directly; leave it
+   unanswered if it still has to be provisioned, in which case it belongs
+   on the self-provisioning shopping list below.
+
+7. **Where the target product repo lives** — an existing repo, or a brand
    new one you'll create — and, if there's a live product already, where
    its own content/docs live. Both are needed by later steps of the
    first-boot flow: the conventions doc gets written into that repo, and a
@@ -132,7 +143,9 @@ assume:
    pointer to the business's own context.
 
 This list is the complete set of what the interview covers; `STARTUP.md`
-points here for it rather than re-listing it.
+points here for it rather than re-listing it. Which of these answers has a
+named `.env` slot, and what it's called, is `.env.example`'s business, not
+this list's.
 
 See [`STARTUP.md`](./STARTUP.md) for the full first-boot flow this interview
 sits inside — it also covers agreeing on an autonomy model, writing `.env`,

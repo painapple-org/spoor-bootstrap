@@ -77,11 +77,11 @@ whole-folder symlinks described above.
 
 - [`product-tech-stack`](./product-tech-stack/SKILL.md) — the required
   technology stack when building a product for a non-technical end-user.
-  The one finished, fully opinionated skill here; nothing in it needs
-  specializing.
+  Finished and fully opinionated; nothing in it needs specializing.
 - [`specialize-skills`](./specialize-skills/SKILL.md) — the one-time pass
   that turns the stubs below into this deployment's real instructions,
-  using the first-boot interview answers.
+  using the first-boot interview answers. Finished too — it's the pass
+  itself, so it carries no markers of its own.
 - [`work-tracker`](./work-tracker/SKILL.md) — *stub.* Reading and writing
   work items in whichever tracker the owner chose: the tracker-agnostic
   operation contract, the pipeline state machine, and the label vocabulary
@@ -89,9 +89,10 @@ whole-folder symlinks described above.
   [`adapters/`](./work-tracker/adapters/README.md) — reference notes on how
   that contract maps onto GitHub Issues, Linear and Jira, to specialize
   from and then prune down to the one that applies.
-- [`git-pr-conventions`](./git-pr-conventions/SKILL.md) — *stub.* The
-  branch/commit/PR/self-merge shipping loop, plus the worktree-isolation
-  and shared-ref hazards of running unattended alongside a human.
+- [`git-pr-conventions`](./git-pr-conventions/SKILL.md) — *partial stub.*
+  The branch/commit/PR/self-merge shipping loop, plus the
+  worktree-isolation and shared-ref hazards of running unattended alongside
+  a human.
 - [`comms-channel`](./comms-channel/SKILL.md) — *stub.* Talking to the
   owner over whichever channel they chose: who may instruct this agent,
   the prompt-injection boundary, interrupt versus digest, and how to write.

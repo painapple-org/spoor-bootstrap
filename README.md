@@ -56,13 +56,14 @@ pipeline (git, PRs, CI), not a chat window.
 ## What it won't do without asking
 
 The autonomy above comes with a default boundary that exists before you've
-configured anything. [`AGENTS.md`](./AGENTS.md)'s "Default guardrails"
-section is the one home for it — a stop-and-ask list covering irreversible
-git operations, destroying data or backups, credential rotation, DNS and
-hosting changes, spending money, contacting third parties, and anything with
-no concrete rollback. It's read every session, it's in force from the first
-one, and your own conventions doc can tighten or extend it but never
-silently replaces it. That list isn't restated here; go read it there.
+configured anything: a stop-and-ask list the agent reads every session,
+in force from the first one, which your own conventions doc can tighten or
+extend but never silently replaces.
+
+What's actually on that list is deliberately not restated here — not even
+in summary, because a partial summary of a security boundary is the worst
+version of it. [`AGENTS.md`](./AGENTS.md)'s "Default guardrails" section is
+its one home; go read it there.
 
 ## Before you run `install.sh`
 
@@ -74,8 +75,12 @@ then point an AI agent at that box. What that actually involves:
   requirements below by hand and skip straight to
   [`STARTUP.md`](./STARTUP.md).
 - **It needs root**, either as root directly or via `sudo` (apt installs,
-  plus adding your own user to the `docker` group). It stops immediately if
-  it has neither.
+  plus adding a user to the `docker` group). It stops immediately if it has
+  neither. Run under `sudo`, it adds the invoking user to that group. Run as
+  root directly it can't: there's no invoking user to infer, and the account
+  that will run the agent may not exist yet. In that case add it yourself
+  once it does — `usermod -aG docker <account>` — or every docker command
+  from that account will need `sudo`.
 - **It runs two official upstream installers** — Docker's
   (`get.docker.com`) and `uv`'s (`astral.sh`) — and adds GitHub's own apt
   repository for `gh`. Those, plus the apt repos your box already trusts,
