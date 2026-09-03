@@ -56,9 +56,11 @@ else
 	command -v docker >/dev/null 2>&1 || fail "docker install ran but 'docker' is still not on PATH."
 
 	if [[ -n "${SUDO_USER:-}" ]]; then
-		usermod -aG docker "$SUDO_USER" 2>/dev/null \
-			&& log "Added ${SUDO_USER} to the docker group (log out/in for it to take effect)." \
-			|| log "Could not add ${SUDO_USER} to the docker group automatically; add manually with 'usermod -aG docker ${SUDO_USER}' if you want to run docker without sudo."
+		if usermod -aG docker "$SUDO_USER" 2>/dev/null; then
+			log "Added ${SUDO_USER} to the docker group (log out/in for it to take effect)."
+		else
+			log "Could not add ${SUDO_USER} to the docker group automatically; add manually with 'usermod -aG docker ${SUDO_USER}' if you want to run docker without sudo."
+		fi
 	fi
 	log "docker installed ($(docker --version))."
 fi

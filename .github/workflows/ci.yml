@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # shellcheck ships preinstalled on GitHub's ubuntu runner images, so this
+      # needs no install step. Run at the strictest severity: this repo is a
+      # handful of shell lines and currently passes clean at that level, so
+      # there is nothing to justify an --exclude for. Add one only alongside a
+      # comment saying which check and why.
+      - name: Shellcheck every tracked shell script
+        run: |
+          mapfile -t scripts < <(git ls-files '*.sh')
+          if [[ ${#scripts[@]} -eq 0 ]]; then
+            echo "No .sh files tracked in git — nothing to check." >&2
+            exit 1
+          fi
+          printf 'Checking: %s\n' "${scripts[@]}"
+          shellcheck --severity=style "${scripts[@]}"
+
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Catches dead relative links between docs (the common regression when a
+      # file moves or a skill is renamed) as well as dead external URLs.
+      #
+      # .claude/skills and .opencode/skills are symlinks to skills/, so globbing
+      # them too would re-check every SKILL.md at a fake path where its own
+      # ../.. relative links resolve to nothing. Exclude them; the symlinks
+      # -> ../skills relationship itself is what the symlinks job verifies.
+      - name: Check markdown links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --include-fragments
+            --max-retries 3
+            --accept 200,206,429
+            --exclude-path .claude
+            --exclude-path .opencode
+            './**/*.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  symlinks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The runtime equivalent of this lives in install.sh, guarding against a
+      # "Download ZIP" copy that flattens each symlink into a plain text file.
+      # This job catches the other direction: a commit that replaces one of the
+      # symlinks with a real file or directory, which would ship a broken
+      # template that install.sh only rejects once someone runs it.
+      - name: Verify harness skill symlinks
+        run: |
+          status=0
+          for dir in .claude/skills .opencode/skills; do
+            mode="$(git ls-files --stage -- "$dir" | awk '{print $1}')"
+            if [[ "$mode" != "120000" ]]; then
+              echo "FAIL: $dir is committed with git mode '${mode:-missing}', expected 120000 (symlink)." >&2
+              status=1
+              continue
+            fi
+            target="$(readlink "$dir")"
+            if [[ "$target" != "../skills" ]]; then
+              echo "FAIL: $dir points at '$target', expected '../skills'." >&2
+              status=1
+            fi
+            if [[ ! -d "$dir" ]]; then
+              echo "FAIL: $dir does not resolve to a directory." >&2
+              status=1
+            fi
+            if [[ ! -f "$dir/README.md" ]]; then
+              echo "FAIL: $dir/README.md is not readable through the symlink." >&2
+              status=1
+            fi
+            if [[ $status -eq 0 ]]; then
+              echo "OK: $dir -> $target"
+            fi
+          done
+          exit $status
