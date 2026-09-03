@@ -29,18 +29,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # OS detection
 # ---------------------------------------------------------------------------
 
+# ID alone is the distro's own name, so an apt-based derivative (Linux Mint,
+# Pop!_OS, Raspberry Pi OS, Devuan, ...) never matches it even though every
+# step below would work there. ID_LIKE is precisely the field those distros
+# use to declare which parent they behave like, so it is the fallback: match
+# either. ID_LIKE is a space-separated list, hence the padded case match on
+# both fields together rather than a string comparison.
+
 OS_ID=""
+OS_ID_LIKE=""
 if [[ -r /etc/os-release ]]; then
 	# shellcheck source=/dev/null
 	OS_ID="$(. /etc/os-release && echo "${ID:-}")"
+	# shellcheck source=/dev/null
+	OS_ID_LIKE="$(. /etc/os-release && echo "${ID_LIKE:-}")"
 fi
 
-if [[ "$OS_ID" != "ubuntu" && "$OS_ID" != "debian" ]]; then
-	fail "install.sh only knows how to set up an apt-based OS (Ubuntu/Debian) right now. Detected OS_ID='${OS_ID:-unknown}'. Install docker, uv, and gh manually for your OS, then proceed straight to STARTUP.md, or send a PR that adds support for your OS."
-fi
+case " ${OS_ID} ${OS_ID_LIKE} " in
+	*" ubuntu "* | *" debian "*) ;;
+	*)
+		fail "install.sh only knows how to set up an apt-based OS (Ubuntu/Debian, or a derivative declaring one of them in ID_LIKE) right now. /etc/os-release reports ID='${OS_ID:-unknown}' ID_LIKE='${OS_ID_LIKE:-none}'. Install docker, uv, and gh manually for your OS, then proceed straight to STARTUP.md, or send a PR that adds support for your OS."
+		;;
+esac
 
 if ! command -v apt-get >/dev/null 2>&1; then
-	fail "OS reports as '${OS_ID}' but apt-get is not on PATH. Refusing to guess how to install packages here."
+	fail "OS reports as ID='${OS_ID:-unknown}' ID_LIKE='${OS_ID_LIKE:-none}', which looks apt-based, but apt-get is not on PATH. Refusing to guess how to install packages here."
 fi
 
 # ---------------------------------------------------------------------------

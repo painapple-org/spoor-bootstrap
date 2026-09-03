@@ -70,10 +70,12 @@ its one home; go read it there.
 You're about to run a script from a stranger's repo on a box you own, and
 then point an AI agent at that box. What that actually involves:
 
-- **Ubuntu or Debian only.** The script refuses to run anywhere else rather
-  than guessing at another package manager. On another OS, install the three
-  requirements below by hand and skip straight to
-  [`STARTUP.md`](./STARTUP.md).
+- **apt-based Linux only** — Ubuntu, Debian, or a derivative that declares
+  one of them in `/etc/os-release`'s `ID_LIKE` (Linux Mint, Pop!_OS,
+  Raspberry Pi OS, Devuan and friends). The script refuses to run anywhere
+  else rather than guessing at another package manager, and names both
+  fields it read when it does. On another OS, install the three requirements
+  below by hand and skip straight to [`STARTUP.md`](./STARTUP.md).
 - **It needs root**, either as root directly or via `sudo` (apt installs,
   plus adding a user to the `docker` group). It stops immediately if it has
   neither. Run under `sudo`, it adds the invoking user to that group. Run as
@@ -135,9 +137,9 @@ resulting `.env`, an excerpt of the conventions doc it produces, and one
 skill stub shown before and after specialization. It's illustrative, not a
 default; every file it quotes remains the home for its own content.
 
-1. **Get a VPS you can SSH into**, running Ubuntu or Debian. Any provider
-   works. Painapple's own instance runs on OVHcloud; that's not a
-   requirement here, just one data point.
+1. **Get a VPS you can SSH into**, running Ubuntu, Debian or an apt-based
+   derivative of either. Any provider works. Painapple's own instance runs
+   on OVHcloud; that's not a requirement here, just one data point.
 
 2. **Fork `painapple-org/spoor-bootstrap` on GitHub, then clone your own
    fork** onto that VPS (or wherever your harness will run). Don't clone
