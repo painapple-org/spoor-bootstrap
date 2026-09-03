@@ -321,6 +321,25 @@ key. They go in the conventions doc, which is what the next section is.
 
 ## 4. Excerpt from the generated conventions doc
 
+### First, a git identity that actually pushes
+
+Before any of this could ship, `gh auth status` came back empty — the
+binary was installed, nothing was logged in. So that got dealt with on the
+spot, with Priya still at the terminal: she ran `gh auth login`, picked the
+browser flow, and authenticated as her own GitHub account. A
+`git push --dry-run` of a throwaway branch name against
+`northlight-orders` confirmed write access rather than just a successful
+login, and the working invocation went into `git-pr-conventions`' `Auth`
+section.
+
+Her own account, not the agent's. A GitHub account belonging to the agent
+is item 3 on the shopping list below and is the better end state, but it is
+an upgrade to an identity that already works — waiting for it would have
+meant no first PR at all. Swapping it in later is a re-run of the
+specialization pass scoped to that one section.
+
+### The doc
+
 Written to `northlight-orders/AGENTS.md`, and shipped the same way
 everything else will be: a branch, a PR, a self-merge. It's the first
 change, so it establishes the convention rather than being the exception to
@@ -554,7 +573,9 @@ is Priya's to create — the agent does not register itself for anything.
    outbound message and the whole alert path. Until this exists the agent
    has no way to reach her except the terminal she started it from.
 3. **A GitHub account for the agent**, with write access to the repo.
-   Blocks the one remaining marker in `work-tracker`, as shown above.
+   Blocks the one remaining marker in `work-tracker`, as shown above. It
+   does *not* block pushing: those currently authenticate as Priya's own
+   account, per section 4 above.
 4. **The wholesale handbook**, either exported into the repo as markdown or
    shared with the account from item 1. Without it, any proactive work
    proposal about pricing or lead times would be guesswork.
