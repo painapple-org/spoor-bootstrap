@@ -1,16 +1,17 @@
 ---
 name: specialize-skills
-description: The one-time pass that turns this repo's generic skill stubs into this deployment's real instructions, using the first-boot interview answers. Run once, as the last step of STARTUP.md's flow, after .env and the conventions doc are written and before any product work starts.
+description: The one-time pass that turns this repo's generic skill stubs into this deployment's real instructions, using the first-boot interview answers. Run once, as the specialization step of STARTUP.md's flow, after .env and the conventions doc are written and before any product work starts.
 ---
 
 # specialize-skills
 
 ## When to run this
 
-Once, as the final step of the first-boot flow in
+Once, as the specialization step of the first-boot flow in
 [`STARTUP.md`](../../STARTUP.md) — after the interview, after `.env` is
-written, after this deployment's conventions doc exists, and **before** any
-product feature work begins.
+written, after this deployment's conventions doc exists, before the
+self-provisioning shopping list that closes that flow out, and **before**
+any product feature work begins.
 
 Also run it again, scoped to one file, whenever a `TODO(specialize)` marker
 somewhere becomes answerable — e.g. the owner has now provisioned the
@@ -50,8 +51,9 @@ Work through them in order; later ones depend on earlier answers:
    own account, the scope identifier. Read
    [`skills/work-tracker/adapters`](../work-tracker/adapters/README.md)
    first if the chosen tracker is one it covers, and follow its instruction
-   to delete the adapters this deployment didn't use once the SKILL is
-   specialized.
+   to delete the per-tracker adapter files this deployment didn't use once
+   the SKILL is specialized. That directory's own README stays — it's the
+   index other files link to.
 2. [`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md) — the
    default branch and naming convention, the push/auth invocation that
    actually works from an unattended session on this host, the pushing

@@ -41,11 +41,14 @@ any of that, they only say how it lands in one tracker's API.
    label names, the scope identifier, the access mechanism, the agent's own
    account. An adapter cannot answer those — it doesn't know the
    deployment.
-4. **Delete the adapters you didn't use, and this file with them, once
-   `SKILL.md` is specialized.** A deployment runs one tracker; keeping notes
-   for two others is exactly the "state that isn't real right now" the
-   deployment conventions doc rules out. Git holds them if the owner ever
-   migrates trackers.
+4. **Delete the per-tracker adapter files you didn't use, once `SKILL.md` is
+   specialized** — but keep this file. A deployment runs one tracker;
+   keeping notes for two others is exactly the "state that isn't real right
+   now" the deployment conventions doc rules out. Git holds them if the
+   owner ever migrates trackers. This README stays because it's the
+   permanent index for the directory and several files across the repo link
+   to it; remove the bullet for each deleted adapter from "Available
+   adapters" above instead.
 
 ## If the owner's tracker isn't one of these
 

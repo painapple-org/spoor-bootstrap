@@ -13,11 +13,13 @@ nothing in this repo yet says how. That gap is what this file marks. Every
 and product before this agent operates anything live — see
 [`skills/specialize-skills`](../specialize-skills/SKILL.md).
 
-Docker and docker-compose are the one safe assumption: they're a hard
-requirement `install.sh` guarantees, and the required stack for a
-non-technical end-user's product includes them (see
-[`skills/product-tech-stack`](../product-tech-stack/SKILL.md)). Everything
-else here is open.
+Docker is the one safe assumption: it's a hard requirement `install.sh`
+installs and verifies, and the required stack for a non-technical end-user's
+product includes it (see
+[`skills/product-tech-stack`](../product-tech-stack/SKILL.md)). Compose is
+typically present too, since docker's own installer brings it along, but
+nothing here guarantees it — run `docker compose version` and check before
+relying on it. Everything else here is open.
 
 ## Deploying
 

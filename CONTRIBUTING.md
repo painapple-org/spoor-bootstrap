@@ -127,7 +127,11 @@ is worse than a crash, because it leaves no handle to grab.
   [`skills/`](./skills/README.md).
 - A skill that still has `TODO(specialize)` markers also carries a
   `## Status: STUB — needs specialization` heading, removed when the last
-  marker in it goes.
+  marker in it goes. One variant is allowed, for a file whose unmarked half
+  is genuinely usable as shipped rather than a placeholder:
+  `## Status: PARTIAL STUB — needs specialization`, followed by a sentence
+  saying which parts are real now and which wait on specialization. Nothing
+  else — a third phrasing is what makes the heading unskimmable.
 - **Harness-agnostic.** Nothing under `skills/` may assume a particular
   agentic harness's tool syntax, config format or file paths. If it only
   makes sense under one harness, it doesn't belong there.
