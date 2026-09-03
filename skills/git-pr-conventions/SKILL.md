@@ -152,6 +152,19 @@ terminal to prompt on.
   the agent's own account once it exists is a re-run of
   [`skills/specialize-skills`](../specialize-skills/SKILL.md) scoped to
   this section.
+- **The credential that opens and merges the PR**, which is a separate
+  thing from the one that pushes: the push rides the git remote, while the
+  PR goes through the hosting provider's API. Record what was verified for
+  *that* path too. One credential often serves both, and recording that it
+  did is the point — the next session shouldn't have to re-derive whether
+  the push working implies the merge will.
+- **Whether this remote has a PR mechanism at all.** The loop above assumes
+  one. A plain git remote — a bare repo on a box, a self-hosted host with
+  no API in use — has no PR object, so "open a PR, merge it yourself" has
+  to become something concrete and reviewable instead. Say what it became,
+  and say how the default branch gets advanced without the local
+  fast-forward the hazard above warns against, since a server-side merge is
+  exactly what was avoiding it.
 
 ## Protected branches and irreversible git operations
 

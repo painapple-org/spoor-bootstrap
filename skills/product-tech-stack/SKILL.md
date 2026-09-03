@@ -16,7 +16,10 @@ non-technical audience. That answer is recorded as `END_USER_TYPE` in
 
 If the product is aimed at a technical end-user (developers, technical
 teams, internal tooling for technically fluent users), this SKILL does not
-apply — choose your stack on its merits for that case.
+apply — choose your stack on its merits for that case, and record what you
+chose in the deployment conventions doc at `CONVENTIONS_DOC_PATH` in `.env`.
+That's its home in that case; this file stays the home only for the
+non-negotiable list below, so nothing chosen on merits gets written in here.
 
 ## The requirement
 
