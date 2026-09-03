@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 #
-# install.sh — sets up the three hard requirements for a spoor-bootstrap
-# instance (docker, uv, gh cli) and runs the first-run interview that
-# records how this deployment wants to work.
+# install.sh — pure OS-level bootstrap for a spoor-bootstrap instance:
+# installs the three hard requirements (docker, uv, gh cli) and sanity-checks
+# the skill symlinks. Nothing else.
 #
-# Scope, deliberately narrow: this script installs infrastructure tooling
-# and asks questions. It does not install or configure anything
-# app-specific (no email client, no work-tracker SDK, no comms-channel
-# library) — those are per-deployment choices, documented as pointers
-# below, not scripted here.
+# Scope, deliberately narrow: this script is purely mechanical OS/dependency
+# setup. It asks no questions and writes no config — the first-boot
+# interview, .env generation, and this deployment's conventions doc are all
+# driven by the agent itself, per STARTUP.md, once this script hands off.
+# That keeps the interview logic (which needs real back-and-forth judgment,
+# not a fixed `read -p` script) in one place instead of split across a shell
+# script and a doc.
 #
 # Fails loudly on anything it can't handle: an unsupported OS, a failed
 # install, or a missing prerequisite stops the script with a clear message
@@ -32,7 +34,7 @@ if [[ -r /etc/os-release ]]; then
 fi
 
 if [[ "$OS_ID" != "ubuntu" && "$OS_ID" != "debian" ]]; then
-	fail "install.sh only knows how to set up an apt-based OS (Ubuntu/Debian) right now. Detected OS_ID='${OS_ID:-unknown}'. Install docker, uv, and gh manually for your OS, then re-run this script's interview section, or send a PR that adds support for your OS."
+	fail "install.sh only knows how to set up an apt-based OS (Ubuntu/Debian) right now. Detected OS_ID='${OS_ID:-unknown}'. Install docker, uv, and gh manually for your OS, then proceed straight to STARTUP.md, or send a PR that adds support for your OS."
 fi
 
 if ! command -v apt-get >/dev/null 2>&1; then
@@ -123,51 +125,6 @@ done
 log ".claude/skills and .opencode/skills resolve correctly."
 
 # ---------------------------------------------------------------------------
-# Interview
-# ---------------------------------------------------------------------------
-
-log "Now a short interview about how this deployment should work."
-echo "Nothing below is scripted behavior — it just records your answers so"
-echo "whichever agentic harness you run next (see AGENTS.md) knows how to act."
-echo
-
-read -r -p "Your own technical experience level (e.g. 'experienced developer', 'non-technical'): " OWNER_TECH_LEVEL
-read -r -p "Who is the end product for — a technical or a non-technical end-user? [technical/non-technical]: " END_USER_TYPE
-read -r -p "Which work tracker do you want to use (e.g. Linear, GitHub Issues, Jira, plain markdown files)?: " WORK_TRACKER
-read -r -p "Which real-time comms channel do you want the agent reachable on (e.g. Telegram, Slack, Discord, none yet)?: " COMMS_CHANNEL
-
-if [[ "$END_USER_TYPE" == "non-technical" || "$END_USER_TYPE" == "Non-technical" ]]; then
-	echo
-	log "Noted: building for a non-technical end-user."
-	echo "Your agent's first read after this interview should be:"
-	echo "  ${SCRIPT_DIR}/skills/product-tech-stack/SKILL.md"
-	echo "That file states the required stack once — it isn't repeated here."
-fi
-
-# ---------------------------------------------------------------------------
-# Write .env
-# ---------------------------------------------------------------------------
-
-ENV_FILE="${SCRIPT_DIR}/.env"
-ENV_EXAMPLE="${SCRIPT_DIR}/.env.example"
-
-if [[ -f "$ENV_FILE" ]]; then
-	log ".env already exists at ${ENV_FILE}; leaving it untouched. Edit it by hand to update these answers."
-else
-	[[ -f "$ENV_EXAMPLE" ]] || fail ".env.example is missing from ${SCRIPT_DIR}; can't generate .env without it."
-	cp "$ENV_EXAMPLE" "$ENV_FILE"
-	{
-		echo ""
-		echo "# --- recorded by install.sh's interview ---"
-		echo "OWNER_TECH_LEVEL=\"${OWNER_TECH_LEVEL}\""
-		echo "END_USER_TYPE=\"${END_USER_TYPE}\""
-		echo "WORK_TRACKER=\"${WORK_TRACKER}\""
-		echo "COMMS_CHANNEL=\"${COMMS_CHANNEL}\""
-	} >> "$ENV_FILE"
-	log "Wrote interview answers to ${ENV_FILE}."
-fi
-
-# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 
@@ -182,33 +139,14 @@ Installed / verified:
   - uv:     $(uv --version 2>/dev/null || echo "not found")
   - gh:     $(gh --version 2>/dev/null | head -n1 || echo "not found")
 
-Recorded in .env:
-  - Your technical level: ${OWNER_TECH_LEVEL}
-  - End-user type:        ${END_USER_TYPE}
-  - Work tracker:         ${WORK_TRACKER}
-  - Comms channel:        ${COMMS_CHANNEL}
+This script does not ask you anything and has not written a .env — that
+all happens next, driven by the agent itself.
 
-What this script did NOT do (by design — these are per-deployment
-choices, not something install.sh scripts for you):
-  - No work-tracker integration was installed or configured. Wire up
-    "${WORK_TRACKER}" yourself, or point your agent at docs for it.
-  - No comms-channel bot/library was installed. Set up "${COMMS_CHANNEL}"
-    yourself (bot token, webhook, etc.) and hand the credential to your
-    agent via .env.
-  - No email provider was configured. Whether you use Gmail, Outlook, a
-    self-hosted Nextcloud mail MCP, or something else is your call —
-    document the choice and provision an account for your agent's own
-    address (see AGENTS.md's self-provisioning section), there's no
-    installer for this here.
-
-Next steps:
-  1. Read AGENTS.md for what your agent does with all of this.
-  2. Read STARTUP.md and paste its prompt into your chosen harness to
-     kick off the first-boot interview there (this script only handled
-     infrastructure + the interview above, not the agent's own
-     conversation loop).
-  3. Provision the self-provisioning shopping list your agent gives you
-     once the interview inside your harness is done.
+Next step:
+  Run your chosen agentic harness (Claude Code, OpenCode, Codex CLI, or
+  another) in this checkout and tell it to read STARTUP.md. It will run
+  the first-boot interview, write .env, generate this deployment's
+  conventions doc, and hand you the self-provisioning shopping list.
 
 ============================================================
 SUMMARY

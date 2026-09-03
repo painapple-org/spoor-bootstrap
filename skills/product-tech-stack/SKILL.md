@@ -56,5 +56,5 @@ drift — point back here instead of copying the list again.
 This SKILL states a stack requirement, nothing more. It does not include:
 scheduling/deployment mechanics, a work-tracker choice, a comms-channel
 choice, or an email provider — those remain separate, per-deployment
-decisions covered elsewhere (`AGENTS.md`, `install.sh`'s interview,
-`skills/README.md`).
+decisions covered elsewhere (`AGENTS.md`, `STARTUP.md`'s first-boot
+interview, `skills/README.md`).

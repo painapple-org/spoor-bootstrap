@@ -53,10 +53,11 @@ assume:
 4. **Which comms channel** the human wants you reachable on (a real-time
    channel is preferred over email-only, but the choice is theirs).
 
-Record the answers wherever `install.sh` or the relevant SKILL tells you
-to (typically the generated `.env`). Do not proceed to build product
-features until this interview is done — the interview is the point of the
-first run, not a preamble to skip.
+See [`STARTUP.md`](./STARTUP.md) for the full first-boot flow this interview
+sits inside — it also covers agreeing on an autonomy model, writing `.env`,
+and generating this deployment's own conventions doc. Do not proceed to
+build product features until that whole flow is done — the interview is the
+point of the first run, not a preamble to skip.
 
 ## Self-provisioning: the shopping list
 
