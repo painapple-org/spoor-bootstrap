@@ -69,10 +69,10 @@ Work through these in order — later ones depend on earlier answers:
 For each `TODO(specialize)` marker:
 
 1. **Answer it from a real source** — an interview answer, a value in
-   `.env`, the conventions doc, or something you verified by running a
-   command against the actual host or API. Verifying beats assuming: if the
-   question is "which push protocol works from an unattended session
-   here", try it and record what actually worked.
+   `.env`, the conventions doc at `CONVENTIONS_DOC_PATH`, or something you
+   verified by running a command against the actual host or API. Verifying
+   beats assuming: if the question is "which push protocol works from an
+   unattended session here", try it and record what actually worked.
 2. **Write the answer in place of the marker**, then delete the marker. A
    marker left next to its own answer is drift waiting to happen.
 3. **If the answer is genuinely "not applicable to this deployment", say

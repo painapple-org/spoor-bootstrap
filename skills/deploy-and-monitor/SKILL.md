@@ -65,8 +65,12 @@ Two things that are true regardless of mechanism:
 - **What the agent is allowed to fix unattended.** Restarting an unhealthy
   container and clearing a filled disk of the agent's own artifacts are
   common carve-outs; deleting anything the owner might want is not. This is
-  an autonomy question, so it belongs in the deployment conventions doc and
-  only gets *pointed at* from here.
+  an autonomy question, so it belongs in the deployment conventions doc —
+  read its path from `CONVENTIONS_DOC_PATH` in `.env` — and only gets
+  *pointed at* from here. Anything that doc doesn't explicitly permit
+  unattended falls back to [`AGENTS.md`](../../AGENTS.md)'s "Default
+  guardrails" list, which is stop-and-ask for destroying data, deleting
+  backups or volumes, and anything with no concrete rollback.
 - **Where an alert goes.** One destination, per
   [`skills/comms-channel`](../comms-channel/SKILL.md).
 
@@ -96,5 +100,8 @@ Never put a real secret in a committed file, a code comment, a doc, a work
 item, or a message. Reference the variable *name* when documenting
 configuration, never the value.
 
-Rotating or revoking a credential is the archetypal stop-and-ask action.
-Whether it's on this deployment's list is recorded in its conventions doc.
+Rotating or revoking a credential is stop-and-ask by default, per
+[`AGENTS.md`](../../AGENTS.md)'s "Default guardrails" list. Any deviation
+this owner agreed to is recorded in the deployment conventions doc at
+`CONVENTIONS_DOC_PATH` in `.env`; if that variable is unset, or the doc is
+silent, the default applies.

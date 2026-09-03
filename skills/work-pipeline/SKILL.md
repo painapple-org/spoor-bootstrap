@@ -54,7 +54,9 @@ tracker, and exits.
    its own merits, fixes clear problems directly on the branch, merges, and
    closes the item. Biases hard toward merging: git-reversible work means a
    wrong call costs a revert, not a disaster. Leaves a PR open only for a
-   real stop-and-ask category.
+   real stop-and-ask category (see [`AGENTS.md`](../../AGENTS.md)'s default
+   guardrails and this deployment's conventions doc at
+   `CONVENTIONS_DOC_PATH`).
 
 Two rules that apply to every stage:
 

@@ -36,17 +36,15 @@ building any product code until all of it is done.
    new one to create) and, if there's a live product already, where its own
    content/docs live — you'll need both for the steps below.
 
-2. Ask about autonomy and stop-and-ask. This repo's default posture (see
-   AGENTS.md's "What you are") is: work through a devops pipeline —
-   branches, PRs, deploys — largely on your own for routine reversible
-   work, and stop and ask before anything destructive or hard to reverse
-   (force-push, deleting branches/volumes/backups, `git reset --hard` on
-   others' work, credential rotation, DNS/domain changes, touching live
-   production data directly). Don't just accept that silently — ask
-   explicitly whether it matches my risk tolerance, or whether I want
-   anything tightened (e.g. sign-off before any merge, not just before
-   destructive ops) or loosened (e.g. a specific carve-out for something
-   routine to this product).
+2. Ask about autonomy and stop-and-ask. You've already read the default
+   guardrail list in AGENTS.md's "Default guardrails" section — that list
+   is in force right now and is the starting point for this conversation.
+   Don't restate it back to me item by item, and don't treat it as
+   provisional: walk me through what it means in practice for this product,
+   then ask explicitly whether I want anything tightened (e.g. sign-off
+   before any merge, not just before destructive ops) or a specific,
+   named carve-out loosened for something genuinely routine here.
+   Anything I don't explicitly change stays as AGENTS.md has it.
 
 3. Ask anything else that's specific to this product and can't be guessed
    from a generic template — a domain name, product/team vocabulary,
@@ -73,18 +71,57 @@ building any product code until all of it is done.
    Leave the real secrets (`WORK_TRACKER_API_KEY`, `COMMS_CHANNEL_TOKEN`)
    blank with a comment pointing at where each one comes from — don't ask me
    to paste a secret into this chat, I'll edit `.env` directly for those
-   once they're provisioned (step 7).
+   once they're provisioned (step 7). Leave `CONVENTIONS_DOC_PATH` blank
+   here too: step 5 is what fills it in, once you've actually decided
+   where that doc lives.
 
 5. Write a conventions doc in the target product repo (that repo's own
    `CLAUDE.md`/`AGENTS.md` if it doesn't have one yet, or a clearly-named
-   sibling if it does and you don't want to clobber it). It should record,
-   for this specific deployment: the autonomy model and stop-and-ask list
-   from step 2 (the one I actually agreed to, not a generic list), the
-   git/PR conventions you'll operate under (branch, commit, push, PR,
-   self-merge for routine work), and anything from step 3. This is the file
-   every future session of yourself should treat as this deployment's own
-   source of truth — point at it rather than re-deriving these answers from
-   this conversation again.
+   sibling if it does and you don't want to clobber it).
+
+   **Record its path in `CONVENTIONS_DOC_PATH` in `.env` as soon as you've
+   decided it, before writing the doc's content.** That variable is the one
+   home for where this doc lives; every skill that says "go read the
+   conventions doc" resolves it from there. Skipping this leaves those
+   skills pointing at a file no future session can name — so if you can't
+   write the variable, stop and tell me rather than proceeding.
+
+   It should record, for this specific deployment:
+
+   - the autonomy model and stop-and-ask list from step 2 — specifically,
+     what I asked to *change* from AGENTS.md's default guardrails, and the
+     fact that everything I didn't change still stands as written there.
+     Don't copy that list in; point at AGENTS.md as its home and record the
+     deltas.
+   - the git/PR conventions you'll operate under (branch, commit, push, PR,
+     self-merge for routine work), including this deployment's branch
+     naming convention and its default branch name.
+   - **the commit process trailer** — the literal trailer line that goes in
+     the commit body naming which process produced the commit, per step 2
+     of skills/git-pr-conventions/SKILL.md. Ask me if we haven't agreed
+     one; that skill points here for the exact text.
+   - **the tracker comment marker convention** — the literal footer line
+     ending every work-item comment you write, so a later run can tell your
+     own prior notes from a human's, per the tracker-agnostic contract in
+     skills/work-tracker/SKILL.md.
+   - **what you're allowed to do unattended versus what needs my sign-off**
+     on the running deployment specifically — e.g. restarting an unhealthy
+     container, clearing disk of your own artifacts, rolling back a bad
+     deploy — per the monitoring section of
+     skills/deploy-and-monitor/SKILL.md. Be concrete about the boundary;
+     a vague "fix what breaks" is what leaves a future session guessing.
+   - anything from step 3.
+
+   This is the file every future session of yourself should treat as this
+   deployment's own source of truth for all of the above — point at it
+   rather than re-deriving these answers from this conversation again.
+
+   **Ship it the same way you'll ship everything else**: branch off the
+   product repo's default branch, commit, push, open a PR, and merge it
+   yourself, per skills/git-pr-conventions/SKILL.md. Don't commit straight
+   to the default branch — this is the first change that establishes the
+   convention, so it shouldn't be the one exception to it. Show me the PR
+   link.
 
 6. Now specialize the skill stubs. Read skills/specialize-skills/SKILL.md
    and follow it. The skills under skills/ ship deliberately generic, with
