@@ -15,11 +15,13 @@ something this template picks. Everything below that is marked
 any pipeline stage that touches work items can run. Fill it in via
 [`skills/specialize-skills`](../specialize-skills/SKILL.md).
 
-The tracker's name is recorded in `WORK_TRACKER` in `.env`, and its
-credential in `WORK_TRACKER_API_KEY` (renamed to the tracker's own
-convention if the owner preferred). Read those rather than assuming a
-tracker — if `WORK_TRACKER` is empty, first-boot setup hasn't happened yet
-and the answer is to run it, not to guess.
+The tracker's name is recorded in `WORK_TRACKER` in `.env`, its credential
+in `WORK_TRACKER_API_KEY`, and the instance's base URL — where the tracker
+is per-customer hosted — in `WORK_TRACKER_BASE_URL`. Those key names stay
+as they are whatever the chosen tracker calls its own equivalents, since
+they're what this file points at. Read them rather than assuming a tracker
+— if `WORK_TRACKER` is empty, first-boot setup hasn't happened yet and the
+answer is to run it, not to guess.
 
 ## When this applies
 

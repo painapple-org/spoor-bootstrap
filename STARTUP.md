@@ -113,12 +113,22 @@ building any product code until all of it is done.
       throwaway branch name against its remote. That contacts the remote
       and gets refused if the account lacks write access, while writing
       nothing. If the product repo doesn't exist yet, say so and get it
-      created first — step 6 has nowhere to land otherwise.
+      created first — step 6 has nowhere to land otherwise. "Exists" here
+      means it has a remote you can reach: a brand-new repo is a valid
+      answer to the interview's repo question, and a local `git init` with
+      no remote will fail this check rather than pass it. Creating the
+      *repo* on my hosting account is fine to do for me if I ask you to and
+      you have the access — it's creating an *account* that's mine alone,
+      per (b).
 
    e. Write down what actually worked in the `Auth` section of
       skills/git-pr-conventions/SKILL.md: the exact push invocation that
-      succeeded, which account it authenticates as, and any protocol
-      quirk you hit. That section is the one home for this, and step 7 has
+      succeeded, which account it authenticates as, any protocol quirk you
+      hit, and what you found when you checked the PR-opening credential in
+      (b) — including "it turned out to be the same one", which is a
+      finding about this deployment and not a general guarantee.
+
+      That section is the one home for this, and step 7 has
       nothing left to add to it — it's answered here because here is where
       it gets verified for real. Follow skills/specialize-skills/SKILL.md's
       "How to specialize one file" rules for how to write it, including
@@ -160,6 +170,12 @@ building any product code until all of it is done.
      ending every work-item comment you write, so a later run can tell your
      own prior notes from a human's, per the tracker-agnostic contract in
      skills/work-tracker/SKILL.md.
+   - **the product's stack, but only if `END_USER_TYPE` is technical.** For
+     a non-technical end-user, skills/product-tech-stack/SKILL.md is the one
+     home for the stack and nothing gets copied out of it. For a technical
+     one that SKILL doesn't apply and the choice is yours on the merits —
+     which leaves the decision with no home at all unless it's recorded
+     here. Record what you chose and the reason, not just the list.
    - **what you're allowed to do unattended versus what needs my sign-off**
      on the running deployment specifically — e.g. restarting an unhealthy
      container, clearing disk of your own artifacts, rolling back a bad
