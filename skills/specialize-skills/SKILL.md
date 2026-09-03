@@ -40,7 +40,11 @@ Work through these in order — later ones depend on earlier answers:
 
 1. [`skills/work-tracker`](../work-tracker/SKILL.md) — the chosen tracker's
    access mechanism, the state-name mapping, the label names, the agent's
-   own account, the scope identifier.
+   own account, the scope identifier. Read
+   [`skills/work-tracker/adapters`](../work-tracker/adapters/README.md)
+   first if the chosen tracker is one it covers, and follow its instruction
+   to delete the adapters this deployment didn't use once the SKILL is
+   specialized.
 2. [`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md) — the
    default branch and naming convention, the push/auth invocation that
    actually works from an unattended session on this host, the pushing

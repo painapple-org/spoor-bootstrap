@@ -77,7 +77,10 @@ Visible to both harnesses via the whole-folder symlinks above.
 - [`work-tracker`](./work-tracker/SKILL.md) — *stub.* Reading and writing
   work items in whichever tracker the owner chose: the tracker-agnostic
   operation contract, the pipeline state machine, and the label vocabulary
-  the stages depend on.
+  the stages depend on, plus
+  [`adapters/`](./work-tracker/adapters/README.md) — reference notes on how
+  that contract maps onto GitHub Issues, Linear and Jira, to specialize
+  from and then prune down to the one that applies.
 - [`git-pr-conventions`](./git-pr-conventions/SKILL.md) — *stub.* The
   branch/commit/PR/self-merge shipping loop, plus the worktree-isolation
   and shared-ref hazards of running unattended alongside a human.
