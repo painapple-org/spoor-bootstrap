@@ -75,8 +75,10 @@ choice this repo asks you to make, not something it assumes for you.
    [`STARTUP.md`](./STARTUP.md).** That's where the actual first-boot flow
    lives now: the interview (your technical level, who the product is for,
    work tracker, comms channel, autonomy model), writing `.env`, generating
-   this deployment's own conventions doc, and — if you're building for a
-   non-technical end-user — a pointer to the opinionated stack in
+   this deployment's own conventions doc, specializing the skill stubs in
+   [`skills/`](./skills/README.md) against your actual answers, and — if
+   you're building for a non-technical end-user — a pointer to the
+   opinionated stack in
    [`skills/product-tech-stack/SKILL.md`](./skills/product-tech-stack/SKILL.md).
    The agent hands you a self-provisioning shopping list at the end.
 
@@ -85,6 +87,28 @@ channel, deploy automation, scheduling — is deliberately left to you and the
 agent you're running. This repo gets you to a box with the right tools
 installed and a documented starting point; it doesn't hand you a finished
 agent.
+
+## What the skills are, and what "stub" means here
+
+[`skills/`](./skills/README.md) holds the portable, harness-agnostic
+instructions this agent operates from. Only one of them
+(`product-tech-stack`) is finished; the rest ship as **stubs** — written out
+in full wherever a fact is genuinely universal (how a work-tracker state
+machine has to behave, why an unattended run must never touch the primary
+git checkout, who is allowed to instruct an agent with real tool access),
+and marked with a literal `TODO(specialize)` everywhere the real answer
+depends on *your* tracker, channel, host and product.
+
+Nothing here guesses those answers on your behalf, which is the point: a
+plausible-looking placeholder is indistinguishable from a verified value
+until something acts on it. Filling them in is a concrete step in
+[`STARTUP.md`](./STARTUP.md)'s flow, driven by
+[`skills/specialize-skills`](./skills/specialize-skills/SKILL.md), and it
+runs off the interview answers rather than asking you to edit markdown by
+hand. Expect to re-run it, one file at a time, as you provision the
+accounts on the shopping list below and more of the markers become
+answerable. See [`skills/README.md`](./skills/README.md) for the current
+list.
 
 ## Self-provisioning: what the agent needs, and who sets it up
 
