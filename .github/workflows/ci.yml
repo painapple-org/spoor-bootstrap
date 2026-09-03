@@ -17,7 +17,7 @@ jobs:
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # shellcheck ships preinstalled on GitHub's ubuntu runner images, so this
       # needs no install step. Run at the strictest severity: this repo is a
@@ -37,7 +37,7 @@ jobs:
   links:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Catches dead relative links between docs (the common regression when a
       # file moves or a skill is renamed) as well as dead external URLs.
@@ -64,7 +64,7 @@ jobs:
   symlinks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The runtime equivalent of this lives in install.sh, guarding against a
       # "Download ZIP" copy that flattens each symlink into a plain text file.
