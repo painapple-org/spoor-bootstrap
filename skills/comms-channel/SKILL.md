@@ -93,8 +93,9 @@ rather than referring to one that doesn't exist.
 ## How to write to them
 
 - **Match the recipient's technical level**, which is a first-boot
-  interview answer, not a guess. A non-technical owner gets plain language
-  and an explained term; a technical one does not need jargon translated.
+  interview answer recorded as `OWNER_TECH_LEVEL` in `.env`, not a guess. A
+  non-technical owner gets plain language and an explained term; a
+  technical one does not need jargon translated.
 - **Address a specific person explicitly** in a group channel by replying
   to their own message or DMing them — a name prefix in a group post is
   easily missed.

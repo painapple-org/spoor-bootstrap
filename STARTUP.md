@@ -56,14 +56,24 @@ building any product code until all of it is done.
 4. Once you have the answers, write `.env` from `.env.example` (copy it if
    `.env` doesn't exist yet; if it already exists, leave it untouched and
    tell me to edit it by hand instead). Fill in every field you now have a
-   real answer for: `PRODUCT_REPO_PATH`, `WORK_TRACKER`, `COMMS_CHANNEL`,
-   and add clearly-named fields for anything from the interview that
-   `.env.example` doesn't already have a slot for (e.g. the tech-level and
-   end-user-type answers). Leave real secrets
-   (`WORK_TRACKER_API_KEY`, `COMMS_CHANNEL_TOKEN`, `AGENT_EMAIL_ADDRESS`)
+   real answer for — `.env.example`'s field list is the schema, so use its
+   names as they are and don't invent new keys: `PRODUCT_REPO_PATH`,
+   `WORK_TRACKER`, `COMMS_CHANNEL`, `COMMS_ALERT_TARGET` (the single
+   destination for urgent alerts — ask me for it outright, the skills that
+   escalate need exactly one target), `OWNER_TECH_LEVEL` and
+   `END_USER_TYPE` (my technical level and who the product is for, from
+   step 1), and `AGENT_EMAIL_ADDRESS` if you already have one — an email
+   address isn't a secret, so just ask me for it, and only leave it blank
+   if it still has to be provisioned (step 7).
+
+   Anything else from the interview that has no slot in `.env.example` —
+   the autonomy model, product vocabulary, a domain name — goes in the
+   conventions doc in step 5, not into `.env` under a name you made up.
+
+   Leave the real secrets (`WORK_TRACKER_API_KEY`, `COMMS_CHANNEL_TOKEN`)
    blank with a comment pointing at where each one comes from — don't ask me
    to paste a secret into this chat, I'll edit `.env` directly for those
-   once they're provisioned (step 6).
+   once they're provisioned (step 7).
 
 5. Write a conventions doc in the target product repo (that repo's own
    `CLAUDE.md`/`AGENTS.md` if it doesn't have one yet, or a clearly-named
