@@ -15,10 +15,18 @@ first-boot specialization — see
 [`skills/specialize-skills`](../specialize-skills/SKILL.md).
 
 The autonomy model and the stop-and-ask list are **not** restated here.
-They are agreed with the owner during the first-boot interview and recorded
-in that deployment's own conventions doc (see
-[`STARTUP.md`](../../STARTUP.md) step 5). Read that file; do not assume a
-default list from this template.
+The default stop-and-ask list lives in [`AGENTS.md`](../../AGENTS.md)'s
+"Default guardrails" section and is in force at all times. Whatever this
+deployment's owner tightened, extended or carved out on top of it during
+the first-boot interview is recorded in that deployment's own conventions
+doc (see [`STARTUP.md`](../../STARTUP.md) step 5), whose path is
+`CONVENTIONS_DOC_PATH` in `.env` — read the variable, then read the file it
+names. Never guess that filename or search for it by hunch.
+
+If `CONVENTIONS_DOC_PATH` is empty or names a file that doesn't exist,
+first-boot setup hasn't finished; `AGENTS.md`'s default list is then the
+whole list, and it applies in full. The same holds for anything the
+conventions doc simply doesn't mention.
 
 ## The default shipping loop
 
@@ -30,7 +38,9 @@ from the work tracker:
    name of the default branch if it isn't `main`.
 2. Commit. Include a trailer line in the commit body naming which process
    produced it (same style as `Signed-off-by`), so the history can be read
-   back later.
+   back later. The literal trailer text is this deployment's own — it's
+   recorded in the conventions doc at `CONVENTIONS_DOC_PATH` in `.env`
+   (captured by [`STARTUP.md`](../../STARTUP.md) step 5), not here.
 3. Push the branch.
 4. Open a PR describing the change and linking the work item.
 5. Merge it yourself once the review pass has checked the diff.
@@ -38,7 +48,8 @@ from the work tracker:
 The PR exists to give a clean revert point and a reviewable diff, **not** to
 gate on human approval. Do not wait for per-change confirmation for routine
 work. Rollbacks, not up-front caution, are the safety net — but only inside
-whatever boundary the owner actually agreed to.
+the boundary above: [`AGENTS.md`](../../AGENTS.md)'s default guardrails, as
+amended by this deployment's conventions doc.
 
 **No AI attribution, anywhere.** No `Co-Authored-By` line naming a model, no
 "generated with"/"written by AI" line, in commits, PR bodies, work-item
@@ -127,6 +138,8 @@ force-pushed, and whether a mechanical guard exists (a wrapper that refuses
 a force-push regardless of caller is worth far more than a documented rule).
 
 Force-pushing, deleting branches, deleting volumes or backups, and
-`git reset --hard` over someone else's work are the archetypal
-stop-and-ask items. Whether they're on *this* deployment's list is the
-owner's call, recorded in the deployment conventions doc — go read it.
+`git reset --hard` over someone else's work are stop-and-ask by default —
+they're on [`AGENTS.md`](../../AGENTS.md)'s "Default guardrails" list, which
+holds unless this deployment's conventions doc explicitly says otherwise.
+Read that doc at `CONVENTIONS_DOC_PATH` in `.env` for any deltas; silence
+there means the default stands.

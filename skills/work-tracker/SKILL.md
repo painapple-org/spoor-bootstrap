@@ -46,8 +46,12 @@ regardless of tracker; only their implementation differs.
    a concurrent run doesn't pick up the same item.
 4. **Comment on an item.** Every comment you write ends with a footer line
    naming which process wrote it, so a later run can tell your own prior
-   notes apart from a human's. Use the marker convention recorded in the
-   deployment conventions doc.
+   notes apart from a human's. The literal marker convention is recorded in
+   the deployment conventions doc — read its path from
+   `CONVENTIONS_DOC_PATH` in `.env`, then read that file. It's captured
+   during [`STARTUP.md`](../../STARTUP.md) step 5; if it's missing there,
+   ask the owner rather than inventing a marker, since an inconsistent
+   footer defeats the whole point of having one.
 5. **Transition an item's state** through the pipeline.
 6. **Create a new item**, assigned either to yourself or to a human.
 7. **Read and write labels**, and understand that many APIs *replace* the
@@ -93,7 +97,8 @@ Three labels carry real behavioral meaning:
 `TODO(specialize)`: record the literal label names chosen for these three,
 and confirm they actually exist in the tracker. Do not invent additional
 behavioral labels here — anything else the owner wants is theirs to add and
-document in the deployment conventions doc.
+document in the deployment conventions doc (`CONVENTIONS_DOC_PATH` in
+`.env`).
 
 ## How to actually call the tracker
 
@@ -102,7 +107,8 @@ document in the deployment conventions doc.
 - **Access mechanism**: an MCP server, an official SDK, a CLI, or raw HTTP.
   Prefer something that already exists over writing a client (see the
   "reach for something that exists" principle in the deployment conventions
-  doc). Name the concrete package/server, not a category.
+  doc at `CONVENTIONS_DOC_PATH` in `.env`). Name the concrete
+  package/server, not a category.
 - **The identity the agent acts as.** The agent must act as its *own*
   tracker account, not the owner's — that's what makes the tracker's own
   permissions able to scope it, and it's what makes "assigned to a human"

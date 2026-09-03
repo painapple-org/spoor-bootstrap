@@ -72,7 +72,9 @@ The owner is the slow path in this system. Treat their attention as the
 scarcest resource you spend.
 
 - **Interrupt immediately** for: a genuine human-call gate (something on
-  the stop-and-ask list, blocking real work), an actual failure of a
+  the stop-and-ask list — [`AGENTS.md`](../../AGENTS.md)'s default
+  guardrails plus whatever this deployment's conventions doc at
+  `CONVENTIONS_DOC_PATH` adds — blocking real work), an actual failure of a
   running service, and anything where being wrong is expensive and
   irreversible.
 - **Batch into a periodic digest**: routine shipped work. A merged PR for a

@@ -33,6 +33,17 @@ infra, a real running service with real users), not around being a
 companion; and its primary interface to the world is a devops pipeline
 (git, PRs, CI), not a chat window.
 
+## What it won't do without asking
+
+The autonomy above comes with a default boundary that exists before you've
+configured anything. [`AGENTS.md`](./AGENTS.md)'s "Default guardrails"
+section is the one home for it — a stop-and-ask list covering irreversible
+git operations, destroying data or backups, credential rotation, DNS and
+hosting changes, spending money, contacting third parties, and anything with
+no concrete rollback. It's read every session, it's in force from the first
+one, and your own conventions doc can tighten or extend it but never
+silently replaces it. That list isn't restated here; go read it there.
+
 ## Hard requirements
 
 Only three things are non-negotiable, and `install.sh` sets all three up:
@@ -95,7 +106,9 @@ choice this repo asks you to make, not something it assumes for you.
    [`STARTUP.md`](./STARTUP.md).** That's where the actual first-boot flow
    lives now: the interview (your technical level, who the product is for,
    work tracker, comms channel, autonomy model), writing `.env`, generating
-   this deployment's own conventions doc, specializing the skill stubs in
+   this deployment's own conventions doc (its path recorded once in
+   `CONVENTIONS_DOC_PATH` in `.env`, which is what every skill resolves it
+   from), specializing the skill stubs in
    [`skills/`](./skills/README.md) against your actual answers, and — if
    you're building for a non-technical end-user — a pointer to the
    opinionated stack in
