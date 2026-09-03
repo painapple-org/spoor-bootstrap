@@ -11,15 +11,17 @@ Most of this SKILL is real right now: the branch/PR/merge shape and the
 concurrency hazards are properties of git and of running unattended, not of
 any particular business. The parts marked `TODO(specialize)` depend on the
 owner's actual repo, host and auth setup and must be filled in during
-first-boot specialization — see
-[`skills/specialize-skills`](../specialize-skills/SKILL.md).
+first-boot — see
+[`skills/specialize-skills`](../specialize-skills/SKILL.md), with the one
+exception that the `Auth` section below is filled in earlier than the rest,
+for the reason stated there.
 
 The autonomy model and the stop-and-ask list are **not** restated here.
 The default stop-and-ask list lives in [`AGENTS.md`](../../AGENTS.md)'s
 "Default guardrails" section and is in force at all times. Whatever this
 deployment's owner tightened, extended or carved out on top of it during
 the first-boot interview is recorded in that deployment's own conventions
-doc (see [`STARTUP.md`](../../STARTUP.md) step 5), whose path is
+doc (see [`STARTUP.md`](../../STARTUP.md) step 6), whose path is
 `CONVENTIONS_DOC_PATH` in `.env` — read the variable, then read the file it
 names. Never guess that filename or search for it by hunch.
 
@@ -40,7 +42,7 @@ from the work tracker:
    produced it (same style as `Signed-off-by`), so the history can be read
    back later. The literal trailer text is this deployment's own — it's
    recorded in the conventions doc at `CONVENTIONS_DOC_PATH` in `.env`
-   (captured by [`STARTUP.md`](../../STARTUP.md) step 5), not here.
+   (captured by [`STARTUP.md`](../../STARTUP.md) step 6), not here.
 3. Push the branch.
 4. Open a PR describing the change and linking the work item.
 5. Merge it yourself once the review pass has checked the diff.
@@ -118,6 +120,15 @@ directory before spawning.
 
 ## Auth
 
+This section is answered **first**, before this deployment's first push —
+[`STARTUP.md`](../../STARTUP.md) step 5, not the specialization pass in
+step 7. It has to be: every other section here assumes a git identity that
+can already reach the remote, so leaving it for the same pass that fills in
+branch naming would make the first PR depend on a step that comes after it.
+A human is present at that point, which is also the only time an
+interactive login is possible at all — later runs are unattended with no
+terminal to prompt on.
+
 `TODO(specialize)` — record, for this deployment:
 
 - Which git remote protocol actually works from an unattended/spawned
@@ -127,9 +138,20 @@ directory before spawning.
   exception (some hosting providers refuse specific classes of change over
   a token that lacks a specific scope, and only the other protocol works
   for those).
-- Which account the pushes authenticate as, and its permission level. This
-  should be the agent's own account, provisioned by a human, not the
-  owner's personal one.
+- Which account the pushes authenticate as, and its permission level.
+  Note that authenticating to the hosting provider is not the same as
+  having write access to the specific repo being pushed to — record that
+  the latter was actually verified, not just that a login succeeded.
+
+  The agent's own account, provisioned by a human, is the end state worth
+  getting to, for the RBAC-scoping reason
+  [`AGENTS.md`](../../AGENTS.md)'s self-provisioning section gives. It is
+  **not** a precondition for pushing at all: the owner's own account is a
+  valid answer here in the meantime, and recording that honestly beats
+  blocking the first PR on an account nobody has created yet. Swapping in
+  the agent's own account once it exists is a re-run of
+  [`skills/specialize-skills`](../specialize-skills/SKILL.md) scoped to
+  this section.
 
 ## Protected branches and irreversible git operations
 

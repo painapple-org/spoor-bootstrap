@@ -104,7 +104,12 @@ itself to operate**, and `install.sh` sets all three up:
 - **uv** — Python dependency management for whatever tooling the agent
   writes for itself.
 - **GitHub CLI (`gh`)** — the agent operates through branches, PRs, and the
-  GitHub API; `gh` is how it authenticates and acts.
+  GitHub API; `gh` is how it authenticates and acts. `install.sh` installs
+  the binary only and never logs it in: authenticating it needs a
+  decision (which account, which protocol) and an interactive prompt, both
+  of which belong to the first-boot flow. [`STARTUP.md`](./STARTUP.md)
+  step 5 is where a working git identity gets established and verified,
+  before anything tries to push.
 
 This is the agent's own host tooling, not a statement about what the
 product it builds is written in. That's a separate decision with its own
@@ -157,7 +162,8 @@ default; every file it quotes remains the home for its own content.
    that the docker daemon actually came up. It refuses to continue on two
    things it can't fix for you: an `origin` still pointing at upstream, and
    skill symlinks broken by a ZIP download. Re-running it is safe — every
-   step is skipped if it's already done.
+   step is skipped if it's already done. It does not log `gh` in; that
+   happens in the first-boot flow, step 5 below.
 
 4. **Pick and install an agentic harness.** Claude Code, OpenCode, Codex
    CLI, or something else — this repo doesn't prefer one.
@@ -171,7 +177,10 @@ default; every file it quotes remains the home for its own content.
    [`STARTUP.md`](./STARTUP.md).** That's where the first-boot flow lives:
    the interview (whose questions are enumerated in
    [`AGENTS.md`](./AGENTS.md)), agreeing on an autonomy model, writing
-   `.env`, generating this deployment's own conventions doc (its path
+   `.env`, getting `gh` logged in and proving a push actually works (expect
+   to be walked through `gh auth login` here, with whichever GitHub account
+   you want the agent pushing as for now — your own is fine to start),
+   generating this deployment's own conventions doc (its path
    recorded once in `CONVENTIONS_DOC_PATH` in `.env`, which is what every
    skill resolves it from), and specializing the skill stubs in
    [`skills/`](./skills/README.md) against your actual answers. It ends by

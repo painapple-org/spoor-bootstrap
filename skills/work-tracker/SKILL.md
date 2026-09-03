@@ -49,7 +49,7 @@ regardless of tracker; only their implementation differs.
    notes apart from a human's. The literal marker convention is recorded in
    the deployment conventions doc — read its path from
    `CONVENTIONS_DOC_PATH` in `.env`, then read that file. It's captured
-   during [`STARTUP.md`](../../STARTUP.md) step 5; if it's missing there,
+   during [`STARTUP.md`](../../STARTUP.md) step 6; if it's missing there,
    ask the owner rather than inventing a marker, since an inconsistent
    footer defeats the whole point of having one.
 5. **Transition an item's state** through the pipeline.

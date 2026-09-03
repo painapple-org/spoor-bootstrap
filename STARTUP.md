@@ -4,10 +4,15 @@ This is the prompt a human pastes into their agentic harness of choice
 (Claude Code, OpenCode, Codex CLI, or another) the very first time they run
 it in a freshly cloned `spoor-bootstrap` checkout, right after `install.sh`
 finishes. `install.sh` only does mechanical OS-level bootstrap (docker, uv,
-gh, the skill-symlink sanity check); everything from here on — the
-interview, generating `.env`, generating this deployment's own conventions
-doc, and handing back the self-provisioning shopping list — is driven by the
-agent itself, from this one prompt.
+the `gh` binary, the skill-symlink sanity check); everything from here on —
+the interview, generating `.env`, authenticating `gh`, generating this
+deployment's own conventions doc, and handing back the self-provisioning
+shopping list — is driven by the agent itself, from this one prompt.
+
+Note what that means for `gh`: `install.sh` deliberately installs the
+binary without logging it in, so the first-boot flow below is where a
+working git identity actually gets established — step 5, before anything
+in this flow tries to push.
 
 ---
 
@@ -54,14 +59,79 @@ building any product code until all of it is done.
 
    - Anything from the interview that has no slot there — the autonomy
      model, product vocabulary, a domain name — goes in the conventions doc
-     in step 5, not into `.env` under a name you made up.
+     in step 6, not into `.env` under a name you made up.
    - Leave every secret blank, with a comment pointing at where it comes
      from. Don't ask me to paste a secret into this chat; I'll edit `.env`
-     directly for those once they're provisioned (step 7).
-   - Leave `CONVENTIONS_DOC_PATH` blank here: step 5 is what fills it in,
+     directly for those once they're provisioned (step 8).
+   - Leave `CONVENTIONS_DOC_PATH` blank here: step 6 is what fills it in,
      once you've actually decided where that doc lives.
 
-5. Write a conventions doc in the target product repo (that repo's own
+5. Establish a working git identity, and prove it works, before you try to
+   push anything. Everything from step 6 on ships through a branch and a
+   PR, so this is the step that makes that possible — don't discover it's
+   missing halfway through your first push.
+
+   `install.sh` installed the `gh` binary and nothing more: it never
+   authenticated it. Do that now, with me sitting here — right now is the
+   only moment in this deployment's life when an interactive login is
+   available at all, since every later run is scheduled or unattended with
+   no terminal to prompt on.
+
+   a. Run `gh auth status`. If it already reports an authenticated
+      account, tell me which account and what scopes, and move on to (c).
+
+   b. If it doesn't, walk me through `gh auth login` here in the chat —
+      tell me which prompts to expect and which answers you need (github.com
+      vs. an enterprise host, HTTPS vs. SSH, browser vs. pasting a token),
+      then have me run it and re-check `gh auth status` yourself. If I'd
+      rather use a credential this box already has (an SSH key already
+      loaded, an existing credential helper), that's fine too for the
+      *push* — verify *that* instead of insisting on a particular
+      mechanism. What matters is that something works.
+
+      Opening and merging the PR is a separate credential from pushing,
+      though: that goes through the hosting provider's API, so `gh` (or
+      whatever you'll call the API with) needs a token of its own even if
+      the push itself rides an SSH key. Check both, not just the one that
+      happens to work first.
+
+      Do not create a GitHub account for me, and don't try to register one
+      for yourself — that's mine to do, per AGENTS.md's self-provisioning
+      section.
+
+   c. **Whose account this is, is not a blocker here.** My own GitHub
+      account is a perfectly good answer for now. A GitHub account that is
+      *yours*, separate from mine, is on the step-8 shopping list because
+      it's the better end state and AGENTS.md's self-provisioning section
+      says why — but it is an upgrade to a git identity that already works,
+      not a prerequisite for your first PR. When I do provision it, swapping
+      it in is a re-run of step 7 scoped to one section, nothing more.
+
+   d. Authenticating to GitHub is not the same as being able to write to
+      *my* repo, so verify the thing you actually need: from the product
+      repo at `PRODUCT_REPO_PATH`, run a `git push --dry-run` of a
+      throwaway branch name against its remote. That contacts the remote
+      and gets refused if the account lacks write access, while writing
+      nothing. If the product repo doesn't exist yet, say so and get it
+      created first — step 6 has nowhere to land otherwise.
+
+   e. Write down what actually worked in the `Auth` section of
+      skills/git-pr-conventions/SKILL.md: the exact push invocation that
+      succeeded, which account it authenticates as, and any protocol
+      quirk you hit. That section is the one home for this, and step 7 has
+      nothing left to add to it — it's answered here because here is where
+      it gets verified for real. Follow skills/specialize-skills/SKILL.md's
+      "How to specialize one file" rules for how to write it, including
+      deleting the `TODO(specialize)` marker once it's answered.
+
+   f. If none of this can be made to work — no account you're willing to
+      use, no network, a repo neither of us can push to — **stop and tell
+      me, and don't route around it.** Don't commit straight to the default
+      branch instead. Write step 6's doc, leave it uncommitted, tell me
+      plainly that the first PR is blocked on git auth and nothing else,
+      and pick step 6 back up the moment it's fixed.
+
+6. Write a conventions doc in the target product repo (that repo's own
    `CLAUDE.md`/`AGENTS.md` if it doesn't have one yet, or a clearly-named
    sibling if it does and you don't want to clobber it).
 
@@ -104,31 +174,38 @@ building any product code until all of it is done.
 
    **Ship it the same way you'll ship everything else**: branch off the
    product repo's default branch, commit, push, open a PR, and merge it
-   yourself, per skills/git-pr-conventions/SKILL.md. Don't commit straight
-   to the default branch — this is the first change that establishes the
-   convention, so it shouldn't be the one exception to it. Show me the PR
-   link.
+   yourself, per skills/git-pr-conventions/SKILL.md — using the identity
+   and the invocation you verified and wrote down in step 5. Don't commit
+   straight to the default branch — this is the first change that
+   establishes the convention, so it shouldn't be the one exception to it.
+   Show me the PR link.
 
-6. Now specialize the skill stubs. Read skills/specialize-skills/SKILL.md
+7. Now specialize the skill stubs. Read skills/specialize-skills/SKILL.md
    and follow it. The skills under skills/ ship deliberately generic, with
    an explicit `TODO(specialize)` marker everywhere a real answer depends
    on my tracker, my comms channel, my host or my product — the answers you
-   just collected in steps 1-5 are exactly what those markers are waiting
+   just collected in steps 1-6 are exactly what those markers are waiting
    for. Work through every stub that SKILL lists, in the order it gives.
+
+   One marker is already gone by the time you get here: the `Auth` section
+   of skills/git-pr-conventions/SKILL.md, which step 5 answered against a
+   real push. Don't re-open it. If it somehow still carries a marker, that
+   means step 5's verification never happened — go back and do it rather
+   than filling it in from what you assume worked.
 
    Two things I care about here: don't invent a specific to make a file look
    finished (a marker that still says "unknown" is better than a confident
    wrong value), and don't leave a marker unanswered that you could have
    answered by just running a command and checking. Where something is
    genuinely blocked on an account I haven't created yet, leave the marker,
-   name the blocker in one line, and carry it into step 7.
+   name the blocker in one line, and carry it into step 8.
 
-7. Give me the self-provisioning shopping list exactly as AGENTS.md's
+8. Give me the self-provisioning shopping list exactly as AGENTS.md's
    "Self-provisioning: the shopping list" section defines it — that section
    owns what's on it and why, so don't work from a list restated here — so
    I can go create those accounts and paste the resulting secrets into
    `.env` myself. Don't try to register for any of them yourself, per that
-   same section. Fold in the blockers from step 6, and tell me which skill
+   same section. Fold in the blockers from step 7, and tell me which skill
    stubs are still incomplete because of them — I'd rather know that now
    than find out when a stage silently does the wrong thing.
 ```
@@ -136,11 +213,15 @@ building any product code until all of it is done.
 ---
 
 That's the whole first-boot flow: read `AGENTS.md`, interview, defer to the
-stack SKILL if relevant, agree on an autonomy model, write `.env`, generate
-the conventions doc, specialize the skill stubs, hand back a provisioning
-list. Everything after that — actually wiring up the chosen work tracker and
-comms channel, writing product code, setting up scheduling — is follow-on
-work once the human has provisioned what's on that list and pasted the
-resulting secrets into `.env`. Step 6 is expected to be re-run, scoped to a
+stack SKILL if relevant, agree on an autonomy model, write `.env`, get a git
+identity that actually pushes, generate the conventions doc through a real
+PR, specialize the skill stubs, hand back a provisioning list. The ordering
+is deliberate: nothing in it depends on something a later step promises to
+deliver, which is why git auth sits ahead of the first push rather than
+inside the specialization pass. Everything after that — actually wiring up
+the chosen work tracker and comms channel, writing product code, setting up
+scheduling — is follow-on work once the human has provisioned what's on that
+list and pasted the resulting secrets into `.env`. Step 7 is expected to be
+re-run, scoped to a
 single file, each time one of those provisioning blockers clears and a
 `TODO(specialize)` marker becomes answerable.
