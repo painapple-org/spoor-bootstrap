@@ -101,9 +101,10 @@ variables so it can be copied and run as-is. Export them once from the
 `.env` values named above:
 
 ```sh
-export JIRA_BASE="$WORK_TRACKER_BASE_URL"                    # https://<site>.atlassian.net
+set -a; . ./.env; set +a                      # from the repo root, if not already exported
+export JIRA_BASE="$WORK_TRACKER_BASE_URL"     # https://<site>.atlassian.net
 export JIRA_AUTH="$AGENT_EMAIL_ADDRESS:$WORK_TRACKER_API_KEY"
-export JIRA_PROJECT=<KEY>
+export JIRA_PROJECT='<KEY>'                   # quote it: <KEY> is a redirect otherwise
 ```
 
 `curl -u "$JIRA_AUTH"` is the Basic auth pair described above. Confirm the
