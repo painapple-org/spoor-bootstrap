@@ -282,11 +282,13 @@ building any product code until all of it is done.
 
    **Ship it the same way you'll ship everything else**: branch off the
    product repo's default branch, commit, push, open a PR, and merge it
-   yourself, per skills/git-pr-conventions/SKILL.md — using the identity
-   and the invocation you verified and wrote down in step 5. Don't commit
-   straight to the default branch — this is the first change that
+   yourself — or run the agreed substitute from step 5(e), if this remote
+   has no PR mechanism — per skills/git-pr-conventions/SKILL.md, using the
+   identity and the invocation you verified and wrote down in step 5. Don't
+   commit straight to the default branch — this is the first change that
    establishes the convention, so it shouldn't be the one exception to it.
-   Show me the PR link.
+   Show me the PR link (or, on the substitute, whatever it produces in its
+   place).
 
    **Then ship step 5(e)'s edit too — same loop, different repo.** That
    auth answer went into a tracked file in this bootstrap checkout, whose
@@ -294,9 +296,10 @@ building any product code until all of it is done.
    5(d) — that verification, not `install.sh`, is what makes this possible.
    (`install.sh` only refuses an `origin` whose URL is literally upstream's;
    it never tested write access.) Branch off this repo's default branch,
-   commit, push to `origin`, open a PR, merge it yourself. Two PRs by the
-   end of this step, then: one in the product repo for the doc above, one
-   here for the auth answer.
+   commit, push to `origin`, open a PR, merge it yourself — or the agreed
+   substitute from step 5(e), if this remote has no PR mechanism. Two
+   shipped changes by the end of this step, then: one in the product repo
+   for the doc above, one here for the auth answer.
 
    **Name the target repo explicitly on every PR and merge command you run
    against this checkout.** `gh` resolves a clone's base repo to its
@@ -336,10 +339,11 @@ building any product code until all of it is done.
    don't let it disappear into the marker list: specializing
    skills/work-pipeline means deciding which pipeline stages this
    deployment actually runs, and then writing one prompt file per stage
-   kept — that's the biggest deliverable of the whole pass, three to five
-   substantial files rather than a line each. They live in prompts/ in this
-   repo; read prompts/README.md for where they go, how they're named and
-   what each one has to contain, and start each from
+   kept — that's the biggest deliverable of the whole pass: one substantial
+   file for every stage in the set we agree on, reactive and proactive
+   alike, rather than a line each. They live in prompts/ in this repo; read
+   prompts/README.md for where they go, how they're named and what each one
+   has to contain, and start each from
    prompts/STAGE_TEMPLATE.md. Tell me which stages you're proposing before
    you write them. If you can't finish them all today, that's fine — say
    which ones are still to write and carry them into step 8 as outstanding
@@ -373,8 +377,9 @@ building any product code until all of it is done.
    uncommitted working tree has no revert point, no reviewable diff and no
    backup — which is the whole reason step 6 went through a PR instead of
    committing to the default branch. So: branch off this repo's default
-   branch, commit, push to `origin`, open a PR, merge it yourself, per
-   skills/git-pr-conventions/SKILL.md, exactly as in step 6 — including
+   branch, commit, push to `origin`, open a PR, merge it yourself — or the
+   agreed substitute from step 5(e), if this remote has no PR mechanism —
+   per skills/git-pr-conventions/SKILL.md, exactly as in step 6, including
    naming the target repo explicitly on the PR and merge commands, for the
    reason step 6 gives.
 
@@ -418,9 +423,11 @@ That's the whole first-boot flow: read `AGENTS.md`, interview, defer to the
 stack SKILL if relevant, agree on an autonomy model, write `.env`, get a git
 identity that actually pushes to both repos, ship the conventions doc and the
 auth answer through real PRs, specialize the skill stubs and ship those
-through one more, hand back a provisioning list. Three PRs, in two repos:
-the product repo gets the conventions doc, this one gets the edits first
-boot makes to itself.
+through one more, hand back a provisioning list. Three shipped changes, in
+two repos: the product repo gets the conventions doc, this one gets the
+edits first boot makes to itself. Three *PRs*, on a remote that has them —
+on one that doesn't, each is the substitute agreed in step 5(e) instead,
+which is why that step settles the question before step 6 ships anything.
 
 The ordering is deliberate: nothing in it depends on something a later step
 promises to deliver, which is why git auth sits ahead of the first push

@@ -136,9 +136,10 @@ fi
 # This checkout is not a one-shot installer that gets thrown away: the agent
 # keeps opening PRs against it for work items targeting its own tooling (see
 # skills/git-pr-conventions and skills/work-tracker). That only works if
-# `origin` is a repo the adopter controls — a private repo of their own by
-# default, or a fork if they opted into that tradeoff (README.md's "Path to a
-# running instance" owns that choice). Cloning upstream directly leaves
+# `origin` is a repo the adopter controls — which shape of remote that is
+# (a private repo of their own, a fork, or a plain git remote on a box they
+# own with no hosting provider behind it) is README.md's "Path to a running
+# instance" to own, not this script's. Cloning upstream directly leaves
 # `origin` unpushable, and the failure would otherwise stay invisible until
 # the agent's first push, long after setup.
 #
@@ -169,7 +170,7 @@ fi
 
 if [[ -n "$origin_url" ]]; then
 	if [[ "$origin_url" == *"painapple-org/spoor-bootstrap"* ]]; then
-		fail "origin still points at the upstream repo (${origin_url}), which you almost certainly cannot push to. Create your own private repo, then repoint this checkout with 'git remote set-url origin <your-repo-url>' and re-run this script. A GitHub fork also works but is permanently public, and this checkout ends up holding real operational detail about your deployment — read the 'Path to a running instance' section in README.md for that tradeoff before choosing."
+		fail "origin still points at the upstream repo (${origin_url}), which you almost certainly cannot push to. Repoint this checkout at a remote you control with 'git remote set-url origin <your-repo-url>' and re-run this script. There is more than one supported shape of remote here, and the choice has real consequences — this checkout ends up holding operational detail about your deployment. Read the 'Path to a running instance' section in README.md, which owns that choice, before picking one."
 	fi
 	log "origin is ${origin_url} (not upstream's URL). This compared the URL only, not whether you can push to it — STARTUP.md step 5 verifies that."
 else
