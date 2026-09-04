@@ -1,0 +1,1089 @@
+#!/usr/bin/env python3
+#
+# spoor-doctor — a read-only health check for one live spoor-bootstrap
+# deployment, runnable at any point after first boot by the owner or by the
+# agent instance itself.
+#
+# What it is for: every state below is one this repo's own conventions call a
+# real bug rather than a style problem, and every one of them is *invisible
+# from the outside* — a deployment in any of them looks finished and keeps
+# running until the moment it silently does the wrong thing. A world-readable
+# `.env`. A tracker token that was never valid. A comms allowlist that is
+# empty on a channel that can verify identities, so nobody can instruct this
+# agent at all. A stage prompt still full of `<...>` placeholders that a cron
+# line will happily invoke. An `origin` still pointing at upstream, which no
+# PR will ever land on. Fail loudly, never quietly (CONTRIBUTING.md's section
+# by that name is the home for that value) means these have to be findable on
+# demand, not discovered during an incident.
+#
+# Scope, deliberately narrow:
+#
+#   - **Read-only.** It writes nothing, installs nothing, and fixes nothing.
+#     The one thing it sends over the network is a credential probe against
+#     an API the deployment already talks to (plus a `git push --dry-run`,
+#     which by definition writes nothing) — pass `--offline` to skip all of
+#     that. It never prints a secret's value, only the name of the variable
+#     holding it, in text output and in `--json` alike.
+#   - **It re-derives no fact it does not own.** The `.env` schema comes from
+#     `.env.example`, including which fields are required — see the
+#     `# doctor:` annotations there, which are that file's own machine-
+#     readable statement of what its prose already says. The upstream-remote
+#     URL is read out of `install.sh`'s own guard rather than restated here.
+#     The consistency of `skills/` against its indexes belongs to
+#     `.github/ci/check-skills-consistency.py`, so this script *runs* that
+#     script instead of reimplementing any of its rules.
+#   - **It does not judge content.** Whether a specialized skill says
+#     something true about this deployment is a reading job for a human or an
+#     agent. This script only answers questions with a mechanical answer.
+#
+# Exit status: 0 when nothing FAILed (warnings and skips included), 1 when
+# any check FAILed, 2 when the script could not run at all.
+
+import argparse
+import base64
+import json
+import os
+import re
+import shutil
+import socket
+import stat
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+PASS = "PASS"
+WARN = "WARN"
+FAIL = "FAIL"
+SKIP = "SKIP"
+
+COLOR = {
+	PASS: "\033[1;32m",
+	WARN: "\033[1;33m",
+	FAIL: "\033[1;31m",
+	SKIP: "\033[1;90m",
+}
+RESET = "\033[0m"
+
+NETWORK_TIMEOUT_SECONDS = 20
+
+results = []
+
+def record(check_id, status, message):
+	results.append({"id": check_id, "status": status, "message": message})
+
+def run(command, cwd=None, timeout=60, extra_env=None):
+	"""Run a command, returning (returncode, stdout+stderr). Never raises on a
+	non-zero exit — a failing command is a finding here, not a crash."""
+	env = dict(os.environ)
+	# Nothing this script runs may sit waiting on a credential prompt: it is
+	# invoked from cron and from unattended sessions as much as from a
+	# terminal, and a hung check reports nothing at all.
+	env["GIT_TERMINAL_PROMPT"] = "0"
+	env["GIT_ASKPASS"] = "true"
+	env["SSH_ASKPASS"] = "true"
+	if extra_env:
+		env.update(extra_env)
+	try:
+		completed = subprocess.run(
+			command,
+			cwd=str(cwd) if cwd else None,
+			capture_output=True,
+			text=True,
+			timeout=timeout,
+			env=env,
+			check=False,
+		)
+	except FileNotFoundError:
+		return 127, f"{command[0]}: not found"
+	except subprocess.TimeoutExpired:
+		return 124, f"{command[0]}: timed out after {timeout}s"
+	return completed.returncode, (completed.stdout + completed.stderr).strip()
+
+def http_json(url, headers=None, data=None, method=None):
+	"""One HTTP call, returning (status, parsed-body-or-raw-text, error-string).
+
+	A non-2xx is not an exception here: an API answering 401 is the most
+	informative result a credential probe can get, so it has to come back as
+	data rather than blowing up the check."""
+	request = urllib.request.Request(url, data=data, method=method or ("POST" if data else "GET"))
+	for name, value in (headers or {}).items():
+		request.add_header(name, value)
+	try:
+		with urllib.request.urlopen(request, timeout=NETWORK_TIMEOUT_SECONDS) as response:
+			status, body = response.status, response.read().decode("utf-8", errors="replace")
+	except urllib.error.HTTPError as error:
+		status = error.code
+		body = error.read().decode("utf-8", errors="replace")
+	except (urllib.error.URLError, socket.timeout, OSError) as error:
+		return None, None, str(error)
+	try:
+		return status, json.loads(body), None
+	except ValueError:
+		return status, body, None
+
+# --- the .env schema, as .env.example declares it ---------------------------
+
+# `# doctor: <spec>` in the comment block above a field is that field's own
+# statement of whether it has to hold a value. .env.example is the one home
+# for the schema and for what each key means, so it is the one home for this
+# too; the specs are documented in its header.
+ANNOTATION = re.compile(r"^#\s*doctor:\s*(\S.*?)\s*$")
+ENV_KEY_LINE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.*)$")
+
+# A value that is syntactically present but was never actually answered. Each
+# of these is worse than a blank, because a blank fails at the first use while
+# a plausible-looking string gets acted on.
+PLACEHOLDERS = [
+	re.compile(r"^<.*>$"),
+	re.compile(r"\bTODO\b", re.IGNORECASE),
+	re.compile(r"\bFIXME\b", re.IGNORECASE),
+	re.compile(r"change[-_ ]?me", re.IGNORECASE),
+	re.compile(r"replace[-_ ]?me", re.IGNORECASE),
+	re.compile(r"fill[-_ ]?me", re.IGNORECASE),
+	re.compile(r"^your[-_ ]", re.IGNORECASE),
+	re.compile(r"\byour[-_](token|key|repo|email|team|account)\b", re.IGNORECASE),
+	re.compile(r"^x{3,}$", re.IGNORECASE),
+	re.compile(r"@example\.(com|org|net)$", re.IGNORECASE),
+	re.compile(r"^(unset|unknown|n/?a|none-yet|tbd)$", re.IGNORECASE),
+]
+
+def is_placeholder(value):
+	return any(pattern.search(value) for pattern in PLACEHOLDERS)
+
+def parse_schema(text):
+	"""Every key .env.example declares, with the `# doctor:` spec above it."""
+	schema = []
+	pending = None
+	for line in text.splitlines():
+		annotation = ANNOTATION.match(line)
+		if annotation:
+			pending = annotation.group(1)
+			continue
+		key_line = ENV_KEY_LINE.match(line)
+		if key_line:
+			schema.append((key_line.group(1), pending))
+			pending = None
+			continue
+		if not line.strip():
+			# A blank line ends a field's comment block, so an annotation
+			# cannot drift down onto a later, unrelated key.
+			pending = None
+	return schema
+
+def parse_env(text):
+	"""(values, malformed-lines) for a real `.env`. Deliberately simple: this
+	is the same subset of shell syntax `.env.example` itself is written in."""
+	values = {}
+	malformed = []
+	for number, raw in enumerate(text.splitlines(), start=1):
+		line = raw.strip()
+		if not line or line.startswith("#"):
+			continue
+		if line.startswith("export "):
+			line = line[len("export "):].strip()
+		key_line = ENV_KEY_LINE.match(line)
+		if not key_line:
+			malformed.append(number)
+			continue
+		value = key_line.group(2).strip()
+		if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+			value = value[1:-1]
+		values[key_line.group(1)] = value
+	return values, malformed
+
+def spec_requires(spec, env):
+	"""(required?, why) for one `# doctor:` spec against the answers in .env."""
+	tokens = spec.split()
+	kind = tokens[0]
+	if kind == "optional":
+		return False, "declared optional"
+	if kind == "required":
+		return True, "declared required"
+	if kind in ("required-if", "required-unless"):
+		if len(tokens) < 2 or "=" not in tokens[1]:
+			return None, f"malformed condition in `# doctor: {spec}`"
+		other, _, expected = tokens[1].partition("=")
+		matches = env.get(other, "") == expected
+		if kind == "required-if":
+			return matches, f"{other}={expected}" if matches else f"{other} is not {expected}"
+		return not matches, f"{other} is not {expected}" if not matches else f"{other}={expected}"
+	return None, f"unknown spec `{spec}`"
+
+def spec_oneof(spec):
+	for token in spec.split():
+		if token.startswith("oneof="):
+			return [v for v in token[len("oneof="):].split(",") if v]
+	return []
+
+# --- checks -----------------------------------------------------------------
+
+def check_env_file(repo_root):
+	"""The `.env` itself: present, mode 0600, and not committed."""
+	env_path = repo_root / ".env"
+	if not env_path.is_file():
+		record(
+			"env-file",
+			FAIL,
+			".env does not exist. First-boot setup writes it from .env.example "
+			"(STARTUP.md step 4); nothing in this deployment can read its own "
+			"configuration until it exists.",
+		)
+		return None
+
+	text = env_path.read_text(encoding="utf-8")
+	record("env-file", PASS, f".env exists ({len(text.splitlines())} lines).")
+
+	mode = stat.S_IMODE(env_path.stat().st_mode)
+	if mode == 0o600:
+		record("env-permissions", PASS, ".env is mode 0600.")
+	else:
+		record(
+			"env-permissions",
+			FAIL,
+			f".env is mode {mode:04o}, not 0600 — it holds this deployment's "
+			"tracker and comms credentials, and 0600 is a standing invariant "
+			"(skills/deploy-and-monitor/SKILL.md's secrets section is the home "
+			"for why). Fix with: chmod 600 .env",
+		)
+
+	code, output = run(["git", "ls-files", "--error-unmatch", ".env"], cwd=repo_root)
+	if code == 0:
+		record(
+			"env-not-tracked",
+			FAIL,
+			".env is tracked by git in this checkout. It is gitignored for a "
+			"reason: committing it puts live credentials into history that a "
+			"later push publishes. Remove it from the index (git rm --cached "
+			".env) and treat every secret in it as exposed.",
+		)
+	elif code == 127 or "not a git repository" in output:
+		record("env-not-tracked", SKIP, f"could not ask git about .env: {output}")
+	else:
+		record("env-not-tracked", PASS, ".env is not tracked by git.")
+
+	return text
+
+def check_env_schema_and_values(repo_root, env_text):
+	"""`.env` against `.env.example`: the key set, and every required answer."""
+	example_path = repo_root / ".env.example"
+	if not example_path.is_file():
+		record("env-schema", FAIL, ".env.example is missing, so there is no schema to check .env against.")
+		return {}
+
+	schema = parse_schema(example_path.read_text(encoding="utf-8"))
+	if not schema:
+		record("env-schema", FAIL, ".env.example declares no keys — it cannot be the schema it says it is.")
+		return {}
+
+	unannotated = [key for key, spec in schema if spec is None]
+	if unannotated:
+		record(
+			"env-schema-annotations",
+			FAIL,
+			f"{len(unannotated)} key(s) in .env.example carry no `# doctor:` annotation, so "
+			f"nothing says whether they have to hold a value: {', '.join(unannotated)}. Add one "
+			"in the comment block above each — an unannotated key is silently unchecked, which is "
+			"the failure mode this whole script exists for.",
+		)
+	else:
+		record("env-schema-annotations", PASS, f"all {len(schema)} .env.example keys carry a `# doctor:` annotation.")
+
+	if env_text is None:
+		return {}
+
+	env, malformed = parse_env(env_text)
+	if malformed:
+		record(
+			"env-schema",
+			FAIL,
+			f".env has {len(malformed)} line(s) that are neither a comment nor KEY=value "
+			f"(line{'s' if len(malformed) > 1 else ''} {', '.join(str(n) for n in malformed)}). "
+			"Anything reading .env with a plain parser silently drops them.",
+		)
+	else:
+		declared = [key for key, _ in schema]
+		missing = [key for key in declared if key not in env]
+		invented = [key for key in env if key not in declared]
+		problems = []
+		if missing:
+			problems.append(
+				f"declared in .env.example but absent from .env: {', '.join(missing)} — a skill that "
+				"names one of these reads an empty value with nothing saying why"
+			)
+		if invented:
+			problems.append(
+				f"present in .env but not in the schema: {', '.join(invented)} — .env.example's header "
+				"is the one home for the key set, and a per-deployment key no skill can name is "
+				"unreadable to every later session"
+			)
+		if problems:
+			record("env-schema", FAIL, "; ".join(problems))
+		else:
+			record("env-schema", PASS, f".env holds exactly the {len(declared)} keys .env.example declares.")
+
+	failures = []
+	satisfied = 0
+	for key, spec in schema:
+		if spec is None:
+			continue
+		value = env.get(key, "")
+		required, why = spec_requires(spec, env)
+		if required is None:
+			failures.append(f"{key}: {why}")
+			continue
+		if not value:
+			if required:
+				failures.append(f"{key} is empty but required ({why})")
+			continue
+		if is_placeholder(value):
+			# Never echo the value: a placeholder in a secret field still
+			# sits next to real secrets in this file's output.
+			failures.append(
+				f"{key} holds a placeholder rather than a real answer"
+				+ ("" if required else " (the field is optional — clear it or answer it)")
+			)
+			continue
+		allowed = spec_oneof(spec)
+		if allowed and value not in allowed:
+			failures.append(f"{key} is not one of the values .env.example allows ({', '.join(allowed)})")
+			continue
+		satisfied += 1
+
+	if failures:
+		record("env-required", FAIL, f"{len(failures)} problem(s): " + "; ".join(failures))
+	else:
+		record("env-required", PASS, f"{satisfied} .env field(s) hold a real value; every required one is answered.")
+
+	return env
+
+def upstream_slug(repo_root):
+	"""The upstream repo path, read out of install.sh's own guard.
+
+	install.sh owns that string. Restating it here would give it a second
+	home that goes stale the day this template is forked under a new name —
+	so it is read, and an unreadable guard is a loud failure rather than a
+	fallback to a hardcoded guess."""
+	install_path = repo_root / "install.sh"
+	if not install_path.is_file():
+		return None, "install.sh is missing, so its upstream-remote guard cannot be read"
+	match = re.search(
+		r'\$origin_url"\s*==\s*\*"([^"]+)"\*',
+		install_path.read_text(encoding="utf-8"),
+	)
+	if not match:
+		return None, (
+			"install.sh no longer contains a recognizable upstream-remote comparison, so the "
+			"unpushable-upstream check cannot run — fix this script's reader or install.sh's guard"
+		)
+	return match.group(1), None
+
+def check_git_remote(repo_root, offline):
+	"""`origin` exists, is not upstream's, and actually accepts a push."""
+	code, output = run(["git", "remote", "get-url", "origin"], cwd=repo_root)
+	if code != 0:
+		record(
+			"git-origin",
+			FAIL,
+			f"this checkout has no readable 'origin' remote (git said: {output}). Every shipped "
+			"change goes through it; README.md's \"Path to a running instance\" owns the choice of "
+			"which shape that remote takes.",
+		)
+		return
+	origin = output.strip()
+
+	slug, error = upstream_slug(repo_root)
+	if slug is None:
+		record("git-origin", FAIL, error)
+	elif slug in origin:
+		record(
+			"git-origin",
+			FAIL,
+			f"origin is still upstream ({origin}), which this deployment almost certainly cannot "
+			"push to — so every PR it tries to open has nowhere to land. Repoint it at a remote you "
+			"control; README.md's \"Path to a running instance\" owns that choice.",
+		)
+	else:
+		record("git-origin", PASS, f"origin is {origin} (not upstream's URL).")
+
+	if offline:
+		record("git-push-access", SKIP, "--offline: not contacting origin.")
+		return
+
+	# A dry-run push of a branch name nothing else uses: it contacts the
+	# remote and is refused without write access, while writing nothing. The
+	# pid keeps concurrent runs from naming the same ref.
+	probe_ref = f"refs/heads/spoor-doctor-probe-{os.getpid()}"
+	code, output = run(
+		["git", "push", "--dry-run", "origin", f"HEAD:{probe_ref}"],
+		cwd=repo_root,
+		timeout=90,
+	)
+	if code == 0:
+		record("git-push-access", PASS, "a dry-run push to origin was accepted (nothing was written).")
+	else:
+		record(
+			"git-push-access",
+			FAIL,
+			f"a dry-run push to origin was refused, so this deployment cannot ship anything: {output}",
+		)
+
+def github_shaped(origin):
+	return "github.com" in origin
+
+def check_gh_auth(repo_root, offline):
+	"""`gh` is authenticated, on the remote shapes that need it."""
+	code, origin = run(["git", "remote", "get-url", "origin"], cwd=repo_root)
+	if code != 0:
+		record("gh-auth", SKIP, "no readable origin, so the remote shape is unknown.")
+		return
+	if not github_shaped(origin):
+		record(
+			"gh-auth",
+			SKIP,
+			"origin is not a github.com remote, so there may be no GitHub API to authenticate "
+			"against — README.md's \"Hard requirements\" owns when gh applies.",
+		)
+		return
+	if shutil.which("gh") is None:
+		record("gh-auth", FAIL, "origin is a GitHub remote but the gh CLI is not on PATH.")
+		return
+	if offline:
+		record("gh-auth", SKIP, "--offline: not contacting the GitHub API.")
+		return
+	code, output = run(["gh", "auth", "status"], cwd=repo_root)
+	if code == 0:
+		account = re.search(r"account (\S+)", output)
+		record("gh-auth", PASS, f"gh is authenticated{f' as {account.group(1)}' if account else ''}.")
+	else:
+		detail = output.splitlines()[0] if output else "gh reported no detail"
+		record(
+			"gh-auth",
+			FAIL,
+			f"gh is not authenticated, so nothing here can open or merge a PR: {detail}",
+		)
+
+def resolve_product_repo(env):
+	value = env.get("PRODUCT_REPO_PATH", "")
+	return Path(os.path.expanduser(value)) if value else None
+
+def check_product_repo(env):
+	"""`PRODUCT_REPO_PATH` is a real working tree with a remote."""
+	path = resolve_product_repo(env)
+	if path is None:
+		record("product-repo", SKIP, "PRODUCT_REPO_PATH holds no value, so there is nothing to check here — the .env checks above own that.")
+		return
+	if not path.is_dir():
+		record(
+			"product-repo",
+			FAIL,
+			f"PRODUCT_REPO_PATH is {path}, which is not a directory on this box. Every pipeline "
+			"stage that touches product code needs a working tree there.",
+		)
+		return
+	code, output = run(["git", "rev-parse", "--is-inside-work-tree"], cwd=path)
+	if code != 0:
+		record("product-repo", FAIL, f"PRODUCT_REPO_PATH ({path}) is not a git working tree: {output}")
+		return
+	code, output = run(["git", "remote", "get-url", "origin"], cwd=path)
+	if code != 0:
+		record(
+			"product-repo",
+			FAIL,
+			f"the product repo at {path} has no 'origin' remote, so work done there can never be "
+			"pushed or reviewed.",
+		)
+		return
+	record("product-repo", PASS, f"product repo at {path} is a working tree with an origin.")
+
+def check_conventions_doc(env):
+	"""`CONVENTIONS_DOC_PATH` resolves to a file that exists."""
+	value = env.get("CONVENTIONS_DOC_PATH", "")
+	if not value:
+		record("conventions-doc", SKIP, "CONVENTIONS_DOC_PATH holds no value, so there is nothing to check here — the .env checks above own that.")
+		return
+	candidate = Path(os.path.expanduser(value))
+	tried = [candidate]
+	if not candidate.is_absolute():
+		product = resolve_product_repo(env)
+		if product is not None:
+			tried.insert(0, product / candidate)
+	for path in tried:
+		if path.is_file():
+			record("conventions-doc", PASS, f"conventions doc found at {path}.")
+			return
+	record(
+		"conventions-doc",
+		FAIL,
+		f"CONVENTIONS_DOC_PATH is set to {value!r} but no file exists there (tried: "
+		f"{', '.join(str(p) for p in tried)}). Every skill that says \"read the conventions doc\" "
+		"resolves it from this variable, so a wrong path means each of them silently falls back to "
+		"the default guardrails only.",
+	)
+
+def check_work_tracker_auth(env, offline):
+	"""A real call against the tracker, with the deployment's real credential."""
+	tracker = env.get("WORK_TRACKER", "").strip().lower()
+	token = env.get("WORK_TRACKER_API_KEY", "").strip()
+	base_url = env.get("WORK_TRACKER_BASE_URL", "").strip().rstrip("/")
+
+	if not tracker:
+		record("work-tracker-auth", SKIP, "WORK_TRACKER holds no value, so there is nothing to check here — the .env checks above own that.")
+		return
+	if tracker in ("plain-markdown", "plain_markdown", "markdown", "none"):
+		record("work-tracker-auth", SKIP, f"WORK_TRACKER={tracker} has no API to authenticate against.")
+		return
+	if offline:
+		record("work-tracker-auth", SKIP, "--offline: not contacting the tracker.")
+		return
+
+	if tracker == "linear":
+		if not token:
+			record("work-tracker-auth", FAIL, "WORK_TRACKER=linear but WORK_TRACKER_API_KEY is empty.")
+			return
+		query = json.dumps({"query": "query { viewer { id name email } }"}).encode()
+		# A personal API key goes in Authorization as-is; an OAuth token needs
+		# a Bearer prefix. Which one this deployment holds is not recorded
+		# anywhere, so try the documented default first and say which worked.
+		for label, header in (("as-is (personal API key)", token), ("Bearer (OAuth token)", f"Bearer {token}")):
+			status, body, error = http_json(
+				"https://api.linear.app/graphql",
+				headers={"Authorization": header, "Content-Type": "application/json"},
+				data=query,
+			)
+			if error:
+				record("work-tracker-auth", FAIL, f"could not reach Linear's API: {error}")
+				return
+			# Linear answers 200 on failure, with the real verdict in `errors`
+			# — a check that reads only the status code passes on a dead key.
+			if isinstance(body, dict) and not body.get("errors"):
+				viewer = (body.get("data") or {}).get("viewer") or {}
+				if viewer.get("id"):
+					record(
+						"work-tracker-auth",
+						PASS,
+						f"Linear accepted WORK_TRACKER_API_KEY {label}; it belongs to "
+						f"{viewer.get('email') or viewer.get('name') or viewer['id']}.",
+					)
+					return
+			last = body
+		record(
+			"work-tracker-auth",
+			FAIL,
+			f"Linear rejected WORK_TRACKER_API_KEY on both header shapes (HTTP {status}): "
+			f"{json.dumps(last)[:300] if not isinstance(last, str) else last[:300]}",
+		)
+		return
+
+	if tracker in ("github-issues", "github", "github_issues"):
+		if shutil.which("gh") is None:
+			record("work-tracker-auth", FAIL, "WORK_TRACKER=github-issues but the gh CLI is not on PATH.")
+			return
+		code, output = run(["gh", "api", "user", "--jq", ".login"])
+		if code == 0 and output:
+			record("work-tracker-auth", PASS, f"the GitHub API accepted gh's credential (acting as {output.strip()}).")
+		else:
+			record("work-tracker-auth", FAIL, f"gh could not authenticate against the GitHub API: {output}")
+		return
+
+	if tracker == "jira":
+		email = env.get("AGENT_EMAIL_ADDRESS", "").strip()
+		if not base_url:
+			record(
+				"work-tracker-auth",
+				FAIL,
+				"WORK_TRACKER=jira but WORK_TRACKER_BASE_URL is empty — a Jira site is per-customer, "
+				"so there is no endpoint to call.",
+			)
+			return
+		if not token or not email:
+			record(
+				"work-tracker-auth",
+				FAIL,
+				"Jira's Basic auth needs both AGENT_EMAIL_ADDRESS and WORK_TRACKER_API_KEY, and one "
+				"of them is empty.",
+			)
+			return
+		credential = base64.b64encode(f"{email}:{token}".encode()).decode()
+		status, body, error = http_json(
+			f"{base_url}/rest/api/3/myself",
+			headers={"Authorization": f"Basic {credential}", "Accept": "application/json"},
+		)
+		if error:
+			record("work-tracker-auth", FAIL, f"could not reach {base_url}: {error}")
+		elif status == 200 and isinstance(body, dict) and body.get("accountId"):
+			record(
+				"work-tracker-auth",
+				PASS,
+				f"Jira accepted the credential; it belongs to {body.get('emailAddress') or body['accountId']}.",
+			)
+		else:
+			record("work-tracker-auth", FAIL, f"Jira rejected the credential (HTTP {status}).")
+		return
+
+	record(
+		"work-tracker-auth",
+		WARN,
+		f"WORK_TRACKER={tracker!r} has no credential probe in this script, so nothing here can tell "
+		"whether it authenticates. Add one alongside the tracker's own adapter notes.",
+	)
+
+def check_comms_channel(env, offline):
+	"""The instruction surface: an allowlist that exists, and a live credential."""
+	channel = env.get("COMMS_CHANNEL", "").strip().lower()
+	allowlist = [entry.strip() for entry in env.get("COMMS_ALLOWLIST", "").split(",") if entry.strip()]
+	token = env.get("COMMS_CHANNEL_TOKEN", "").strip()
+	endpoint = env.get("COMMS_CHANNEL_ENDPOINT", "").strip()
+
+	if not channel:
+		record("comms-allowlist", SKIP, "COMMS_CHANNEL holds no value, so there is nothing to check here — the .env checks above own that.")
+		return
+
+	if channel == "none":
+		if allowlist:
+			record(
+				"comms-allowlist",
+				WARN,
+				f"COMMS_CHANNEL=none but COMMS_ALLOWLIST holds {len(allowlist)} entr"
+				f"{'ies' if len(allowlist) > 1 else 'y'} — on that channel there is no identity to "
+				"verify, so those entries verify nothing. .env.example is the home for why empty is "
+				"the real answer there.",
+			)
+		else:
+			record("comms-allowlist", PASS, "COMMS_CHANNEL=none, and an empty allowlist is the real answer there.")
+	elif not allowlist:
+		record(
+			"comms-allowlist",
+			FAIL,
+			f"COMMS_CHANNEL={channel} can verify identities but COMMS_ALLOWLIST is empty, so nobody "
+			"is permitted to instruct this agent over its own comms channel. That is the security "
+			"boundary of the whole deployment; empty is only a real answer on a channel that cannot "
+			"verify an identity at all.",
+		)
+	else:
+		record(
+			"comms-allowlist",
+			PASS,
+			f"COMMS_ALLOWLIST names {len(allowlist)} identit{'ies' if len(allowlist) > 1 else 'y'} on {channel}.",
+		)
+
+	if offline:
+		record("comms-channel-auth", SKIP, "--offline: not contacting the comms channel.")
+		return
+	if not token:
+		record("comms-channel-auth", SKIP, "COMMS_CHANNEL_TOKEN holds no value, so there is nothing to check here — the .env checks above own that.")
+		return
+
+	if channel == "telegram":
+		host = endpoint or "https://api.telegram.org"
+		status, body, error = http_json(f"{host.rstrip('/')}/bot{token}/getMe")
+		if error:
+			record("comms-channel-auth", FAIL, f"could not reach the Telegram Bot API at {host}: {error}")
+		elif isinstance(body, dict) and body.get("ok"):
+			record("comms-channel-auth", PASS, f"Telegram accepted the bot token (@{body['result'].get('username')}).")
+		else:
+			record("comms-channel-auth", FAIL, f"Telegram rejected the bot token (HTTP {status}).")
+		return
+
+	if channel == "slack":
+		status, body, error = http_json(
+			(endpoint or "https://slack.com").rstrip("/") + "/api/auth.test",
+			headers={"Authorization": f"Bearer {token}", "Content-Type": "application/x-www-form-urlencoded"},
+			data=b"",
+		)
+		if error:
+			record("comms-channel-auth", FAIL, f"could not reach Slack: {error}")
+		elif isinstance(body, dict) and body.get("ok"):
+			record("comms-channel-auth", PASS, f"Slack accepted the token (team {body.get('team')}, bot {body.get('user')}).")
+		else:
+			reason = body.get("error") if isinstance(body, dict) else status
+			record("comms-channel-auth", FAIL, f"Slack rejected the token: {reason}")
+		return
+
+	if channel == "discord":
+		status, body, error = http_json(
+			(endpoint or "https://discord.com").rstrip("/") + "/api/v10/users/@me",
+			headers={"Authorization": f"Bot {token}"},
+		)
+		if error:
+			record("comms-channel-auth", FAIL, f"could not reach Discord: {error}")
+		elif status == 200 and isinstance(body, dict) and body.get("id"):
+			record("comms-channel-auth", PASS, f"Discord accepted the bot token ({body.get('username')}).")
+		else:
+			record("comms-channel-auth", FAIL, f"Discord rejected the bot token (HTTP {status}).")
+		return
+
+	if channel == "none":
+		# The mail path. COMMS_CHANNEL_ENDPOINT is where the SMTP host lives,
+		# and an unreachable host means the escalation path is down.
+		if ":" not in endpoint:
+			record(
+				"comms-channel-auth",
+				WARN,
+				"COMMS_CHANNEL_ENDPOINT records no port, so the SMTP host cannot be probed without "
+				"guessing one. Record it as host:port.",
+			)
+			return
+		host, _, port = endpoint.rpartition(":")
+		try:
+			with socket.create_connection((host, int(port)), timeout=NETWORK_TIMEOUT_SECONDS) as connection:
+				connection.recv(1)
+			record("comms-channel-auth", PASS, f"the mail host at {endpoint} accepted a TCP connection.")
+		except (OSError, ValueError) as error:
+			record(
+				"comms-channel-auth",
+				FAIL,
+				f"could not connect to the mail host at {endpoint} ({error}) — on COMMS_CHANNEL=none "
+				"that is the entire outbound escalation path.",
+			)
+		return
+
+	record(
+		"comms-channel-auth",
+		WARN,
+		f"COMMS_CHANNEL={channel!r} has no credential probe in this script, so nothing here can tell "
+		"whether its token still works.",
+	)
+
+def private_networking_specialized(repo_root):
+	"""Whether skills/private-networking still calls itself a stub."""
+	skill = repo_root / "skills" / "private-networking" / "SKILL.md"
+	if not skill.is_file():
+		return None
+	return re.search(r"^#{1,6}\s*Status:", skill.read_text(encoding="utf-8"), re.MULTILINE) is None
+
+def check_private_networking(repo_root, offline):
+	"""If a mesh was set up, it is actually up — a joined-looking client that
+	never joined is the exact failure skills/private-networking warns about."""
+	specialized = private_networking_specialized(repo_root)
+
+	if shutil.which("tailscale"):
+		if offline:
+			record("private-networking", SKIP, "--offline: not querying the tailnet.")
+			return
+		code, output = run(["tailscale", "status", "--json"], timeout=30)
+		if code != 0:
+			record("private-networking", FAIL, f"a tailscale client is installed but would not report status: {output}")
+			return
+		try:
+			status = json.loads(output)
+		except ValueError:
+			record("private-networking", FAIL, "tailscale status returned output this script could not parse as JSON.")
+			return
+		state = status.get("BackendState")
+		self_node = status.get("Self") or {}
+		if state != "Running":
+			record(
+				"private-networking",
+				FAIL,
+				f"the tailscale client on this box is in state {state!r}, not Running — anything "
+				"exposed only over the mesh is unreachable, and a container holding a consumed auth "
+				"key looks healthy from the outside.",
+			)
+			return
+		peers = status.get("Peer") or {}
+		online = sum(1 for peer in peers.values() if peer.get("Online"))
+		record(
+			"private-networking",
+			PASS,
+			f"this box is on the mesh as {self_node.get('DNSName', '').rstrip('.') or 'an unnamed node'} "
+			f"({online} of {len(peers)} peer(s) online).",
+		)
+		return
+
+	if shutil.which("wg"):
+		code, output = run(["wg", "show"], timeout=30)
+		if code == 0 and output:
+			record("private-networking", PASS, "a WireGuard interface is up on this box.")
+		else:
+			record(
+				"private-networking",
+				FAIL,
+				f"wireguard-tools is installed but no interface is up: {output or 'wg show printed nothing'}",
+			)
+		return
+
+	if specialized:
+		record(
+			"private-networking",
+			WARN,
+			"skills/private-networking is specialized (it no longer calls itself a stub) but no mesh "
+			"client is installed on this box — so whatever mesh that file records is not running "
+			"here. Read the file: if the recorded answer is \"none yet, deliberately\", this is fine.",
+		)
+	else:
+		record(
+			"private-networking",
+			SKIP,
+			"no mesh client on this box, and skills/private-networking is still a stub, so nothing "
+			"claims one exists yet.",
+		)
+
+def check_stage_prompts(repo_root):
+	"""A pipeline with no prompts, or a prompt still full of placeholders — the
+	second is worse, because a trigger will run it."""
+	prompts_dir = repo_root / "prompts"
+	if not prompts_dir.is_dir():
+		record("stage-prompts", FAIL, "prompts/ does not exist, so no pipeline stage has a prompt to run.")
+		return
+
+	template = prompts_dir / "STAGE_TEMPLATE.md"
+	stage_files = sorted(
+		path for path in prompts_dir.glob("*.md")
+		if path.name not in ("README.md", "STAGE_TEMPLATE.md")
+	)
+
+	pipeline_skill = repo_root / "skills" / "work-pipeline" / "SKILL.md"
+	pipeline_specialized = (
+		pipeline_skill.is_file()
+		and re.search(r"^#{1,6}\s*Status:", pipeline_skill.read_text(encoding="utf-8"), re.MULTILINE) is None
+	)
+
+	if not stage_files:
+		if pipeline_specialized:
+			record(
+				"stage-prompts",
+				FAIL,
+				"skills/work-pipeline is specialized but prompts/ holds no stage prompt, so the "
+				"stages it decided on have no text to run with. prompts/README.md is the home for "
+				"what each one has to contain.",
+			)
+		else:
+			record(
+				"stage-prompts",
+				SKIP,
+				"no stage prompts yet, and skills/work-pipeline is still a stub — which stages exist "
+				"has not been decided.",
+			)
+		return
+
+	# `<...>` is STAGE_TEMPLATE.md's own marker for something a deployment has
+	# to answer, and that file says an unfilled one is a prompt that isn't
+	# finished. A scheduled run cannot tell the difference.
+	placeholder = re.compile(r"<[a-z][^<>\n]{2,60}>")
+	broken = []
+	for path in stage_files:
+		text = path.read_text(encoding="utf-8")
+		found = placeholder.findall(text)
+		if found:
+			broken.append(f"{path.name} ({len(found)} unfilled, first: {found[0]})")
+		elif template.is_file() and text.strip() == template.read_text(encoding="utf-8").strip():
+			broken.append(f"{path.name} (still a verbatim copy of STAGE_TEMPLATE.md)")
+		elif not text.strip():
+			broken.append(f"{path.name} (empty)")
+
+	if broken:
+		record(
+			"stage-prompts",
+			FAIL,
+			f"{len(broken)} stage prompt(s) carry unanswered placeholders and would be acted on "
+			f"literally by any trigger that names them: {'; '.join(broken)}",
+		)
+	else:
+		record(
+			"stage-prompts",
+			PASS,
+			f"{len(stage_files)} stage prompt(s) present, none carrying unfilled <...> placeholders: "
+			f"{', '.join(path.stem for path in stage_files)}.",
+		)
+
+def check_skills_specialization(repo_root, env):
+	"""How much of the specialization pass actually landed."""
+	skills_dir = repo_root / "skills"
+	if not skills_dir.is_dir():
+		record("skills-specialization", FAIL, "skills/ does not exist.")
+		return
+
+	status_heading = re.compile(r"^#{1,6}\s*Status:\s*(.+?)\s*$", re.MULTILINE)
+	stubs = []
+	total = 0
+	for skill_file in sorted(skills_dir.glob("*/SKILL.md")):
+		total += 1
+		match = status_heading.search(skill_file.read_text(encoding="utf-8"))
+		if match:
+			stubs.append(skill_file.parent.name)
+
+	if not stubs:
+		record("skills-specialization", PASS, f"none of the {total} skills still calls itself a stub.")
+		return
+
+	# A deployment that got as far as writing real .env answers but has not
+	# specialized a single skill is the state STARTUP.md step 7 exists to
+	# leave behind: every skill is still generic template text, while
+	# everything around it looks configured.
+	onboarding_started = bool(env.get("WORK_TRACKER") or env.get("COMMS_CHANNEL"))
+	if onboarding_started and all(
+		skill in stubs for skill in ("work-tracker", "comms-channel", "work-pipeline")
+	):
+		record(
+			"skills-specialization",
+			FAIL,
+			f".env holds real answers but {len(stubs)} of {total} skills are still unspecialized "
+			f"stubs, including every one the pipeline depends on ({', '.join(stubs)}). Nothing here "
+			"knows this deployment's tracker states, labels or comms rules — STARTUP.md step 7 is "
+			"the pass that answers them.",
+		)
+		return
+
+	record(
+		"skills-specialization",
+		WARN,
+		f"{len(stubs)} of {total} skills still call themselves stubs: {', '.join(stubs)}. Each one is "
+		"generic template text until specialized, so read it before relying on it.",
+	)
+
+def check_skills_consistency(repo_root):
+	"""Delegated: .github/ci/check-skills-consistency.py owns these rules."""
+	script = repo_root / ".github" / "ci" / "check-skills-consistency.py"
+	if not script.is_file():
+		record(
+			"skills-consistency",
+			WARN,
+			"'.github/ci/check-skills-consistency.py' is missing, so the docs-vs-skills consistency "
+			"rules it owns cannot be checked here.",
+		)
+		return
+	code, output = run([sys.executable, str(script)], cwd=repo_root, timeout=120)
+	if code == 0:
+		record("skills-consistency", PASS, "skills/ agrees with its own indexes and cross-references.")
+	else:
+		record(
+			"skills-consistency",
+			FAIL,
+			"the skills-consistency check reports drift between skills/ and the docs that index it "
+			"(that script owns the rules and prints which one broke):\n"
+			+ "\n".join(output.splitlines()[:12]),
+		)
+
+def check_harness_symlinks(repo_root):
+	"""Both harness skill directories still resolve into skills/."""
+	problems = []
+	checked = []
+	for name in (".claude/skills", ".opencode/skills"):
+		path = repo_root / name
+		if not path.is_symlink():
+			problems.append(f"{name} is not a symlink (a 'Download ZIP' copy flattens these)")
+			continue
+		target = os.readlink(path)
+		if not path.is_dir() or not (path / "README.md").is_file():
+			problems.append(f"{name} -> {target} does not resolve to a readable skills directory")
+			continue
+		checked.append(f"{name} -> {target}")
+	if problems:
+		record(
+			"harness-symlinks",
+			FAIL,
+			"; ".join(problems) + " — a harness reading skills through that path sees nothing.",
+		)
+	else:
+		record("harness-symlinks", PASS, "; ".join(checked) + ".")
+
+def check_host_tooling():
+	"""The three tools install.sh puts on the box, and docker actually running."""
+	for tool, args, check_id in (
+		("docker", ["docker", "info", "--format", "{{.ServerVersion}}"], "host-tooling-docker"),
+		("uv", ["uv", "--version"], "host-tooling-uv"),
+		("gh", ["gh", "--version"], "host-tooling-gh"),
+	):
+		if shutil.which(tool) is None:
+			record(
+				check_id,
+				FAIL,
+				f"{tool} is not on PATH — README.md's \"Hard requirements\" is the home for why "
+				"install.sh puts it there.",
+			)
+			continue
+		code, output = run(args, timeout=60)
+		if code == 0:
+			record(check_id, PASS, f"{tool} is installed and responding ({output.splitlines()[0][:80]}).")
+		elif tool == "docker":
+			record(
+				check_id,
+				FAIL,
+				"docker is installed but its daemon is unreachable from here, so nothing this "
+				f"deployment builds can actually run: {output.splitlines()[0][:200] if output else 'no output'}",
+			)
+		else:
+			record(check_id, FAIL, f"{tool} is installed but would not run: {output.splitlines()[0][:200]}")
+
+# --- driver -----------------------------------------------------------------
+
+def main():
+	parser = argparse.ArgumentParser(
+		description=(
+			"Read-only health check for a live spoor-bootstrap deployment. Reports one line per "
+			"check and exits non-zero if any of them FAILed."
+		),
+	)
+	parser.add_argument(
+		"--repo-root",
+		default=str(Path(__file__).resolve().parent),
+		help="the spoor-bootstrap checkout to inspect (default: this script's own directory)",
+	)
+	parser.add_argument(
+		"--offline",
+		action="store_true",
+		help="skip every check that contacts a network: the push dry-run, and each credential probe",
+	)
+	parser.add_argument(
+		"--json",
+		action="store_true",
+		dest="as_json",
+		help="emit machine-readable results instead of the report (never includes a secret's value)",
+	)
+	arguments = parser.parse_args()
+
+	repo_root = Path(arguments.repo_root).resolve()
+	if not repo_root.is_dir():
+		print(f"spoor-doctor: {repo_root} is not a directory", file=sys.stderr)
+		return 2
+	if not (repo_root / ".env.example").is_file():
+		print(
+			f"spoor-doctor: {repo_root} does not look like a spoor-bootstrap checkout "
+			"(no .env.example). Pass --repo-root.",
+			file=sys.stderr,
+		)
+		return 2
+
+	env_text = check_env_file(repo_root)
+	env = check_env_schema_and_values(repo_root, env_text)
+	check_git_remote(repo_root, arguments.offline)
+	check_gh_auth(repo_root, arguments.offline)
+	check_product_repo(env)
+	check_conventions_doc(env)
+	check_work_tracker_auth(env, arguments.offline)
+	check_comms_channel(env, arguments.offline)
+	check_private_networking(repo_root, arguments.offline)
+	check_stage_prompts(repo_root)
+	check_skills_specialization(repo_root, env)
+	check_skills_consistency(repo_root)
+	check_harness_symlinks(repo_root)
+	check_host_tooling()
+
+	counts = {status: sum(1 for r in results if r["status"] == status) for status in (PASS, WARN, FAIL, SKIP)}
+	exit_code = 1 if counts[FAIL] else 0
+
+	if arguments.as_json:
+		print(json.dumps({"repo_root": str(repo_root), "checks": results, "counts": counts, "exit_code": exit_code}, indent=2))
+		return exit_code
+
+	color = sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
+	print(f"spoor-doctor — {repo_root}\n")
+	for result in results:
+		label = result["status"]
+		if color:
+			label = f"{COLOR[result['status']]}{label}{RESET}"
+		print(f"{label}  {result['id']}")
+		for line in result["message"].splitlines():
+			print(f"        {line}")
+	print(
+		f"\n{counts[PASS]} passed, {counts[WARN]} warning(s), {counts[FAIL]} failure(s), "
+		f"{counts[SKIP]} skipped."
+	)
+	if counts[FAIL]:
+		print("\nEach failure above is a state this deployment cannot be trusted in. Fix, then re-run.")
+	return exit_code
+
+if __name__ == "__main__":
+	sys.exit(main())

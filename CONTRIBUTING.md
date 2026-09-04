@@ -35,7 +35,9 @@ You don't need a fix to open an issue.
    sudo-user, asserting docker/uv/gh end up runnable and that docker can
    actually run a workload), a markdown link check across every tracked
    `.md`, a consistency check on [`skills/`](./skills/README.md) and the
-   docs that index it, and an integrity check on the harness skill
+   docs that index it, a self-test that breaks a fixture deployment one way
+   per check to prove [`spoor-doctor`](./spoor-doctor) catches it, and an
+   integrity check on the harness skill
    symlinks. A dead link in a doc fails the build, which is intentional —
    so does a stub whose `Status:` heading disagrees with its own
    `TODO(specialize)` markers, a skill missing from
@@ -171,6 +173,27 @@ is worse than a crash, because it leaves no handle to grab.
   installing.
 - A top-of-file comment block explaining the script's scope and what it
   deliberately does *not* do.
+
+### Python scripts
+
+- **Standard library only.** Both of the Python scripts here — the
+  skills-consistency check and [`spoor-doctor`](./spoor-doctor) — run on a
+  bare `python3` with nothing installed, on a CI runner and on a freshly
+  bootstrapped box alike. A dependency would mean an install step in front
+  of a check whose whole job is to run when things are broken.
+- Tab-indented, procedural, and no class where a function does.
+- A top-of-file comment block saying what the script is for, which real
+  failure each of its rules exists for, and what it deliberately does not
+  do. Both existing scripts are the model.
+- **Nothing hardcoded that another file owns.** Read the fact from the file
+  that owns it and fail loudly when it can't be read, rather than keeping a
+  copy that goes stale silently — `spoor-doctor` reading the upstream remote
+  out of [`install.sh`](./install.sh)'s own guard, and the required-field
+  specs out of [`.env.example`](./.env.example), are the worked examples.
+- A check is only finished when something proves it catches its own
+  failure. The `doctor-self-test` job in
+  [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) is how that is
+  done here: a real fixture, broken one way per check.
 
 ### Markdown, skill and prompt files
 
