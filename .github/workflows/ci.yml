@@ -17,7 +17,7 @@ jobs:
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # shellcheck ships preinstalled on GitHub's ubuntu runner images, so this
       # needs no install step. Run at the strictest severity: this repo is a
@@ -51,7 +51,7 @@ jobs:
     steps:
       # persist-credentials: false because the checkout's .git is mounted into
       # the test container; there is no reason for a real token to be in it.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -85,7 +85,7 @@ jobs:
   links:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Ask git for the file list rather than globbing the filesystem, the same
       # way the shellcheck job does: tracked files are what a clone actually
@@ -149,7 +149,7 @@ jobs:
   skills-consistency:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Stdlib-only python3, preinstalled on the runner image — no setup-python
       # step and no dependencies to pin.
@@ -169,7 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Stdlib-only python3 and git, both preinstalled on the runner image.
       # The test binds only loopback sockets and pushes only to bare repos in
@@ -190,7 +190,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Stdlib-only python3 (tomllib included) and git, both preinstalled on the
       # runner image. Every remote the fixture uses is a bare repo in a temp
@@ -202,7 +202,7 @@ jobs:
   symlinks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # The runtime equivalent of this lives in install.sh, guarding against a
       # "Download ZIP" copy that flattens each symlink into a plain text file.
