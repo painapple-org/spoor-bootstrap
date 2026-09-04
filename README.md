@@ -226,15 +226,26 @@ your own situation, or all of them:
   defers to, and years of tracker issues that must not be swept into its
   inbox on the first run.
 
-There is also one document here that is **not** a reconstruction:
-[`docs/live-fire-github-pages.md`](./docs/live-fire-github-pages.md)
-records an actual deploy of an actual toy product to an actual hosting
-platform, run to find out whether
-[`skills/deploy-and-monitor`](./skills/deploy-and-monitor/SKILL.md)'s
-guidance survives being followed rather than read. It found four things
-wrong with it, all since fixed, and it is the file to read if the question
-is how much of this repo has been tested against reality versus written
-carefully.
+There are also two documents here that are **not** reconstructions, and
+they are the files to read if the question is how much of this repo has
+been tested against reality versus written carefully:
+
+- [`docs/live-fire-github-pages.md`](./docs/live-fire-github-pages.md)
+  records an actual deploy of an actual toy product to an actual hosting
+  platform, run to find out whether
+  [`skills/deploy-and-monitor`](./skills/deploy-and-monitor/SKILL.md)'s
+  guidance survives being followed rather than read. It found four things
+  wrong with it, all since fixed.
+- [`docs/specializing-billing-and-payments.md`](./docs/specializing-billing-and-payments.md)
+  does the same to
+  [`skills/billing-and-payments`](./skills/billing-and-payments/SKILL.md),
+  the one skill here authored through
+  [`skills/skill-authoring`](./skills/skill-authoring/SKILL.md) and the
+  hardest to follow honestly, since the thing it governs is somebody's
+  money. Its business is fictional and its verifications are real runs
+  with their output quoted, and it says which is which throughout. Eight
+  findings, all since fixed — including one where the correct outcome was
+  to stop at a guardrail rather than get the nicer result.
 
 **Or read a profile instead of a transcript.** The same three shapes, and
 two more, exist as filled-in machine-readable profiles under

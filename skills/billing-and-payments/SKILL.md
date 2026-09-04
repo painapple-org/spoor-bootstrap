@@ -1,6 +1,6 @@
 ---
 name: billing-and-payments
-description: How this agent works on a product that takes money from its users — where the line falls between building a payment integration (ordinary reversible work) and moving money (owner-only), the owner/agent split on the payment provider account and its live keys, the provider-is-the-source-of-truth rule for entitlement, the webhook and money-representation constraints that are wrong by default, and what has to be reported rather than retried. Read before touching checkout, subscription, invoicing or entitlement code, and before anything that would issue a charge, a refund or a payout. Ships as a stub — whether this deployment charges anyone, through which provider, and how tax is handled are per-deployment.
+description: How this agent works on a product that takes money from its users — where the line falls between building a payment integration (ordinary reversible work) and moving money (owner-only), the owner/agent split on the payment provider account and its live keys, how the agent gets a test-mode environment to work in at all before that account exists, the provider-is-the-source-of-truth rule for entitlement, the webhook and money-representation constraints that are wrong by default, and what has to be reported rather than retried. Read before touching checkout, subscription, invoicing or entitlement code, and before anything that would issue a charge, a refund or a payout. Ships as a stub — whether this deployment charges anyone, through which provider, and how tax is handled are per-deployment.
 ---
 
 # billing-and-payments
@@ -89,6 +89,25 @@ If an integration exists, use it and record it. A second provider alongside
 the first means two systems both believing they know who has paid, which is
 the one thing this file's central rule exists to prevent.
 
+**All four of those checks can come back empty and still be the wrong
+answer**, because they look for the incumbent inside the product's code,
+and on a small business it is routinely outside it: the owner raising
+invoices by hand in an accounting package, taking bank transfers, and
+flipping a flag in an admin screen when one lands. That is a payment system
+with a source of truth, and adding a provider to it creates exactly the
+two-systems duplication above — invisibly to every check listed here. So
+ask the owner directly how money reaches them today, rather than concluding
+from the repo that nothing does, and where the answer is a manual process:
+
+- name who does it and in which system, since that person is about to have
+  their job partly automated and is the one who knows what the flag means,
+- treat the change as a cutover rather than a feature, with a dual-running
+  period, one named person reconciling the two during it, and the manual
+  path **deleted** afterwards rather than kept as a fallback,
+- and don't move existing customers onto the provider as part of building
+  it. Their payment method changing is the owner's decision to make and
+  announce, not a side effect of a merge.
+
 ## The owner/agent split
 
 Split this before starting, because the halves land on opposite sides of
@@ -119,6 +138,45 @@ Where the live keys live once they exist is not this file's business:
 [`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md)'s "Secrets"
 is the one home for how this deployment handles secrets, and a payment key
 is an ordinary secret under it.
+
+## Before the owner's account exists
+
+The split above puts the account on the owner's side, and identity and
+business verification have lead time measured in days. Which raises the
+question the split does not answer: **the agent's working environment is
+test mode, so who provisions the test credentials?** Not asking it produces
+two wrong answers — sitting idle for a week on work that touches no real
+money, or quietly provisioning a credential, which
+[`AGENTS.md`](../../AGENTS.md)'s "Registering accounts or identities
+anywhere" guardrail forbids without exception.
+
+The right answer is that test credentials are **their own shopping-list
+item**, asked for separately from the account and ahead of it. They unblock
+all of the agent's work and none of the owner's lead time applies to them,
+so bundling them into "set up the provider" delays everything behind a
+verification queue for no reason. Some providers now issue a test-only
+sandbox to a coding agent with no account registration at all, which makes
+that item a single command the owner runs — a far cheaper ask, worth
+presenting as one, and still theirs to run rather than yours. A
+credential-issuing endpoint built for convenience does not narrow that
+guardrail, and the argument that it does is the shape of reasoning the
+guardrail exists to refuse.
+
+Two things are worth doing while that item is outstanding, rather than
+waiting:
+
+- **Find out whether the provider publishes instructions written for
+  coding agents**, as distinct from documentation written for people —
+  several now ship a maintained, machine-readable set. Where one exists it
+  is the source for every API mechanic this file deliberately doesn't
+  carry, and it is strictly better than either a summary here or a page of
+  prose docs, because it stays current without anyone here noticing it
+  should have. Read it before writing a line about the provider's API.
+- **Work at the rung below a sandbox.** Several providers publish a local
+  mock of their own API that needs no credentials, which is enough to
+  exercise request shape and a client's auth wiring. What that rung cannot
+  prove is specific and dangerous, and "Verifying it, honestly" below is
+  the home for it.
 
 ## The provider is the source of truth; your database is a cache
 
@@ -152,16 +210,32 @@ has:
    unverified webhook route is a public, unauthenticated write path into
    billing state — anyone who learns the URL can mark themselves paid. The
    provider's own documentation is the one home for how its signature
-   scheme works; read it there.
-2. **Be idempotent, keyed on the provider's own event id.** Duplicate
-   delivery is normal and documented behaviour, not an anomaly. A handler
-   that grants a month of access per delivery grants three.
+   scheme works; read it there, and read what it says about *which*
+   signatures in the header to check. At least one provider deliberately
+   sends an extra signature under a scheme that cannot verify, as a test
+   aid, and tells you to ignore any scheme it doesn't name — so a handler
+   written to require every signature present to verify fails in test mode
+   and passes in live, which is the one polarity guaranteed to waste a day.
+2. **Be idempotent, keyed on the provider's own event id** — and on nothing
+   else that looks equivalent. Duplicate delivery is normal and documented
+   behaviour, not an anomaly, and a handler that grants a month of access
+   per delivery grants three. The event id is the only stable key: a retry
+   of the same event is commonly re-signed with a fresh timestamp, so
+   dedupe keyed on the signature, on the raw header, or on a hash of the
+   delivery silently doesn't dedupe at all, and passes every happy-path
+   test while doing so.
 3. **Assume out-of-order and late arrival.** A cancellation can land before
    the creation it cancels. Reconcile against the object's current state
-   rather than applying events as a sequence of deltas.
+   rather than applying events as a sequence of deltas, and don't order
+   events by the timestamp in the payload — providers say outright that it
+   isn't an ordering key, and two events can carry the same one.
 4. **Return quickly, and do the slow part elsewhere.** Providers retry on
    timeout, which turns one slow handler into a retry storm against the
-   same endpoint.
+   same endpoint. The failure that matters is not the latency: it is that
+   every retry is another delivery, so a slow handler multiplies whatever
+   constraint 2 was there to prevent. Which is also the order to fix them
+   in — idempotency makes a slow handler merely slow, and a fast handler
+   without it is still wrong.
 5. **Never trust amounts, plans or customer identity from anything other
    than a verified provider payload** — least of all from the client. Price
    arriving from the browser is the oldest bug in this domain.
@@ -198,7 +272,13 @@ active check rather than an absence of alerts.
   against the provider's own record, reporting differences rather than
   fixing them silently. Where a difference is safe to auto-correct in one
   direction, correcting it and still reporting it is the right shape;
-  correcting it silently is how a systematic bug runs for a month.
+  correcting it silently is how a systematic bug runs for a month. **Which
+  direction is safe is a fact about the business, not a billing
+  default** — revoking access nobody is paying for is the obviously
+  conservative move right up against a product whose users have a deadline,
+  where wrongly revoking is the expensive error and the safe pass is
+  report-only. Ask rather than assuming the obvious direction, and record
+  the answer.
 - **A failed or declined payment is a report, not a retry loop.** The
   provider's own dunning handles retries. What it cannot do is tell the
   owner that a customer is about to churn.
@@ -215,7 +295,28 @@ Scheduling that pass is out of a SKILL's scope, per
 ## Verifying it, honestly
 
 Test-mode verification is real verification of the code and no verification
-at all of the money. Both halves have to be said separately:
+at all of the money. But there are four rungs here rather than two, and the
+two easy to miss are the ones an agent waiting on the owner's account is
+actually standing on. In increasing order of what they prove:
+
+1. **The provider's own published instructions**, per "Before the owner's
+   account exists" above. Proves nothing was invented. Proves nothing about
+   this integration.
+2. **A credential-free local mock of the provider's API.** Proves request
+   shape and that a client authenticates at all. Proves **nothing** about
+   amounts, state, entitlement or money — and lies convincingly while
+   doing so, because a mock returns canned fixture values for anything it
+   doesn't derive. An amount or a tax total echoed back by one is not a
+   calculation, and a flow that "worked" against one may have kept no state
+   whatever. Schema validation is not business validation either: a mock
+   that type-checks a field will happily accept a nonsensical value in it.
+3. **The provider's test mode or sandbox**, with real test credentials.
+   This is the rung that verifies the integration, and the bullets below
+   are what to do on it.
+4. **Live**, which is the owner's action and the first evidence about
+   money.
+
+On rung 3, both halves have to be said separately:
 
 - **Exercise the full path in test mode**: a checkout completed with the
   provider's test instruments, the webhook actually delivered and verified,
@@ -273,6 +374,14 @@ Record, concretely:
   subscription, usage-metered, or a mix. Name the objects that exist today,
   not a pricing model nobody has agreed to — an invented plan name is the
   invented specific this repo's specialization rules forbid.
+- **Which payment methods are accepted, and customers in which
+  countries.** Not a detail of the above: it decides whether a dispute can
+  even happen (some bank-transfer and bank-redirect methods cannot be
+  charged back at the customer's bank at all, which makes the refund the
+  whole of the remedy and the dispute question moot), how long a refund
+  takes to settle, whether a recurring charge needs a mandate set up by a
+  separate first payment, and the shape of the tax question below. Record
+  the methods actually enabled, not the ones the provider supports.
 - **Where the credentials live**, by the name of the environment variable
   that holds each of the test and live keys and the webhook signing secret,
   never the value, and never in this file if this deployment's secrets home

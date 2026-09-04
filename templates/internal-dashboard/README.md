@@ -79,7 +79,12 @@ In this order, because each step makes the next one obvious.
    directory next to the product, per the standalone-project rule in
    [`skills/internal-dashboard/SKILL.md`](../../skills/internal-dashboard/SKILL.md).
    It does not belong inside the product's repo, container set, or deploy
-   pipeline.
+   pipeline. **Write where it landed into `INTERNAL_DASHBOARD_PATH` in the
+   deployment's `.env` as part of this step** — that variable is the only
+   record of where this project lives, and `spoor-doctor` reads it to check
+   the location is still true. Note it is the deployment's own `.env`, not
+   the one you copy in the next step: that one is this stack's, and every
+   key in it is `DASHBOARD_*`.
 2. **`cp .env.example .env` and fill it in.** Every variable has a comment
    saying where to get its value. `DASHBOARD_NAME` is the one that matters
    most: it becomes the container name, the mesh hostname, and the URL the

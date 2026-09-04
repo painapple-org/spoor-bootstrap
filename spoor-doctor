@@ -506,6 +506,71 @@ def check_product_repo(env):
 		return
 	record("product-repo", PASS, f"product repo at {path} is a working tree with an origin.")
 
+def check_internal_dashboard(env):
+	"""`INTERNAL_DASHBOARD_PATH`, where this deployment has a dashboard at all.
+
+	Blank is a healthy answer here rather than an unfinished one, so the only
+	states this can report are: nothing claimed, or a claim that isn't true
+	any more. A path that no longer resolves is the invisible failure —
+	nothing else on the box mentions the dashboard, so a project that was
+	moved or deleted leaves this variable quietly pointing at nowhere and the
+	next session builds a second one.
+
+	The one thing it judges beyond existence is where the project sits.
+	skills/internal-dashboard/SKILL.md is the home for why an ops dashboard
+	does not live inside the product's repo; a copy that ended up in there is
+	a real breach of that rule and looks like nothing from the outside."""
+	value = env.get("INTERNAL_DASHBOARD_PATH", "")
+	if not value:
+		record(
+			"internal-dashboard",
+			SKIP,
+			"INTERNAL_DASHBOARD_PATH holds no value, which is a real answer: this deployment has no "
+			"internal dashboard, and skills/internal-dashboard/SKILL.md says not to build one "
+			"speculatively. Its .env.example comment owns the two shapes of blank.",
+		)
+		return
+
+	path = Path(os.path.expanduser(value))
+	if not path.is_dir():
+		record(
+			"internal-dashboard",
+			FAIL,
+			f"INTERNAL_DASHBOARD_PATH is {path}, which is not a directory on this box. The variable "
+			"is the only record of where the dashboard project lives, so a stale value here is a "
+			"dashboard nothing can find — point it at where the project actually is, or clear it if "
+			"there no longer is one.",
+		)
+		return
+
+	resolved = path.resolve()
+	product = resolve_product_repo(env)
+	if product is not None and product.is_dir():
+		product_resolved = product.resolve()
+		if resolved == product_resolved or product_resolved in resolved.parents:
+			record(
+				"internal-dashboard",
+				FAIL,
+				f"the dashboard project at {resolved} is inside the product repo at "
+				f"{product_resolved}. skills/internal-dashboard/SKILL.md's standalone-project rule "
+				"is the home for why that is wrong — its dependency tree, its container set and its "
+				"read-only host mounts all end up in the product's. Move it out; don't add an "
+				"exception here.",
+			)
+			return
+
+	code, _ = run(["git", "rev-parse", "--is-inside-work-tree"], cwd=resolved)
+	if code != 0:
+		record(
+			"internal-dashboard",
+			WARN,
+			f"the dashboard project at {resolved} is not under version control (no git working tree "
+			"here or above it), so a page that breaks has nothing to roll back to. The scaffold's "
+			"specialization steps expect a copy with its own history.",
+		)
+		return
+	record("internal-dashboard", PASS, f"dashboard project at {resolved} is a directory under git.")
+
 def check_conventions_doc(env):
 	"""`CONVENTIONS_DOC_PATH` resolves to a file that exists."""
 	value = env.get("CONVENTIONS_DOC_PATH", "")
@@ -1135,6 +1200,7 @@ def main():
 	check_gh_auth(repo_root, arguments.offline)
 	check_product_repo(env)
 	check_conventions_doc(env)
+	check_internal_dashboard(env)
 	check_work_tracker_auth(env, arguments.offline)
 	check_comms_channel(env, arguments.offline)
 	check_private_networking(repo_root, arguments.offline)
