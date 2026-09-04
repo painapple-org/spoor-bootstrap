@@ -46,20 +46,29 @@ any of that, they only say how it lands in one tracker's API.
    keeping notes for two others is exactly the "no state that isn't real
    right now" rule this repo applies to itself — see
    [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#no-state-that-isnt-real-right-now).
-   Git holds them if the owner ever migrates trackers. This README stays because it's the
-   permanent index for the directory and several files across the repo link
-   to it; remove the bullet for each deleted adapter from "Available
-   adapters" above instead.
+   Git holds them if the owner ever migrates trackers. This README stays,
+   because it's the index for the directory and several files across the
+   repo link to it; remove the bullet for each deleted adapter from
+   "Available adapters" above instead. The one exception is the
+   none-of-the-three case immediately below, where the directory has
+   nothing left to index and this file goes with it.
 
    **If the owner's tracker is none of the three**, every adapter goes and
    this directory is left indexing nothing — which is the one case where
    keeping this file is worse than removing it. Delete the whole
-   `adapters/` directory then, and repoint the links to it (in
-   [`../SKILL.md`](../SKILL.md) and
-   [`skills/README.md`](../../README.md)) at `../SKILL.md`'s own "How to
-   actually call the tracker" section, which by that point holds the real
-   answer for this deployment. See the next section for the notes worth
-   writing instead, and where.
+   `adapters/` directory then, this file included. Then repoint every link
+   that pointed here, which is more than the two obvious ones:
+   [`../SKILL.md`](../SKILL.md), [`skills/README.md`](../../README.md),
+   [`skills/specialize-skills/SKILL.md`](../../specialize-skills/SKILL.md)
+   (twice — its work-tracker step, and its skills-index bookkeeping step)
+   and [`CONTRIBUTING.md`](../../../CONTRIBUTING.md). Point them at
+   `../SKILL.md`'s own "How to actually call the tracker" section, which by
+   that point holds the real answer for this deployment — except
+   `CONTRIBUTING.md`, which is about contributing an adapter back
+   *upstream*, where the directory still exists: reword that one rather
+   than repointing it. Grep for `adapters` afterwards; a dead link in
+   `specialize-skills` is read on every later scoped re-run. See the next
+   section for the notes worth writing instead, and where.
 
 ## If the owner's tracker isn't one of these
 
