@@ -392,6 +392,14 @@ rather than assuming:
   no stage prompt in it: which stages run is a per-deployment decision, and
   writing those files is part of the specialization step below. That README
   is the one home for the layout, naming and required contents.
+- [`spoor-doctor`](./spoor-doctor) — the read-only health check for this
+  deployment's own state: its `.env` against the schema, its remote, its
+  tracker and channel credentials against the real APIs, its stage prompts,
+  how much of the specialization pass actually landed. Run it when something
+  is behaving strangely and before concluding a problem is elsewhere, and
+  after anything that changes configuration. That script's own header is the
+  one home for what it checks and what it deliberately doesn't; a finding is
+  fixed by fixing the deployment, never by editing the check.
 - **This deployment's own conventions doc** — everything specific to this
   owner, product and host: the autonomy model they actually agreed to,
   their git/PR conventions, their vocabulary. It lives outside this repo
