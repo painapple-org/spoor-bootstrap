@@ -425,6 +425,17 @@ def case_skills_index_drift(checkout):
 		encoding="utf-8",
 	)
 
+def case_specialization_deleted_a_linked_file(checkout):
+	"""The breakage a real specialization pass produces.
+
+	skills/work-tracker/adapters/README.md's own instruction has the whole
+	adapters/ directory deleted when the owner's tracker is none of the three
+	it covers, and then every link that pointed there dealt with in the same
+	pass. Miss one and a tracked doc points at a file that is gone. This is
+	the deletion, without the link sites being dealt with — which is what a
+	pass that stopped halfway actually leaves behind."""
+	shutil.rmtree(checkout / "skills" / "work-tracker" / "adapters")
+
 CASES = [
 	("healthy fixture", case_healthy, [], False),
 	(".env missing", case_env_missing, [("env-file", "FAIL")], True),
@@ -482,6 +493,12 @@ CASES = [
 	("stage prompt is the verbatim template", case_stage_prompt_verbatim_template, [("stage-prompts", "FAIL")], True),
 	("harness symlink flattened to a file", case_harness_symlink_flattened, [("harness-symlinks", "FAIL")], True),
 	("skill missing from the skills index", case_skills_index_drift, [("skills-consistency", "FAIL")], True),
+	(
+		"specialization deleted a file other docs link to",
+		case_specialization_deleted_a_linked_file,
+		[("doc-links", "FAIL")],
+		True,
+	),
 ]
 
 def main():
