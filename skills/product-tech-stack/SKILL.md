@@ -1,6 +1,6 @@
 ---
 name: product-tech-stack
-description: The required technology stack when the product being built is aimed at a non-technical end-user/client. Read this before choosing any framework, language, or infra piece in that situation — it is the one place this decision is recorded.
+description: The required technology stack when the product being built is aimed at a non-technical end-user/client, and how to handle an inherited product repo whose stack doesn't match it. Read this before choosing any framework, language, or infra piece in that situation — it is the one place this decision is recorded.
 ---
 
 # product-tech-stack
@@ -41,6 +41,39 @@ re-litigated per deployment:
 - **Docker** and **docker-compose** — containerization and local/deploy
   orchestration.
 - **uv** — Python dependency and environment management.
+
+## When the product repo already exists and doesn't match
+
+Common case, and it has a settled answer — don't re-derive one per
+deployment. The product this agent inherits is often a live codebase
+somebody else built, in a stack that is not the one above. That is a
+conflict between two real things, not a mistake to correct on the spot:
+
+1. **The existing application keeps its stack, and gets maintained in it.**
+   Do not start a migration, and do not write new code inside it in a
+   second stack — a half-migrated app is worse for a non-technical owner
+   than either whole one, and it is exactly what this SKILL exists to
+   prevent. Working competently in the stack that's there beats working
+   ideologically in the one that isn't.
+2. **The requirement above governs genuinely new work** — a new service, a
+   new app, a rewrite the owner actually asked for.
+3. **The conflict gets recorded, not silently resolved in either
+   direction.** Write it into this deployment's conventions doc at
+   `CONVENTIONS_DOC_PATH` as an open conflict: which pieces already match,
+   which don't, and the reading agreed with the owner. Recording it is what
+   keeps a later session from "discovering" the mismatch and starting the
+   rewrite nobody sanctioned, or from quietly treating this SKILL as
+   inapplicable because the first thing it met disagreed with it.
+4. **A migration is a conversation with a cost attached.** Raise it,
+   with what it would buy and what it would cost, and let the owner decide.
+   Starting one unasked is a stop-and-ask violation under
+   [`AGENTS.md`](../../AGENTS.md)'s "anything you cannot describe a concrete
+   rollback for", whatever this SKILL says about the target stack.
+
+Overlap is normal and worth naming explicitly in that record — an inherited
+app frequently already uses Postgres, Docker or uv. Those pieces aren't in
+conflict, and saying which ones already match keeps the record from reading
+as a bigger gap than it is.
 
 ## Why this exists as a single opinionated SKILL
 

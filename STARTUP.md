@@ -151,7 +151,9 @@ building any product code until all of it is done.
       If the dry-run against this checkout's `origin` fails, or `origin`
       is missing or still upstream's URL, stop and tell me, and see (f):
       the fix is a remote I own, and README.md's "Path to a running
-      instance" owns the choice between a private repo and a public fork.
+      instance" owns the choice between the three shapes that remote can
+      take: a private repo I create, a public fork, or a plain git remote
+      with no PR mechanism at all.
       **If `origin` is a public GitHub fork, say so explicitly now, before
       step 6 commits anything** — steps 6 and 7 write real operational
       detail about my deployment into tracked files here (see step 7), a
@@ -242,6 +244,13 @@ building any product code until all of it is done.
      one that SKILL doesn't apply and the choice is yours on the merits —
      which leaves the decision with no home at all unless it's recorded
      here. Record what you chose and the reason, not just the list.
+   - **any conflict between that SKILL's stack and a product repo that
+     already exists in a different one.** That SKILL's "When the product
+     repo already exists and doesn't match" section is the home for how the
+     conflict resolves; this doc is the home for *this* deployment's
+     instance of it — which pieces already match, which don't, and the
+     reading we agreed. Ask me before writing it down; don't record an
+     agreement I didn't make.
    - **what you're allowed to do unattended versus what needs my sign-off**
      on the running deployment specifically — e.g. restarting an unhealthy
      container, clearing disk of your own artifacts, rolling back a bad
@@ -256,6 +265,15 @@ building any product code until all of it is done.
      refinement pass has nothing non-generic to ground a proposal in.
      Record it even when the answer is "nothing written down anywhere" —
      that's a real answer and worth knowing.
+   - **every repo the product spans, if it's more than one**, and which of
+     them `PRODUCT_REPO_PATH` names. That variable is singular — see its own
+     comment in `.env.example` for why that's a limitation with a documented
+     fallback rather than an assumption — so it can only ever point at the
+     primary one. If my product is split across repos, list them here with
+     one line each on what lives where, and say plainly that a skill saying
+     "the product repo" means the primary one unless it names another.
+     Nothing else can record this, and a future session that only reads
+     `.env` will otherwise believe there is exactly one.
    - anything from step 3.
 
    This is the file every future session of yourself should treat as this
@@ -382,6 +400,16 @@ building any product code until all of it is done.
    same section. Fold in the blockers from step 7, and tell me which skill
    stubs are still incomplete because of them — I'd rather know that now
    than find out when a stage silently does the wrong thing.
+
+   That section splits the list into more than accounts, so use all of its
+   categories rather than handing me only the signup list. Anything I left
+   genuinely undecided in this conversation — a tracker I haven't picked, a
+   proactive stage I wasn't sure I wanted, whether an existing codebase
+   ever gets migrated — goes on it as an open decision with what it blocks,
+   not quietly resolved by you and not dropped. Same for work you found and
+   couldn't finish. If it turns out I don't have a git hosting account at
+   all, say so plainly as the item everything else is waiting on rather
+   than phrasing it as an upgrade to something I already have.
 ```
 
 ---

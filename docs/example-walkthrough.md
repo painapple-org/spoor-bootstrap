@@ -89,17 +89,18 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > **Agent:** Then a skill in this repo becomes mandatory rather than a
 > preference — `skills/product-tech-stack/SKILL.md` fixes the stack for a
 > product aimed at a non-technical end user, so I don't get to invent one.
-> I've read it, and there's a conflict I want to name rather than resolve
-> on my own: that skill requires FastAPI, SQLModel, Next.js and Postgres.
-> `northlight-orders` is Django. Postgres and docker-compose match; the
-> rest doesn't.
+> I've read it, and there's a conflict: that skill requires FastAPI,
+> SQLModel, Next.js and Postgres. `northlight-orders` is Django. Postgres
+> and docker-compose match; the rest doesn't.
 >
-> I'm not proposing a rewrite. A rewrite of a live portal 41 accounts
-> depend on is exactly the kind of thing I should not be starting in my
-> first hour, and it isn't what you asked for. What I'd like to record is:
-> the existing Django app stays Django and I maintain it as it is, and the
-> stack requirement applies to anything genuinely new. Does that match what
-> you want?
+> That skill already says how this resolves, so I'm not deciding it here —
+> its "When the product repo already exists and doesn't match" section says
+> the existing app keeps its stack and gets maintained as it is, the
+> requirement governs genuinely new work, and the conflict gets written
+> down rather than silently overridden or ignored. A rewrite of a live
+> portal 41 accounts depend on would be a conversation with a cost
+> attached, not something I start in my first hour. So what I'd record is
+> exactly that reading, against your app. Does it match what you want?
 >
 > **Priya:** Yes. Don't rewrite it. If you ever think it needs rewriting,
 > that's a conversation with a cost attached, not something you just do.
@@ -477,11 +478,13 @@ layout, and how to run the test suite.
 > non-technical) and requires FastAPI, SQLModel and Next.js. This app is
 > Django. Postgres and docker-compose already match.
 >
-> Agreed reading, and it is a decision rather than an oversight: the
-> existing app stays Django and gets maintained as it is. The stack
-> requirement governs anything genuinely new. A migration is a
-> conversation with a cost attached, not something to start unasked —
-> raise it, don't act on it.
+> The resolution is that SKILL's own "When the product repo already exists
+> and doesn't match" — existing app stays Django and gets maintained as it
+> is, the requirement governs genuinely new work, a migration is raised
+> rather than acted on. Recorded here because that section says the
+> conflict gets recorded, and this doc is where *this* deployment's
+> instance of it lives. Priya agreed to this reading in words; it is a
+> decision, not an oversight.
 >
 > ## Git and PR conventions
 >
