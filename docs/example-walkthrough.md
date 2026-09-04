@@ -369,8 +369,15 @@ pre-existing SSH key, the API side would have needed a token of its own,
 and nothing about the working push would have told anyone so.
 
 Both invocations went into `git-pr-conventions`' `Auth` section, which is
-their one home, along with which account they authenticate as and the fact
-that they coincided here.
+their one home, along with which account they authenticate as, the fact
+that they coincided here, and the fourth thing that section asks for:
+whether this remote has a PR mechanism at all. GitHub does, so the answer is
+a single line — but it was checked rather than assumed, because a bare git
+remote on a box wouldn't, and the whole shipping loop assumes one.
+
+That `Auth` edit is a tracked file in Priya's fork of the bootstrap repo, so
+it doesn't get to sit uncommitted: it shipped as its own PR there, alongside
+the conventions-doc PR in `northlight-orders`.
 
 Her own account, not the agent's. A GitHub account belonging to the agent
 is item 3 on the shopping list below and is the better end state, but it is
@@ -607,6 +614,11 @@ actually bite:
   directory's own instruction. Git holds them if Priya ever migrates.
   Keeping notes for two trackers she doesn't use is exactly the "no state
   that isn't real right now" rule this repo applies to itself.
+
+The PR that "same PR" refers to is one PR against Priya's fork of the
+bootstrap repo covering the whole pass — every stub the pass rewrote and
+the adapter deletions together. The one marker that survived comes back as
+its own scoped PR later, once item 3 on the shopping list below exists.
 
 ---
 
