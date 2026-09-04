@@ -51,10 +51,19 @@ Statuses also carry a coarse **status category** (`statusCategory.key` of
 rename-proof way to ask "is this open", and worth preferring over status
 names wherever the question is that coarse.
 
-Mapping the five states: the four live ones map to four workflow statuses,
-which the owner may need to *add* to their workflow — a default Jira
-workflow often doesn't have a distinct review column. Done vs cancelled are
-usually two separate `done`-category statuses (a Done and a Won't Do), and
+A reasonable mapping, to be confirmed against the owner's actual workflow:
+
+- unrefined-inbox → a `new`-category status (a default board's `To Do`, or
+  the project's Triage status if it has one)
+- ready → a second `new`-category status
+- in-progress → an `indeterminate`-category status (`In Progress`)
+- in-review → a **second** `indeterminate`-category status, which the owner
+  may need to *add* to the workflow — a default Jira workflow often has no
+  distinct review column, and adding one also means adding the transitions
+  that reach it
+- done / cancelled → two separate `done`-category statuses (typically a
+  `Done` and a `Won't Do`)
+
 Jira additionally has a `resolution` field that some workflows set on
 transition; check which of the two the owner's board actually distinguishes
 on before deciding which one your queries read.
@@ -77,13 +86,64 @@ Record that as the answer to the second-auth-value marker in
 than leaving a client to infer it. Both values belong to the agent's own
 Atlassian account, per the contract.
 
-There's no first-party CLI worth depending on. Official language SDKs exist;
-so does an Atlassian MCP server. If the harness supports MCP, that's the
-lowest-effort path — but the same caution as any MCP surface applies: it
-wraps a subset, and it has had its own pagination bugs, so check the raw
-REST API before concluding something can't be done.
+There's no first-party CLI. Official language SDKs exist; so does an
+Atlassian MCP server. If the harness supports MCP, that's the lowest-effort
+path — but the same caution as any MCP surface applies: it wraps a subset,
+and it has had its own pagination bugs, so check the raw REST API before
+concluding something can't be done.
 
 Scope identifier is the **project key** (the prefix in issue keys).
+
+### Setting up the shell for the commands below
+
+Every REST command in this file is one `curl`, written against three shell
+variables so it can be copied and run as-is. Export them once from the
+`.env` values named above:
+
+```sh
+export JIRA_BASE="$WORK_TRACKER_BASE_URL"                    # https://<site>.atlassian.net
+export JIRA_AUTH="$AGENT_EMAIL_ADDRESS:$WORK_TRACKER_API_KEY"
+export JIRA_PROJECT=<KEY>
+```
+
+`curl -u "$JIRA_AUTH"` is the Basic auth pair described above. Confirm the
+credential works, and get the agent's own `accountId` (needed by every
+assignment call), with:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/myself"
+```
+
+Bodies below are passed with `-d @- <<JSON`. An unquoted heredoc delimiter
+lets `$JIRA_PROJECT` and friends expand inside the JSON; a quoted one
+(`<<'JSON'`) suppresses that, and is used where the payload contains no
+variables. Building the JSON with `jq -n` instead is worth it for anything
+whose text comes from a variable, since prose interpolated straight into a
+heredoc breaks the document on the first `"`.
+
+### The third-party CLI, if you'd rather not write curl
+
+`ankitpokhrel/jira-cli` is not from Atlassian and is not installed by
+`install.sh`, but it covers most of the contract in one command each and —
+the real reason to consider it — it takes **plain text** for comments and
+descriptions, building the ADF that operation 4 below otherwise makes you
+construct by hand. It authenticates from a `JIRA_API_TOKEN` environment
+variable plus a `jira init` run that records the site and project.
+
+```sh
+jira issue list -q "project = $JIRA_PROJECT AND assignee = currentUser() AND status = \"In Progress\"" --plain
+jira issue view ISSUE-1 --comments 20
+jira issue assign ISSUE-1 "$(jira me)"
+jira issue move ISSUE-1 "In Progress"
+jira issue comment add ISSUE-1 --comment "..."
+jira issue create -t Task -s "..." -b "..." -l <refined-label>
+```
+
+It's a wrapper over the same REST API, so everything below still describes
+what actually happens — and anything it doesn't expose is reachable with the
+`curl` calls directly. Decide which path this deployment uses and record it
+in [`../SKILL.md`](../SKILL.md) rather than mixing both.
 
 ## The seven operations
 
@@ -93,13 +153,23 @@ JQL, via the search endpoint. `assignee = currentUser()` resolves against
 the credential in use, which is exactly right given the contract already
 requires the agent to hold its own account:
 
+```sh
+curl -sS -u "$JIRA_AUTH" -X POST "$JIRA_BASE/rest/api/3/search/jql" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json' -d @- <<JSON
+{
+  "jql": "project = $JIRA_PROJECT AND assignee = currentUser() AND status = \"<in-progress-status>\" AND labels = <refined-label> ORDER BY updated DESC",
+  "fields": ["summary", "status", "labels", "assignee", "updated", "parent"],
+  "maxResults": 100
+}
+JSON
 ```
-project = <KEY>
-  AND assignee = currentUser()
-  AND status = "<in-progress-status>"
-  AND labels = <refined-label>
-ORDER BY updated DESC
-```
+
+The response is `{"issues": [...], "nextPageToken": "..."}`. Add
+`"nextPageToken": "<value from the previous response>"` to the body to get
+the next page, and stop when the key is **absent** from the response — an
+absent token is the only end-of-results signal, there is no total count.
+The tokens are short-lived, so don't persist one between runs; start from
+page one instead.
 
 JQL supports the negation the contract needs and GitHub's CLI doesn't:
 `AND labels != <label>` — but note the trap that in JQL a `!=` comparison
@@ -109,81 +179,207 @@ applies to any optional field. Getting this wrong makes freshly-created
 work invisible.
 
 On the endpoint itself: the long-standing `/rest/api/3/search` was
-**deprecated and removed**, replaced by `/rest/api/3/search/jql`, and
-pagination moved from `startAt` to an opaque **`nextPageToken`** carried in
-the response. Also, that endpoint returns a minimal field set unless you
-ask: pass `fields` explicitly (`summary,status,labels,assignee,updated`) or
-you'll get back issues with almost nothing on them. Confirm the current
-path, the parameter names and the pagination contract in Atlassian's own
-issue-search docs before writing the client — this is the single most
-churned part of this API and the part these notes are least willing to
-vouch for.
+**deprecated and removed**, replaced by the `/rest/api/3/search/jql` used
+above, and pagination moved from `startAt` to the opaque `nextPageToken`.
+The endpoint also returns a minimal field set unless you pass `fields`
+explicitly, which is why every example here does. This is the most churned
+part of this API: if a call above 404s or returns an unexpected envelope,
+check Atlassian's own issue-search docs for the current path before
+assuming your payload is wrong.
 
 ### 2. Read one item in full
 
-`GET /rest/api/3/issue/{issueIdOrKey}` for the fields, and comments as a
-**separate** call: `GET /rest/api/3/issue/{issueIdOrKey}/comment`. The
-issue payload's embedded comment data is truncated/paginated, so a stage
-that reads only the issue will see a partial history — which, for a
-contract where comments carry the previous run's plan and the human's
-answers, is a silent correctness bug rather than a cosmetic one.
+Two calls, because the issue payload's embedded comment data is
+truncated/paginated — a stage that reads only the issue sees a partial
+history, which for a contract where comments carry the previous run's plan
+and the human's answers is a silent correctness bug, not a cosmetic one:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/issue/ISSUE-1?fields=summary,description,status,labels,assignee,parent,issuelinks"
+
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/issue/ISSUE-1/comment?maxResults=100&orderBy=created"
+```
+
+Both accept the issue key or the numeric issue id interchangeably. The
+comment call paginates on `startAt`/`total`, not on a token — the two
+endpoints genuinely differ here.
 
 ### 3. Claim
 
 Not atomic, and worse than the alternatives here: assignment and status are
-different operations. Assign via
-`PUT /rest/api/3/issue/{issueIdOrKey}/assignee` with the target's
-`accountId` (Jira Cloud identifies users by opaque `accountId`, not by
-username or email — a privacy-driven change that broke a lot of older
-scripts), then perform the transition.
+different operations. Jira Cloud identifies users by an opaque `accountId`,
+not by username or email — a privacy-driven change that broke a lot of
+older scripts. Get the agent's own from `/rest/api/3/myself` above, or
+someone else's by search:
 
-A transition POST *can* carry `fields` and an assignee update in the same
-request, which collapses it to one call — verify the exact payload shape in
-Atlassian's docs for the transitions endpoint, since it's also where
-transition-screen required fields have to be supplied.
+```sh
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' --get \
+  --data-urlencode 'query=person@example.com' \
+  "$JIRA_BASE/rest/api/3/user/search"
+```
 
-Do the assignment first, so a crash between the two leaves the item owned
-but not yet marked in progress, rather than in progress and owned by nobody.
+Assign (a 204 with no body on success):
+
+```sh
+curl -sS -u "$JIRA_AUTH" -X PUT "$JIRA_BASE/rest/api/3/issue/ISSUE-1/assignee" \
+  -H 'Content-Type: application/json' -d '{"accountId": "<accountId>"}'
+```
+
+Then transition, per operation 5. **Do the assignment first**, so a crash
+between the two leaves the item owned but not yet marked in progress,
+rather than in progress and owned by nobody.
+
+The transition POST can also carry the assignee in its own `fields`, which
+collapses the claim to one call — the payload in operation 5 shows it. That
+only works if `assignee` is on the transition's screen; if it isn't, the
+call 400s naming the field, and the two-call form above is the answer.
 
 ### 4. Comment
 
-`POST /rest/api/3/issue/{issueIdOrKey}/comment`.
-
 **The v3 API expects the body in Atlassian Document Format (ADF)** — a
-structured JSON document — not a markdown or plain string. This is the
-single most common surprise when moving from the older v2 API, which
-accepted a plain string. A minimal ADF paragraph document is short enough to
-construct by hand, but get the exact shape from Atlassian's ADF
-documentation; a malformed document is rejected, and the same requirement
-applies to `description` and any textarea custom field. If ADF turns out to
-be more friction than it's worth for comment-writing, v2 remains available
-and accepts plain strings — that's a decision to make and record, not to
-discover mid-run.
+structured JSON document, not markdown and not a plain string. This is the
+single most common surprise when moving from the older v2 API. A plain
+string here is a 400.
+
+```sh
+curl -sS -u "$JIRA_AUTH" -X POST "$JIRA_BASE/rest/api/3/issue/ISSUE-1/comment" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json' -d @- <<'JSON'
+{
+  "body": {
+    "type": "doc",
+    "version": 1,
+    "content": [
+      {"type": "paragraph", "content": [
+        {"type": "text", "text": "Plain sentence, then "},
+        {"type": "text", "text": "bold words", "marks": [{"type": "strong"}]},
+        {"type": "text", "text": " and a link.", "marks": [
+          {"type": "link", "attrs": {"href": "https://example.com"}}
+        ]}
+      ]},
+      {"type": "paragraph", "content": [{"type": "text", "text": "Second paragraph."}]}
+    ]
+  }
+}
+JSON
+```
+
+The shape to internalise: one `doc` with `version: 1`, whose `content` is a
+list of block nodes; a `paragraph`'s own `content` is a list of `text`
+nodes; emphasis is a **mark on a text node**, never inline syntax. Writing
+`**bold**` in a `text` node renders those asterisks literally. A blank line
+between paragraphs is two `paragraph` nodes, not a `\n`. The same
+requirement applies to `description` and to any textarea custom field.
+
+If ADF is more friction than it's worth, **v2 is still available and takes
+a plain string** — same path, different version segment:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -X POST "$JIRA_BASE/rest/api/2/issue/ISSUE-1/comment" \
+  -H 'Content-Type: application/json' -d '{"body": "Plain text, wiki markup honoured."}'
+```
+
+Pick one and record it in [`../SKILL.md`](../SKILL.md); discovering the
+choice mid-run is how a comment footer ends up formatted two ways.
 
 ### 5. Transition state
 
-Covered above — it's the structural mismatch, not a footnote.
+The structural mismatch above, in two calls. First ask what's available
+*from the current status*, and pick by destination rather than by the
+transition's own name:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/issue/ISSUE-1/transitions"
+```
+
+That returns `{"transitions": [{"id": "31", "name": "Start work", "to":
+{"name": "In Progress", "statusCategory": {"key": "indeterminate"}}}, ...]}`.
+Select the id by `to.name`:
+
+```sh
+target='<in-progress-status>'
+tid=$(curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/issue/ISSUE-1/transitions" \
+  | jq -r --arg to "$target" '.transitions[] | select(.to.name == $to) | .id')
+```
+
+An empty `$tid` is the loud-failure case described above: report the
+available `to.name` values rather than guessing an id. Then execute it —
+also a 204 with no body, and the place to fold in the assignment from
+operation 3:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -X POST "$JIRA_BASE/rest/api/3/issue/ISSUE-1/transitions" \
+  -H 'Content-Type: application/json' -d @- <<JSON
+{
+  "transition": {"id": "$tid"},
+  "fields": {"assignee": {"accountId": "<accountId>"}}
+}
+JSON
+```
+
+The terminal states are transitions like any other — there is no separate
+close or resolve call. If the workflow sets `resolution` on the way to a
+`done`-category status through a transition screen, it goes in the same
+`fields` object: `"resolution": {"name": "Won't Do"}`.
 
 ### 6. Create
 
-`POST /rest/api/3/issue` with `fields` containing at minimum the project,
-the issue type and the summary. Two things that make this fail confusingly:
+```sh
+curl -sS -u "$JIRA_AUTH" -X POST "$JIRA_BASE/rest/api/3/issue" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json' -d @- <<JSON
+{
+  "fields": {
+    "project": {"key": "$JIRA_PROJECT"},
+    "issuetype": {"name": "<issue-type-name>"},
+    "summary": "One-line title",
+    "labels": ["<refined-label>"],
+    "assignee": {"accountId": "<accountId>"},
+    "description": {
+      "type": "doc", "version": 1,
+      "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Body."}]}]
+    }
+  }
+}
+JSON
+```
+
+Returns `{"id": "...", "key": "$JIRA_PROJECT-123", "self": "..."}`. Note
+the issue lands in whatever status the workflow's initial step is — you
+cannot pass a status on create, so a create-then-transition pair is the only
+way to file something anywhere other than the entry column.
+
+Two things that make this fail confusingly, both answered by createmeta:
 
 - **A field must be present on the project's create screen to be settable.**
-  Passing a field that isn't gets you a 400 naming the field, which reads
-  like the field doesn't exist. `GET /rest/api/3/issue/createmeta` (verify
-  the current path) is how you find out what's actually accepted.
+  Passing one that isn't gets you a 400 naming the field, which reads like
+  the field doesn't exist.
 - **The issue type is per-project** and named by the project's own
-  configuration. Look it up; don't assume "Task" exists.
+  configuration. Look it up; don't assume `Task` exists.
+
+```sh
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/issue/createmeta/$JIRA_PROJECT/issuetypes"
+
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/issue/createmeta/$JIRA_PROJECT/issuetypes/<issueTypeId>"
+```
+
+The bare `/rest/api/3/issue/createmeta` that older scripts use is
+deprecated in favour of those two per-project paths.
 
 ### 7. Labels
 
 Jira labels are add/remove operations on an update document, so the
 contract's replace-semantics warning does **not** apply on this path:
 
-```
-PUT /rest/api/3/issue/{issueIdOrKey}
-{"update": {"labels": [{"add": "<label>"}, {"remove": "<other-label>"}]}}
+```sh
+curl -sS -u "$JIRA_AUTH" -X PUT "$JIRA_BASE/rest/api/3/issue/ISSUE-1" \
+  -H 'Content-Type: application/json' -d @- <<'JSON'
+{"update": {"labels": [{"add": "<incoming-label>"}, {"remove": "<outgoing-label>"}]}}
+JSON
 ```
 
 It *does* apply if you use `{"fields": {"labels": [...]}}` instead, which
@@ -199,13 +395,62 @@ Two divergences from GitHub-style labels:
   contract's vocabulary needs a hyphen or underscore form decided during
   specialization.
 
+## Parent / child links
+
+Not one of the contract's seven operations, but every stage that splits work
+into sub-items needs it, and **hierarchy here is three different
+mechanisms**: sub-tasks and (on team-managed projects) the epic link both
+live on the `parent` field, while everything else is `issuelinks` with a
+link type. Neither comes back unless requested.
+
+Set or move a parent — an ordinary field edit, so `fields` is correct here
+even though operation 7 prefers `update`:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -X PUT "$JIRA_BASE/rest/api/3/issue/ISSUE-2" \
+  -H 'Content-Type: application/json' -d @- <<'JSON'
+{"fields": {"parent": {"key": "ISSUE-1"}}}
+JSON
+```
+
+Passing `"parent": null` detaches it. The same `parent` key works inside
+operation 6's create payload, which is cheaper than creating then linking.
+
+"Find this issue's children" is a **JQL query, not a field read** — there is
+no children array on the issue:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -X POST "$JIRA_BASE/rest/api/3/search/jql" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json' -d @- <<'JSON'
+{"jql": "parent = ISSUE-1 ORDER BY created ASC", "fields": ["summary", "status", "assignee"]}
+JSON
+```
+
+Non-hierarchical relations (blocks, duplicates, relates-to) are a separate
+endpoint, with the link type names coming from the instance's own
+configuration rather than a fixed vocabulary:
+
+```sh
+curl -sS -u "$JIRA_AUTH" -H 'Accept: application/json' \
+  "$JIRA_BASE/rest/api/3/issueLinkType"
+
+curl -sS -u "$JIRA_AUTH" -X POST "$JIRA_BASE/rest/api/3/issueLink" \
+  -H 'Content-Type: application/json' -d @- <<'JSON'
+{
+  "type": {"name": "Blocks"},
+  "inwardIssue": {"key": "ISSUE-2"},
+  "outwardIssue": {"key": "ISSUE-1"}
+}
+JSON
+```
+
+`inward` vs `outward` decides direction, and which is which depends on the
+link type's own `inward`/`outward` description strings from that first call
+— read them rather than guessing, since getting it backwards produces a link
+that reads as the exact opposite of what was meant.
+
 ## Other quirks worth knowing before they bite
 
-- **Hierarchy is three different mechanisms.** Sub-tasks and (on
-  team-managed projects) the epic link both live on the `parent` field;
-  everything else is `issuelinks` with a link type. Neither comes back
-  unless requested, and "find this issue's children" is a JQL query
-  (`parent = <KEY>`), not a field read.
 - **Company-managed vs team-managed projects behave differently** — most
   visibly around workflows, statuses and epic/parent handling. Record which
   kind the owner's project is in `SKILL.md`, because it changes the answers
