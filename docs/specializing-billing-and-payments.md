@@ -406,7 +406,7 @@ now says so in as many words. That is **finding 8**.
 
 ---
 
-## 8. Tax, and the two questions the agent refused to answer
+## 8. Tax, which the agent named precisely and refused to answer
 
 The stub calls this a legal question with an engineering surface and says
 never to present a conclusion as settled on the owner's behalf. Followed
@@ -423,11 +423,12 @@ model, which is why it went to her before any billing code was written:
 - The three Belgian practices. A cross-border EU B2B sale is a different
   question from the 31 domestic ones, and the agent's job was to notice
   that the number three is not zero, not to answer it.
-- Whether her customers' own VAT position — physiotherapy practices being
-  an exempt-supply sector — changes anything about what Duimstok must
-  charge or show them. The agent's stated position: it does not know, this
-  is exactly where a model's recollection of tax law is worse than silence,
-  and the question goes to a professional.
+- Whether her customers' own VAT position changes anything about what
+  Duimstok must charge or show them, healthcare being a sector where that
+  question comes up at all. Note what the agent did *not* do here: state
+  what that position is. It does not know, this is exactly where a model's
+  recollection of tax law is worse than silence, and naming the question
+  is the whole of the contribution.
 - Record retention: how long, and where.
 
 One more owner-side item surfaced from the provider's own documentation
