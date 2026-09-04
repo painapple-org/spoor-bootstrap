@@ -303,6 +303,15 @@ whether one exists or whether it works.
 - **Where an alert goes.** One destination, per
   [`skills/comms-channel`](../comms-channel/SKILL.md).
 
+The signals above are this file's, and stay this file's. Putting them on a
+page for the owner to look at is a separate artifact with its own concerns
+— see [`skills/internal-dashboard`](../internal-dashboard/SKILL.md), which
+owns the dashboard's project shape and its honesty rules and points back
+here rather than restating any signal. Note that a dashboard is *not*
+itself a signal: it has no beat of its own, so it cannot tell you it has
+stopped refreshing, which is precisely the live-versus-abandoned failure
+the bullet above describes.
+
 ### What "monitor" means when you don't have the host
 
 `AGENTS.md` says this agent monitors the product; nothing anywhere grants

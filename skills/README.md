@@ -114,3 +114,13 @@ whole-folder symlinks described above.
   however many environments it has, how it's rolled back, whether the data
   is backed up and whether a restore has ever been verified, how the agent
   knows it's healthy, and what it may fix unattended.
+- [`internal-dashboard`](./internal-dashboard/SKILL.md) — *stub.* Building
+  an internal operations dashboard: whether one is worth building at all,
+  the standalone-project shape that keeps it out of the product's repo and
+  compose file, the service-naming prefix convention, the rule that a page
+  shows real state or says out loud that it doesn't, and verifying it
+  serves rather than merely started. Owns *what it serves* only — reaching
+  it privately is
+  [`private-networking`](./private-networking/SKILL.md)'s, and the signals
+  it displays are
+  [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md)'s.

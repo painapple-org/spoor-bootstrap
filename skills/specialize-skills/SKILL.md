@@ -110,7 +110,16 @@ Work through them in order; later ones depend on earlier answers:
    nothing needs it yet", rather than provisioning a network for a tool
    that doesn't exist. Anything the owner would have to provision on the
    day one does joins the shopping list.
-7. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
+7. [`skills/internal-dashboard`](../internal-dashboard/SKILL.md) — whether
+   this deployment wants an internal operations dashboard at all, and if
+   so, the stack it's built in and the pages it has. It comes last because
+   it depends on both answers before it: its page list is drawn from the
+   health signals item 5 establishes, and it is reached over whatever item
+   6 recorded. Take the "no" answer as seriously here as there — that file
+   opens by saying not to build one speculatively, so "not wanted, the
+   comms channel is enough" finishes this item legitimately and leaves its
+   remaining markers moot.
+8. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
    to specialize. It is already a finished, deliberately non-negotiable
    requirement. Do not edit it to suit a preference; if it applies, follow
    it.

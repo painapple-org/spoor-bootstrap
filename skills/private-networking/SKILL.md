@@ -192,10 +192,12 @@ provision at that point.
 ## How other skills should use this
 
 Anything that needs private, owner-only reachability points here and does
-not re-solve it. A future dashboard skill, a preview-environment skill, an
-admin-tool skill: each owns *what it serves*, and this file owns *how the
-owner reaches it privately*. In particular, don't restate the sidecar
-pattern above in a second file — that is exactly the copied fact
+not re-solve it.
+[`skills/internal-dashboard`](../internal-dashboard/SKILL.md) is the one
+that exists today and works exactly this way; a preview-environment skill
+or an admin-tool skill would join it on the same terms. Each owns *what it
+serves*, and this file owns *how the owner reaches it privately*. In
+particular, don't restate the sidecar pattern above in a second file — that is exactly the copied fact
 [`skills/specialize-skills`](../specialize-skills/SKILL.md)'s one-home rule
 is about, and the copy is what a later reader acts on after this file has
 moved on.
