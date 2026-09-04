@@ -116,9 +116,26 @@ building any product code until all of it is done.
       and gets refused if the account lacks write access, while writing
       nothing.
 
-      **Do the same for this bootstrap checkout's own `origin`**, not just
-      the product repo. Steps 6 and 7 both ship PRs *here*, so this repo's
-      remote is as load-bearing as the product repo's, and it is a
+      **Check first that there is somewhere to run it from.**
+      `.env.example` defines `PRODUCT_REPO_PATH` as a path *or a clone
+      target*, so on a first boot it often isn't a directory on this box
+      yet — and the command above needs a working tree. If it isn't one,
+      make it one before running the check: clone the remote to that path
+      for an existing repo, or for a brand-new one (a valid answer to the
+      interview's repo question) create the repo on my hosting account,
+      then clone it to that path.
+
+      Either way the repo has to end up with a remote you can reach — a
+      local `git init` with no remote will fail this check rather than pass
+      it — and it has to exist at all, since step 6 has nowhere to land
+      otherwise. If you can't get there, say so rather than skipping the
+      check. Creating the *repo* on my hosting account is fine to do for me
+      if I ask you to and you have the access — it's creating an *account*
+      that's mine alone, per (b).
+
+      **Then do the same for this bootstrap checkout's own `origin`**, not
+      just the product repo. Steps 6 and 7 both ship PRs *here*, so this
+      repo's remote is as load-bearing as the product repo's, and it is a
       different repo with its own permissions — write access to one implies
       nothing about the other. Same `git push --dry-run` of a throwaway
       branch name, run from this checkout. Check the PR-opening credential
@@ -139,24 +156,12 @@ building any product code until all of it is done.
       step 6 commits anything** — steps 6 and 7 write real operational
       detail about my deployment into tracked files here (see step 7), a
       fork of a public repo can never be made private, and this is the
-      last moment before that becomes permanently public.
-
-      **Check first that there is somewhere to run it from.**
-      `.env.example` defines `PRODUCT_REPO_PATH` as a path *or a clone
-      target*, so on a first boot it often isn't a directory on this box
-      yet — and the command above needs a working tree. If it isn't one,
-      make it one before running the check: clone the remote to that path
-      for an existing repo, or for a brand-new one (a valid answer to the
-      interview's repo question) create the repo on my hosting account,
-      then clone it to that path.
-
-      Either way the repo has to end up with a remote you can reach — a
-      local `git init` with no remote will fail this check rather than pass
-      it — and it has to exist at all, since step 6 has nowhere to land
-      otherwise. If you can't get there, say so rather than skipping the
-      check. Creating the *repo* on my hosting account is fine to do for me
-      if I ask you to and you have the access — it's creating an *account*
-      that's mine alone, per (b).
+      last moment before that becomes permanently public. Determine that
+      rather than assuming it: `gh repo view --json isFork,visibility`
+      against this checkout's `origin` answers both halves in one call
+      (or the equivalent API read on another host). `install.sh`'s URL
+      comparison cannot — a private repo I created and a public fork both
+      pass it identically.
 
    e. Write down what actually worked in the `Auth` section of
       skills/git-pr-conventions/SKILL.md: the exact push invocation that
@@ -326,7 +331,10 @@ building any product code until all of it is done.
    specific deployment, and where it lands is decided by whatever `origin`
    is. Summarize in a couple of lines what this pass is about to commit and
    which repo it goes to, and if that repo is a public fork say so plainly
-   and get my go-ahead first, per step 5(d).
+   and get my go-ahead first, per step 5(d) — which is also where the check
+   for that lives (`gh repo view --json isFork,visibility` against this
+   checkout's `origin`). Read the answer off that rather than inferring it
+   from what `origin`'s URL looks like.
 
    **Then ship the pass.** Everything you just rewrote is a tracked file in
    this bootstrap repo, and specialization that exists only in one
