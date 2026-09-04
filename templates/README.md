@@ -32,6 +32,14 @@ a snippet library. Each entry is a whole working thing or it doesn't belong.
 
 This list is the one enumeration of what exists here.
 
+- [`synthetic-check/`](./synthetic-check/README.md) — a scheduled synthetic
+  check of a product's own user-facing flows: a stdlib-only runner that drives
+  each flow, proves its real side effect, cleans up its marked test data and
+  alerts once per distinct failure, one example flow implementing that
+  contract, a toy product to point it at, and a verification script that
+  breaks that product ten ways and asserts the check catches each one. Owned
+  by
+  [`skills/synthetic-monitoring`](../skills/synthetic-monitoring/SKILL.md).
 - [`internal-dashboard/`](./internal-dashboard/README.md) — a mesh-only
   internal operations dashboard: three pages reading live disk, container and
   git state, a Dockerfile, a compose file pairing it with the mesh sidecar

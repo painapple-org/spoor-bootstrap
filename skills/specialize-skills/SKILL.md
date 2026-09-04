@@ -98,7 +98,22 @@ Work through them in order; later ones depend on earlier answers:
    already has users it is the most load-bearing thing in this pass — an
    honest "nothing is backed up" belongs on the shopping list, not in a
    hedge.
-6. [`skills/private-networking`](../private-networking/SKILL.md) — which
+6. [`skills/synthetic-monitoring`](../synthetic-monitoring/SKILL.md) — which
+   of this product's user-facing flows get a continuous synthetic check, what
+   counts as proof of each one's side effect, whether the product can even be
+   asked to confirm that side effect yet, the marker-and-cleanup arrangement
+   the owner agreed to for test data in production, the cadence and where its
+   schedule lives, and what watches for the check's own silence. It comes
+   after `deploy-and-monitor` because it is the gap that pass leaves: item 5
+   establishes which health signals exist and what they can see, and a
+   synthetic check is what covers the flows none of them do. **"The product
+   has no users yet, so nothing is worth checking" is a real answer** — record
+   it as decided rather than leaving the file unasked, and note that the
+   trigger to revisit it is the product getting its first real user. Where the
+   evidence read a check needs doesn't exist in the product yet, that is
+   ordinary work to do rather than a blocker, and it belongs on the shopping
+   list only if somebody else owns the product's code.
+7. [`skills/private-networking`](../private-networking/SKILL.md) — which
    mesh VPN this deployment already has or joins, what is exposed on it,
    who besides this box can reach it, and where each node's auth key
    lives. It comes after `deploy-and-monitor` because it is the same
@@ -110,19 +125,19 @@ Work through them in order; later ones depend on earlier answers:
    nothing needs it yet", rather than provisioning a network for a tool
    that doesn't exist. Expected rather than required: where the interview's
    internal-tooling question came back yes, the answer is the mesh agreed
-   on and what the owner has to provision for it, and item 7 is where the
+   on and what the owner has to provision for it, and item 8 is where the
    tool itself lands. Anything the owner would have to provision on the
    day one does joins the shopping list.
-7. [`skills/internal-dashboard`](../internal-dashboard/SKILL.md) — whether
+8. [`skills/internal-dashboard`](../internal-dashboard/SKILL.md) — whether
    this deployment wants an internal operations dashboard at all, and if
-   so, the stack it's built in and the pages it has. It comes after the two
-   items before it because it depends on both: its page list is drawn from the
-   health signals item 5 establishes, and it is reached over whatever item
-   6 recorded. Take the "no" answer as seriously here as there — that file
+   so, the stack it's built in and the pages it has. It comes this late
+   because it depends on two earlier items: its page list is drawn from the
+   health signals item 5 establishes, and it is reached over whatever item 7
+   recorded. Take the "no" answer as seriously here as there — that file
    opens by saying not to build one speculatively, so "not wanted, the
    comms channel is enough" finishes this item legitimately and leaves its
    remaining markers moot.
-8. [`skills/billing-and-payments`](../billing-and-payments/SKILL.md) —
+9. [`skills/billing-and-payments`](../billing-and-payments/SKILL.md) —
    **whether this deployment's product charges anyone at all**, which that
    file makes its first question because every other answer in it is moot
    until it's yes. "Nothing is sold yet" is the expected first-boot answer
@@ -138,11 +153,11 @@ Work through them in order; later ones depend on earlier answers:
    credential is an ordinary secret under item 5's own secrets section. The
    tax half is a legal question rather than an engineering one, so an
    unanswered one belongs on the shopping list and never in a hedge.
-9. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
-   to specialize. It is already a finished, deliberately non-negotiable
-   requirement. Do not edit it to suit a preference; if it applies, follow
-   it.
-10. [`skills/skill-authoring`](../skill-authoring/SKILL.md) — nothing to
+10. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
+    to specialize. It is already a finished, deliberately non-negotiable
+    requirement. Do not edit it to suit a preference; if it applies, follow
+    it.
+11. [`skills/skill-authoring`](../skill-authoring/SKILL.md) — nothing to
     specialize either, and nothing to fill in: it is generic by
     construction, since how to write a skill doesn't vary by deployment.
     It is in this list because this pass is the commonest place its subject

@@ -368,6 +368,19 @@ whether one exists or whether it works.
 - **Where an alert goes.** One destination, per
   [`skills/comms-channel`](../comms-channel/SKILL.md).
 
+Every signal above answers a question about the *machinery* — a process is up,
+a disk has room, a deploy produced a fresh success record. None of them
+answers whether a person could still complete the thing the business exists
+for, and that question fails silently: a health endpoint answers 200 with a
+broken checkout behind it. Continuously re-proving the product's own
+user-facing flows, by driving them the way a user does and checking the real
+side effect happened, is
+[`skills/synthetic-monitoring`](../synthetic-monitoring/SKILL.md)'s — which
+flows are worth it, what counts as proof, and how it writes to production
+without polluting it. A synthetic check is one more entry in the inventory
+above, so record it there like any other signal; nothing about how to choose
+or operate one is restated here.
+
 The signals above are this file's, and stay this file's. Putting them on a
 page for the owner to look at is a separate artifact with its own concerns
 — see [`skills/internal-dashboard`](../internal-dashboard/SKILL.md), which
