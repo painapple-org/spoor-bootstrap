@@ -114,6 +114,31 @@ building any product code until all of it is done.
       and gets refused if the account lacks write access, while writing
       nothing.
 
+      **Do the same for this bootstrap checkout's own `origin`**, not just
+      the product repo. Steps 6 and 7 both ship PRs *here*, so this repo's
+      remote is as load-bearing as the product repo's, and it is a
+      different repo with its own permissions — write access to one implies
+      nothing about the other. Same `git push --dry-run` of a throwaway
+      branch name, run from this checkout. Check the PR-opening credential
+      against this repo too, per (b).
+
+      Note what `install.sh` did and didn't establish here, so you don't
+      mistake it for this check: it compared `origin`'s URL against
+      upstream's and refused only on a literal match, and if it couldn't
+      read an `origin` at all it logged NOT VERIFIED and continued. It
+      never contacted the remote and never tested write access. This is
+      the first time anything does.
+
+      If the dry-run against this checkout's `origin` fails, or `origin`
+      is missing or still upstream's URL, stop and tell me, and see (f):
+      the fix is a remote I own, and README.md's "Path to a running
+      instance" owns the choice between a private repo and a public fork.
+      **If `origin` is a public GitHub fork, say so explicitly now, before
+      step 6 commits anything** — steps 6 and 7 write real operational
+      detail about my deployment into tracked files here (see step 7), a
+      fork of a public repo can never be made private, and this is the
+      last moment before that becomes permanently public.
+
       **Check first that there is somewhere to run it from.**
       `.env.example` defines `PRODUCT_REPO_PATH` as a path *or a clone
       target*, so on a first boot it often isn't a directory on this box
@@ -239,12 +264,26 @@ building any product code until all of it is done.
    Show me the PR link.
 
    **Then ship step 5(e)'s edit too — same loop, different repo.** That
-   auth answer went into a tracked file in this bootstrap checkout, and
-   `install.sh` refused to start until `origin` here pointed at a repo I
-   control, precisely so that this is possible. Branch off this repo's
-   default branch, commit, push to `origin`, open a PR, merge it yourself.
-   Two PRs by the end of this step, then: one in the product repo for the
-   doc above, one here for the auth answer.
+   auth answer went into a tracked file in this bootstrap checkout, whose
+   `origin` you verified you can push to and open a PR against in step
+   5(d) — that verification, not `install.sh`, is what makes this possible.
+   (`install.sh` only refuses an `origin` whose URL is literally upstream's;
+   it never tested write access.) Branch off this repo's default branch,
+   commit, push to `origin`, open a PR, merge it yourself. Two PRs by the
+   end of this step, then: one in the product repo for the doc above, one
+   here for the auth answer.
+
+   **Name the target repo explicitly on every PR and merge command you run
+   against this checkout.** `gh` resolves a clone's base repo to its
+   network parent, so from a fork of this template `gh pr create` defaults
+   to opening the PR against `painapple-org/spoor-bootstrap` — someone
+   else's public repo, which you cannot merge and which would publish this
+   deployment's specifics into a public PR. Pass `--repo <my-owner>/<my-repo>`
+   (and `--head <my-owner>:<branch>` where the command takes one) on every
+   `gh pr create`/`gh pr merge` here, and check the URL the command printed
+   names my repo before you merge. This is the same class of mistake
+   skills/git-pr-conventions/SKILL.md's "Which repo are you even in?"
+   warns about for scratch clones; that section is its home.
 
    It happens in this step rather than back in step 5 for one reason: every
    commit carries the process trailer, and the trailer's literal text is
@@ -272,13 +311,27 @@ building any product code until all of it is done.
    genuinely blocked on an account I haven't created yet, leave the marker,
    name the blocker in one line, and carry it into step 8.
 
+   **Before you commit any of it, tell me what it contains.** A specialized
+   pass writes real operational detail about my business into tracked files
+   here: which identities on my comms channel may instruct you, which
+   account your pushes authenticate as and at what permission level, my
+   tracker's scope identifier and host specifics, which of my branches must
+   never be force-pushed. None of it is a credential — those stay in `.env`,
+   which is gitignored — but all of it is identifying detail about a
+   specific deployment, and where it lands is decided by whatever `origin`
+   is. Summarize in a couple of lines what this pass is about to commit and
+   which repo it goes to, and if that repo is a public fork say so plainly
+   and get my go-ahead first, per step 5(d).
+
    **Then ship the pass.** Everything you just rewrote is a tracked file in
    this bootstrap repo, and specialization that exists only in one
    uncommitted working tree has no revert point, no reviewable diff and no
    backup — which is the whole reason step 6 went through a PR instead of
    committing to the default branch. So: branch off this repo's default
    branch, commit, push to `origin`, open a PR, merge it yourself, per
-   skills/git-pr-conventions/SKILL.md, exactly as in step 6.
+   skills/git-pr-conventions/SKILL.md, exactly as in step 6 — including
+   naming the target repo explicitly on the PR and merge commands, for the
+   reason step 6 gives.
 
    One PR for the whole pass, not one per skill file. The scoped one-file
    re-run this step is built for — when a step-8 provisioning blocker
@@ -308,11 +361,11 @@ building any product code until all of it is done.
 
 That's the whole first-boot flow: read `AGENTS.md`, interview, defer to the
 stack SKILL if relevant, agree on an autonomy model, write `.env`, get a git
-identity that actually pushes, ship the conventions doc and the auth answer
-through real PRs, specialize the skill stubs and ship those through one
-more, hand back a provisioning list. Three PRs, in two repos: the product
-repo gets the conventions doc, this one gets the edits first boot makes to
-itself.
+identity that actually pushes to both repos, ship the conventions doc and the
+auth answer through real PRs, specialize the skill stubs and ship those
+through one more, hand back a provisioning list. Three PRs, in two repos:
+the product repo gets the conventions doc, this one gets the edits first
+boot makes to itself.
 
 The ordering is deliberate: nothing in it depends on something a later step
 promises to deliver, which is why git auth sits ahead of the first push
