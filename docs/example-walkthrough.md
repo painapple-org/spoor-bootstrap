@@ -688,7 +688,7 @@ closed at all until she answers.
     own PRs as work items.
 ````
 
-Three things about that "after" worth noticing, because they're where the
+Four things about that "after" worth noticing, because they're where the
 instructions in
 [`../skills/specialize-skills/SKILL.md`](../skills/specialize-skills/SKILL.md)
 actually bite:
@@ -713,10 +713,23 @@ actually bite:
   directory's own instruction. Git holds them if Priya ever migrates.
   Keeping notes for two trackers she doesn't use is exactly the "no state
   that isn't real right now" rule this repo applies to itself.
+- **The skills index got corrected at the end of the pass**, which is the
+  one step in it that isn't per-file. The adapter deletion above is exactly
+  what makes it necessary: [`../skills/README.md`](../skills/README.md)'s
+  "Current skills" list described `work-tracker`'s `adapters/` as reference
+  notes for three trackers, and after this pass that directory holds one —
+  so the entry was rewritten to describe what's in there now, and
+  `work-tracker`'s *stub* label became *partial stub* to match the heading
+  the file itself now carries. The same sweep dropped the label from every
+  other entry whose last marker this pass removed, and left it on the ones
+  still carrying markers. That list is the only enumeration of what exists
+  under `skills/`, so whatever it still says is what the next session
+  believes — which makes leaving it alone a way of shipping a false fact,
+  not a tidiness lapse. `specialize-skills` states the step.
 
 The PR that "same PR" refers to is one PR against Priya's own private copy
-of the bootstrap repo covering the whole pass — every stub the pass rewrote
-and the adapter deletions together. The one marker that survived comes back
+of the bootstrap repo covering the whole pass — every stub the pass rewrote,
+the adapter deletions and the index correction together. The one marker that survived comes back
 as its own scoped PR later, once item 3 on the shopping list below exists.
 
 ### The other half of the pass: which stages exist at all

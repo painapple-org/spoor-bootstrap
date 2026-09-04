@@ -60,6 +60,16 @@ You don't need a fix to open an issue.
 - **Filling in a `TODO(specialize)` marker with a specific value.** Those
   markers exist for each deployment to answer for itself; a value that's
   right for your tracker is a wrong value shipped to everyone else's.
+- **A stage prompt file in [`prompts/`](./prompts/README.md).** That
+  directory ships with the template and no stage prompt, deliberately: which
+  stages a deployment runs is a per-deployment decision, and a prompt names
+  that deployment's tracker states, labels and test command. A pre-written
+  one is a confident wrong instruction obeyed on every scheduled run — the
+  same class of thing as filling in a `TODO(specialize)` marker above.
+  [`prompts/README.md`](./prompts/README.md) owns that reasoning. Fixes to
+  [`prompts/STAGE_TEMPLATE.md`](./prompts/STAGE_TEMPLATE.md)'s skeleton, or
+  to that README's per-stage notes, are welcome — an actual `refine.md` is
+  not.
 - **Working integration code for one particular work tracker, comms channel
   or host.** The repo deliberately ships none — reference notes an agent
   reads (the adapters above), yes; a client library or wired-up API call,
@@ -130,7 +140,7 @@ is worse than a crash, because it leaves no handle to grab.
 - A top-of-file comment block explaining the script's scope and what it
   deliberately does *not* do.
 
-### Markdown and skill files
+### Markdown, skill and prompt files
 
 - Prose hard-wrapped at roughly 76 columns, matching the existing files.
 - A `SKILL.md` opens with YAML frontmatter carrying `name` and a
@@ -143,6 +153,16 @@ is worse than a crash, because it leaves no handle to grab.
   `## Status: PARTIAL STUB — needs specialization`, followed by a sentence
   saying which parts are real now and which wait on specialization. Nothing
   else — a third phrasing is what makes the heading unskimmable.
+- [`prompts/STAGE_TEMPLATE.md`](./prompts/STAGE_TEMPLATE.md) is a skeleton
+  to be copied per stage, not a document to be completed here: every value
+  in it is an angle-bracketed `<...>` placeholder naming what a deployment
+  has to answer, and its numbered sections are the bones
+  [`prompts/README.md`](./prompts/README.md) refers to per stage. A change
+  that adds or removes a section changes what every stage prompt is expected
+  to contain, so it belongs with the corresponding change to that README's
+  per-stage notes in the same PR. Don't replace a `<...>` with a concrete
+  value to make the template read better — that's the same failure as
+  filling in a `TODO(specialize)` marker.
 - **Harness-agnostic.** Nothing under `skills/` may assume a particular
   agentic harness's tool syntax, config format or file paths. If it only
   makes sense under one harness, it doesn't belong there.

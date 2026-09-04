@@ -102,7 +102,23 @@ building any product code until all of it is done.
    a. Run `gh auth status`. If it already reports an authenticated
       account, tell me which account and what scopes, and move on to (c).
 
-   b. If it doesn't, walk me through `gh auth login` here in the chat —
+   b. **First, check whether `gh` applies to this deployment at all.** If
+      `origin` here is the third remote shape — a plain git remote with no
+      GitHub-style host behind it, a bare repo on a box, a self-hosted
+      server whose API nobody turned on (README.md's "Path to a running
+      instance" owns the three shapes) — then **skip `gh auth login`
+      entirely.** There is no API to authenticate against, so an
+      unauthenticated `gh` is the correct end state here rather than a gap,
+      and logging in against github.com would establish a credential for a
+      host nothing in this deployment talks to. Tell me that's the case and
+      why, then go straight to (d): what actually has to work on this shape
+      is whatever credential the `git push` itself rides on (an SSH key, a
+      credential helper), and (d) is what verifies it. Record it in (e)
+      along with the no-PR-mechanism finding, which is the same fact from
+      the other side. Everything below in this sub-step is about the two
+      GitHub-shaped remotes.
+
+      Otherwise, walk me through `gh auth login` here in the chat —
       tell me which prompts to expect and which answers you need (github.com
       vs. an enterprise host, HTTPS vs. SSH, browser vs. pasting a token),
       then have me run it and re-check `gh auth status` yourself. If I'd
@@ -115,7 +131,10 @@ building any product code until all of it is done.
       though: that goes through the hosting provider's API, so `gh` (or
       whatever you'll call the API with) needs a token of its own even if
       the push itself rides an SSH key. Check both, not just the one that
-      happens to work first.
+      happens to work first. (On the shape this sub-step's first paragraph
+      sends past all of this there is no such API to hold a token for —
+      that's the same finding as "no PR mechanism", which (e) has you
+      establish and record.)
 
       Do not create a GitHub account for me, and don't try to register one
       for yourself — that's mine to do, per AGENTS.md's self-provisioning
@@ -186,6 +205,13 @@ building any product code until all of it is done.
       (or the equivalent API read on another host). `install.sh`'s URL
       comparison cannot — a private repo I created and a public fork both
       pass it identically.
+      **That check only applies to the two GitHub-shaped remotes.** On the
+      plain-git-remote shape from (b) there is no fork relationship and no
+      visibility flag to read, so the question doesn't arise: `gh repo view`
+      just errors against a remote with no API behind it, and README's own
+      note on that shape says the fork privacy tradeoff doesn't apply
+      because the box is mine. Skip the check there and say that's why,
+      rather than running it and reporting its error to me as a finding.
 
    e. Write down what actually worked in the `Auth` section of
       skills/git-pr-conventions/SKILL.md: the exact push invocation that
