@@ -198,6 +198,24 @@ building any product code until all of it is done.
       you have the access, on either shape — it's creating an *account*
       that's mine alone, per (b).
 
+      **Pushing a branch is not the same as being able to merge one
+      either, so check that too, per repo.** Step 6 doesn't just push — it
+      merges. On a repo that already existed before today, the default
+      branch is usually protected, and the common shape of that protection
+      makes a self-merge impossible on purpose: an approving review from
+      someone other than the author, required status checks, bypassing
+      disallowed for everyone. Read the live settings rather than asking me
+      to remember them — they're queryable on a GitHub-shaped remote (the
+      branch-protection and rulesets endpoints) and I may well be wrong
+      about what we configured two years ago. If a self-merge isn't
+      available, don't discover it when step 6's merge is refused and don't
+      read the refusal as an auth failure: bring me the substitute now.
+      skills/git-pr-conventions/SKILL.md's "When you are not allowed to
+      merge your own PR" section is the one home for the options and for
+      what not to do about it — notably that changing my protection settings
+      to unblock yourself is a stop-and-ask, not a fix. Record the answer in
+      (e).
+
       **Then do the same for this bootstrap checkout's own `origin`**, not
       just the product repo. Steps 6 and 7 both ship PRs *here*, so this
       repo's remote is as load-bearing as the product repo's, and it is a
@@ -242,7 +260,9 @@ building any product code until all of it is done.
       succeeded, which account it authenticates as, any protocol quirk you
       hit, what you found when you checked the PR-opening credential in
       (b) — including "it turned out to be the same one", which is a
-      finding about this deployment and not a general guarantee — and
+      finding about this deployment and not a general guarantee —
+      **whether I may merge my own PRs on each repo, and what we agreed
+      instead where I may not**, and
       **whether this remote has a PR-opening mechanism at all.**
 
       That last one is a real question here, not a formality. A plain git
@@ -369,7 +389,12 @@ building any product code until all of it is done.
    commit straight to the default branch — this is the first change that
    establishes the convention, so it shouldn't be the one exception to it.
    Show me the PR link — or, on the review-branch protocol, the merge
-   commit and the commands I can read the diff with.
+   commit and the commands I can read the diff with. If step 5(d) found
+   that you may not merge your own PRs on this repo, the merge is the one
+   part of this that runs the substitute we agreed there instead; the
+   branch, the commit, the push and the PR are unchanged, and an
+   unmerged-but-open PR waiting on my review is a finished step 6, not a
+   blocked one.
 
    **On a product repo you created empty in step 5(d) there is no default
    branch to branch off yet**, and that is not a reason to fall back to

@@ -59,7 +59,9 @@ from the work tracker:
    (captured by [`STARTUP.md`](../../STARTUP.md) step 6), not here.
 3. Push the branch.
 4. Open a PR describing the change and linking the work item.
-5. Merge it yourself once the review pass has checked the diff.
+5. Merge it yourself once the review pass has checked the diff — where the
+   remote permits it. On a repo whose default branch is protected, it may
+   not: see "When you are not allowed to merge your own PR" below.
 
 The PR exists to give a clean revert point and a reviewable diff, **not** to
 gate on human approval. Do not wait for per-change confirmation for routine
@@ -77,6 +79,65 @@ Steps 4 and 5 assume the remote has a PR object to open and a server-side
 merge to trigger. On a plain git remote it doesn't — "Shipping on a remote
 with no PR mechanism" below is the default that replaces those two steps,
 and nothing else in the loop changes.
+
+## When you are not allowed to merge your own PR
+
+Step 5 assumes the merge is yours to make. On a repo that existed before
+this deployment did, it frequently isn't: a team that has been shipping for
+years usually protects its default branch, and the common configuration —
+require a pull request, require an approving review from someone who isn't
+the author, require named status checks, disallow bypassing for everyone
+including admins — makes a self-merge impossible by design. That is not a
+misconfiguration to work around. It is the team's own review policy, and the
+agent is one more author subject to it.
+
+Distinguish it from the plain-remote case, which looks superficially similar
+and is a different diagnosis: there, no PR object exists at all and the
+review-branch protocol below replaces steps 4 and 5. Here the PR mechanism
+works perfectly and only the merge is withheld, so steps 1-4 stand and only
+step 5 changes.
+
+Three consequences worth knowing before they cost a confusing failure:
+
+- **The merge fails at the API, with a message about the base branch's
+  policy rather than about your credential.** Don't read it as an auth
+  problem and don't re-run it hoping to win a race.
+- **Required status checks can leave a PR unmergeable indefinitely for a
+  reason unrelated to review.** A check that is required on the branch but
+  never runs for this PR's changed paths sits pending forever, and a check
+  the agent cannot influence (a human-gated environment approval, a
+  deploy-preview job) does the same. Read which checks are required and
+  confirm they actually run for the kind of change you're shipping.
+- **Changing the protection to unblock yourself is a stop-and-ask**, per
+  [`AGENTS.md`](../../AGENTS.md)'s default guardrails — it appears there
+  twice, as a branch-protection change and as widening your own
+  permissions. Adding the agent to a bypass list is the same act under a
+  different name. Neither is yours to do, and neither is the fix.
+
+What to do instead: agree one substitute with the team, once, and record it
+in the conventions doc at `CONVENTIONS_DOC_PATH` so no later run
+re-negotiates it. The workable shapes, in the order they're usually worth
+proposing:
+
+1. **A human approves, the agent merges.** The agent opens the PR, asks for
+   review on the comms channel naming the person whose approval it needs,
+   and runs the merge itself once the approval and the required checks are
+   in. This keeps the merge mechanism (server-side, no local fast-forward)
+   and costs one human action per PR. It also means a PR can sit unmerged —
+   that's the team's latency, not a failure, so nudge once and leave it
+   rather than escalating.
+2. **A human merges too.** Same as above minus the last step. Worth it only
+   where the team wants the merge button itself to stay human.
+3. **The protection is relaxed, by the team, deliberately.** Sometimes the
+   right answer — e.g. the review requirement was aimed at humans and the
+   team would rather rely on required checks plus revertability for the
+   agent. Raise it as a question with the tradeoff attached and let them
+   decide. Do not implement it, whichever way they answer.
+
+Record which one applies **per repo**, not once for the deployment: the
+product repo and this bootstrap repo have separate protection settings, and
+an agent-only tooling repo commonly has none at all while the product repo
+is locked down.
 
 ## Never mutate the primary checkout from an unattended run
 
@@ -340,6 +401,14 @@ for the reason step 6 gives.
   *that* path too. One credential often serves both, and recording that it
   did is the point — the next session shouldn't have to re-derive whether
   the push working implies the merge will.
+- **Whether you may merge your own PR on each repo**, and if not, which
+  substitute from "When you are not allowed to merge your own PR" the team
+  agreed to. Record what was actually read off the live protection settings
+  and which checks are required, not what the owner remembered in the
+  interview — an existing repo's rules are queryable, and this is exactly
+  the marker
+  [`skills/specialize-skills`](../specialize-skills/SKILL.md) means when it
+  says verifying beats assuming.
 - **Whether this remote has a PR mechanism at all.** The shipping loop
   assumes one. A plain git remote — a bare repo on a box, a self-hosted
   host with no API in use — has no PR object, and "Shipping on a remote
@@ -353,6 +422,13 @@ for the reason step 6 gives.
 `TODO(specialize)`: list any branch on this deployment that must never be
 force-pushed, and whether a mechanical guard exists (a wrapper that refuses
 a force-push regardless of caller is worth far more than a documented rule).
+
+Where the guard is the hosting provider's own branch protection — the usual
+case on a repo that predates this deployment — read the live settings rather
+than transcribing what the owner said, and record what they enforce beyond
+force-pushes, since the same settings are what decide whether the shipping
+loop's step 5 is available at all. Summarize; don't copy. Those settings own
+themselves, and a list here goes stale the first time the team edits one.
 
 Which git operations are stop-and-ask by default is deliberately not listed
 here, not even in part: [`AGENTS.md`](../../AGENTS.md)'s "Default
