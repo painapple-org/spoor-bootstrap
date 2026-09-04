@@ -957,10 +957,10 @@ def check_skills_consistency(repo_root):
 		)
 
 def check_harness_symlinks(repo_root):
-	"""Both harness skill directories still resolve into skills/."""
+	"""Every harness skill directory still resolves into skills/."""
 	problems = []
 	checked = []
-	for name in (".claude/skills", ".opencode/skills"):
+	for name in (".claude/skills", ".opencode/skills", ".agents/skills"):
 		path = repo_root / name
 		if not path.is_symlink():
 			problems.append(f"{name} is not a symlink (a 'Download ZIP' copy flattens these)")

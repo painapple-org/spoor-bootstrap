@@ -11,20 +11,35 @@ This section is the one home for how the skills wiring works; everywhere
 else in this repo points here rather than re-explaining it.
 
 Each harness that wants to discover these natively gets there via a
-single whole-folder symlink pointing back at this directory —
-`.claude/skills` -> `../skills` for Claude Code, `.opencode/skills` ->
-`../skills` for OpenCode — never a copy, and never a directory of
-per-skill symlinks. Because the entire folder is symlinked, anything
-added here is automatically visible at both harness-native paths with no
-extra wiring per skill, and there is exactly one copy of each skill's
-content regardless of which harness you picked.
+single whole-folder symlink pointing back at this directory — never a
+copy, and never a directory of per-skill symlinks. Because the entire
+folder is symlinked, anything added here is automatically visible at
+every harness-native path with no extra wiring per skill, and there is
+exactly one copy of each skill's content regardless of which harness you
+picked.
 
-Git tracks and clones symlinks natively on Linux/macOS, so once
-`.claude/skills` and `.opencode/skills` are committed, a fresh clone
-already has both harness-native paths resolving to this directory. The
-one way this silently breaks is a non-git copy (a GitHub "Download ZIP"),
-which turns each symlink into a plain text file containing its target
-path; `install.sh` sanity-checks for exactly that.
+Three such paths are committed, because harnesses disagree about the
+directory name and each reads only the one it expects:
+
+| Path | Needed by |
+|---|---|
+| `.claude/skills` -> `../skills` | Claude Code |
+| `.opencode/skills` -> `../skills` | OpenCode |
+| `.agents/skills` -> `../skills` | Codex CLI |
+
+A harness reading a path it doesn't own is a bonus, not something to
+design around: OpenCode happens to scan all three, which is why it logs a
+duplicate-skill warning on startup. That warning is expected and
+shouldn't be "fixed" by deleting a symlink —
+[`docs/harness-verification.md`](../docs/harness-verification.md) records
+why, along with what has and hasn't actually been checked under each
+harness.
+
+Git tracks and clones symlinks natively on Linux/macOS, so once these are
+committed, a fresh clone already has every harness-native path resolving
+to this directory. The one way this silently breaks is a non-git copy (a
+GitHub "Download ZIP"), which turns each symlink into a plain text file
+containing its target path; `install.sh` sanity-checks for exactly that.
 
 ## What belongs in a SKILL here
 
@@ -58,7 +73,7 @@ everything that needs it should link to this file, per this repo's own
 "every fact has exactly one home" convention.
 
 That's the whole mechanical step — a new subdirectory here is picked up by
-both harnesses immediately, per "How harnesses discover these" above. Add
+every harness immediately, per "How harnesses discover these" above. Add
 it to the "Current skills" list below.
 
 Deciding whether a new file is the right artifact in the first place, and
@@ -80,7 +95,7 @@ a step of the first-boot flow.
 ## Current skills
 
 This list is the one enumeration of what exists here; nothing else in this
-repo re-lists them. Every entry is visible to both harnesses via the
+repo re-lists them. Every entry is visible to every harness via the
 whole-folder symlinks described above.
 
 The stubs below are listed in the order the specialization pass works

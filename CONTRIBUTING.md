@@ -88,6 +88,11 @@ What that means for you, concretely:
   [`skills/README.md`](./skills/README.md) for what belongs in one.
 - **Harness support**, if you got this working under a harness that isn't
   Claude Code or OpenCode and it needed something the repo doesn't have.
+  Also welcome without a code change at all: a row in
+  [`docs/harness-verification.md`](./docs/harness-verification.md)'s table
+  saying what you ran and what you found. Its "Adding a harness to the
+  table" section says which two mechanisms are worth checking and how to
+  observe them without a model. Half-verified and honest beats confident.
 
 ## What's probably not welcome
 

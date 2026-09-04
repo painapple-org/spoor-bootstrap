@@ -123,7 +123,7 @@ capture_installed_state() {
 		printf 'docker: %s\n' "$(command -v docker && docker --version)"
 		printf 'uv: %s\n' "$(command -v uv && uv --version)"
 		printf 'gh: %s\n' "$(command -v gh && gh --version | sed -n 1p)"
-		for dir in .claude/skills .opencode/skills; do
+		for dir in .claude/skills .opencode/skills .agents/skills; do
 			if [[ -L "$dir" ]]; then
 				printf '%s: symlink -> %s (resolves to dir: %s)\n' \
 					"$dir" "$(readlink "$dir")" "$([[ -d "$dir" ]] && echo yes || echo no)"

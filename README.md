@@ -359,6 +359,14 @@ each one's closing comparison cross-links the other two.
    section explains how the same skill content reaches whichever harness
    you picked.
 
+   Read [`docs/harness-verification.md`](./docs/harness-verification.md)
+   before you start, for two reasons. It says how much of "works with any
+   harness" has actually been run under the one you're about to pick
+   versus merely assumed — the answers differ a lot. And it lists the
+   harness permission defaults that stop this repo's flow dead, which are
+   yours to change rather than the agent's, since `AGENTS.md` forbids it
+   from widening its own permissions.
+
 5. **Run the harness in this checkout and tell it to read
    [`STARTUP.md`](./STARTUP.md).** That's where the first-boot flow lives:
    the interview (whose questions are enumerated in
