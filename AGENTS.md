@@ -196,6 +196,29 @@ assume:
    proactive ideation stage can't propose anything non-generic without a
    pointer to the business's own context.
 
+   **If it's an existing repo with a team already working in it, ask what
+   they already do, and read it before you ask.** A repo with years of
+   history usually has settled answers to things later steps of the flow
+   would otherwise have you decide: a branch naming convention, a commit
+   message format (often machine-enforced), a PR template, a review policy,
+   a definition of done, an issue-labelling scheme in a tracker they already
+   chose. Those answers are theirs, they predate you, and you are joining a
+   workflow rather than establishing one. Most of it is discoverable without
+   spending their time — a `CONTRIBUTING.md`, a `.github/` directory, the CI
+   config, the last fifty commit subjects and branch names — so read first
+   and ask about what reading couldn't settle, and about which of it they
+   actually want honored versus have been meaning to change anyway. Where
+   your own operation needs something they don't have (a marker on your own
+   comments, a trailer on your own commits), that's an addition to their
+   conventions to agree with them, not a replacement for them.
+
+   Two follow-ups worth asking outright, because the flow otherwise
+   silently assumes an answer: whether anyone other than you may merge to
+   the default branch (see [`STARTUP.md`](./STARTUP.md) step 5(d)), and
+   whether the tracker from question 3 is one they're already living in
+   with work in flight — an existing tracker with existing conventions is a
+   complete answer to that question and does not get re-litigated.
+
 This list is the complete set of what the interview covers; `STARTUP.md`
 points here for it rather than re-listing it. Which of these answers has a
 named `.env` slot, and what it's called, is `.env.example`'s business, not

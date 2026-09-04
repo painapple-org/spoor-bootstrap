@@ -331,6 +331,22 @@ building any product code until all of it is done.
    - the git/PR conventions you'll operate under (branch, commit, push, PR,
      self-merge for routine work), including this deployment's branch
      naming convention and its default branch name.
+
+     **Where the product repo already had conventions, they own them and
+     this doc points at them.** On an existing repo with a team in it, the
+     branch naming, the commit format and the review policy are already
+     written down somewhere in that repo — a `CONTRIBUTING.md`, a PR
+     template, a commit-lint config — or are legible from its own history,
+     per the interview's repo question. Copying them in here creates a
+     second home for a fact that already has one, which is exactly the
+     drift this doc is elsewhere careful to avoid, and this doc is the copy
+     that goes stale. So name the file that owns them, say they apply to you
+     the same way they apply to a human on that team, and record only two
+     things: the *deltas* you agreed with them, and the answers their
+     conventions don't have because no human needed one — what an actor
+     with no initials puts in a branch name, for instance. On a repo you
+     created today none of this applies and the conventions are yours to
+     propose.
    - **the commit process trailer** — the literal trailer line that goes in
      the commit body naming which process produced the commit, per step 2
      of skills/git-pr-conventions/SKILL.md. Ask me if we haven't agreed
