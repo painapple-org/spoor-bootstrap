@@ -189,8 +189,9 @@ what you write" is the one home for the writing rules, and they apply in
 full to a file authored from scratch — one home per fact, no secrets, no
 state that isn't real in either time direction.
 
-Three failure modes are specific to authoring rather than specializing, and
-each has produced a wrong file at least once:
+Three failure modes are specific to authoring rather than specializing.
+None of them looks like a mistake in the finished file, which is why they
+are worth holding in mind while writing it:
 
 - **Claiming a pattern is proven when it has only been written down.** A
   skill may say a pattern is in production only where it is in production
