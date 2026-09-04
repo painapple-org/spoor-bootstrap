@@ -19,7 +19,7 @@ this repo was extracted from.
 
 ## What you actually get
 
-Six things, and nothing more:
+Seven things, and nothing more:
 
 - **[`install.sh`](./install.sh)** — mechanical OS-level bootstrap. It
   installs three tools and sanity-checks the checkout. It asks no
@@ -46,6 +46,14 @@ Six things, and nothing more:
   agent can run at any point after the first boot, for the states a
   deployment can be silently broken in. See
   [Checking a live deployment](#checking-a-live-deployment) below.
+- **[`spoor-profile`](./spoor-profile)** — the non-interactive way through
+  the first boot, for an owner who'd rather fill in a file than be
+  interviewed. A documented profile format
+  ([`profile.example.toml`](./profile.example.toml)) holds the interview's
+  answers, and this script turns a filled-in one into the same `.env` and
+  conventions doc the interview produces — leaving the judgement calls
+  visibly unanswered rather than guessing them. See
+  [`docs/non-interactive-onboarding.md`](./docs/non-interactive-onboarding.md).
 
 It is explicitly **not**:
 
@@ -239,7 +247,14 @@ been tested against reality versus written carefully:
   findings, all since fixed — including one where the correct outcome was
   to stop at a guardrail rather than get the nicer result.
 
-Each of the three takes its fictional business through the whole of item 5 in the list
+**Or read a profile instead of a transcript.** The same three shapes, and
+two more, exist as filled-in machine-readable profiles under
+[`examples/`](./examples/README.md) — the input to the non-interactive path
+above rather than a narration of the interactive one. `northlight.toml`
+there is the same business as the first walkthrough, and CI asserts the two
+produce the same `.env`.
+
+Each of the three walkthroughs takes its fictional business through the whole of item 5 in the list
 below: the interview with plausible answers, the autonomy negotiation, the
 resulting `.env`, an excerpt of the conventions doc it produces, and one
 skill stub shown before and after specialization. They're illustrative, not

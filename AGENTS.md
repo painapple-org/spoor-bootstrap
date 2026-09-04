@@ -196,6 +196,25 @@ assume:
    proactive ideation stage can't propose anything non-generic without a
    pointer to the business's own context.
 
+   **This question collects more separate answers than any other one here,
+   so treat it as a list rather than a question.** Every item below is
+   independently answerable, has its own destination, and is silently
+   assumed by some later step if nobody asks — which is exactly what makes
+   a bundled question the wrong shape for it. The paragraphs after the list
+   are the reasoning for each; the list is so that none of them gets
+   skipped:
+
+   - (a) where the repo lives, and whether it exists yet;
+   - (b) where the business's own content and docs live;
+   - (c) which file, if any, already owns that repo's branch naming, commit
+     format and review policy;
+   - (d) how the product currently reaches production;
+   - (e) whether anyone other than you may merge to the default branch;
+   - (f) whether the tracker from question 3 is one they're already living
+     in with work in flight;
+   - (g) whether a merge to the default branch deploys to production by
+     itself.
+
    **If it's an existing repo with a team already working in it, ask what
    they already do, and read it before you ask.** A repo with years of
    history usually has settled answers to things later steps of the flow
@@ -277,10 +296,18 @@ assume:
     on the owner's side, and the interview is not where an integration gets
     designed.
 
-This list is the complete set of what the interview covers; `STARTUP.md`
-points here for it rather than re-listing it. Which of these answers has a
-named `.env` slot, and what it's called, is `.env.example`'s business, not
-this list's.
+This list is the complete set of what the interview *asks about the business*;
+`STARTUP.md` points here for it rather than re-listing it. Which of these
+answers has a named `.env` slot, and what it's called, is `.env.example`'s
+business, not this list's.
+
+Two topics the same conversation covers are deliberately not on it, because
+they aren't questions about the business: agreeing an autonomy model against
+the default guardrails above, which is [`STARTUP.md`](./STARTUP.md) step 2's
+own job, and the catch-all for anything product-specific a generic template
+can't guess, which is that file's step 3. Nothing else adds to this list —
+read those two steps as part of the interview rather than as follow-on work,
+and don't take a numbered list ending at 10 as meaning the interview does.
 
 See [`STARTUP.md`](./STARTUP.md) for the full first-boot flow this interview
 sits inside — it also covers agreeing on an autonomy model, writing `.env`,

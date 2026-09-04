@@ -1,0 +1,123 @@
+# Basalt Metrics — one technical person, a technical end-user, Jira, Discord.
+#
+# Shape it exercises: the solo case, and the one where
+# skills/product-tech-stack/SKILL.md does *not* apply. `END_USER_TYPE` is
+# technical, so the mandated stack is not in force and the choice is on the
+# merits — which leaves it with no home but the conventions doc, and leaves
+# `[product].stack` as the judgement field it is. It is unanswered here on
+# purpose: the founder wants to make that call with an agent rather than
+# type it into a file, and a generated guess would be indistinguishable from
+# a decision he made.
+#
+# It also exercises the two conditional `.env` fields from the other side:
+# `WORK_TRACKER=jira` makes `WORK_TRACKER_BASE_URL` required rather than
+# optional, per `.env.example`'s own `# doctor:` spec, and the generated `.env`
+# reads that spec back when it explains itself.
+#
+# And it is the one-person case: the generated conventions doc says out loud
+# what that costs, because it has no fix.
+
+[profile]
+schema_version = 1
+business = "Basalt Metrics"
+summary = """
+One person in Reykjavík selling a hosted metrics-ingest endpoint to small
+infrastructure teams: point an OpenTelemetry exporter at it, get retention and
+a query API, no agent to install. Three paying design partners on monthly
+invoices. The product is greenfield — a prototype ingest path exists on a
+laptop and nothing is deployed.
+"""
+
+[product]
+end_user_type = "technical"
+repo_path = "/home/spoor/basalt"
+repo_state = "new"
+primary_repo_remote = "basalt-metrics/basalt"
+conventions_doc_path = "AGENTS.md"
+merge_deploys_to_production = true
+context_location = """
+docs/ in the product repo, once the repo exists. The pricing and the retention
+promise are currently only in three sent emails, and writing them down is
+itself on the shopping list.
+"""
+domain = "basaltmetrics.io"
+# stack and stack_rationale are unanswered on purpose. See the header: this is
+# the case where product-tech-stack does not apply, so the decision is real,
+# and it is one Halldór wants to make in conversation.
+
+[[people]]
+name = "Halldór Sigurðsson"
+role = "founder, and the only person"
+tech_level = "technical"
+may_instruct = true
+channel_identity = "284917330551238657"
+
+[tracker]
+name = "jira"
+base_url = "https://basalt-metrics.atlassian.net"
+scope = "BAS"
+already_in_use = true
+api_key_source = """
+An API token minted at id.atlassian.com from this agent's own Atlassian
+account. Blocked: that account does not exist yet, and the Jira Basic-auth
+username reads from AGENT_EMAIL_ADDRESS, so no mailbox also means no tracker.
+"""
+item_bar = """
+Anything that changes behaviour gets an issue. A comment typo does not — the
+commit log is the audit trail for that.
+"""
+
+[comms]
+channel = "discord"
+alert_target = "284917330551238657"
+token_source = """
+Bot token from the Discord developer portal's Bot page. Blocked: the
+application does not exist yet.
+"""
+
+[git]
+branch_naming = "spoor/<BAS key>-<short-slug>"
+commit_trailer = "Spoor-Process: <stage>"
+tracker_comment_marker = "— spoor · <stage>"
+
+[internal_tooling]
+wanted = false
+
+[billing]
+charges = true
+what_is_sold = "A monthly per-ingest-volume subscription, invoiced by hand to three design partners."
+refund_human = "Halldór Sigurðsson, who is also the only person who can. This agent does not touch money."
+
+[autonomy]
+signoff_before_merge = false
+tightened = [
+	"Any new runtime dependency on a service somebody else operates — object storage, a hosted database, an error tracker. A free tier is not an exemption. The test is whether it still works with the box disconnected from everything but its own network. Adding a package, however large, is routine.",
+	"Any change to the retention window or to what an ingest endpoint accepts. Those are the two things a design partner was promised in writing.",
+]
+loosened = [
+	"Force-push, rewrite and delete refs under `wip/*`, then say so afterwards. Backed by an update hook on the remote refusing non-fast-forward and deletion on the default branch regardless of pusher.",
+	"Restart the ingest container and re-run one failed rollup job. One retry; the same symptom three times means investigating instead.",
+]
+unattended_on_deployment = [
+	"Restart a container, roll back a deploy this agent made, delete and regenerate derived rollup tables.",
+	"Never: the raw ingest store, or restoring from a backup.",
+]
+# gate is unanswered: a merge deploys to production here, so there is a real
+# question about when that may happen, and it has not been answered.
+# review_trigger is unanswered for the same reason.
+
+[pipeline]
+stages = ["refine", "implement", "review", "upkeep"]
+stages_declined = ["critique", "resolve-critique", "ideation"]
+
+[[vocabulary]]
+term = "ingest"
+means = "one accepted write of one batch of spans or samples. The billing unit."
+
+[[vocabulary]]
+term = "rollup"
+means = "a pre-aggregated table the query API reads from. Derived, and safe to delete and rebuild."
+
+[[vocabulary]]
+term = "design partner"
+means = "one of the three paying customers, who get a direct line and expect one. Not a beta user."
