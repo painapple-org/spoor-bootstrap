@@ -428,6 +428,22 @@ def env_values(profile, schema_keys):
 			"the conventions doc.",
 		),
 		"AGENT_EMAIL_ADDRESS": (comms.get("agent_email", ""), None),
+		# Always blank, and not because a profile could not hold it: its own
+		# comment in `.env.example` says a value there is a claim that there is
+		# something to open, and on a first boot there never is. Which of the
+		# two blanks this is — decided against, or not built yet — is the
+		# conventions doc's, which the internal-tooling section records.
+		"INTERNAL_DASHBOARD_PATH": (
+			"",
+			"Nothing exists to point at yet, and a value here would claim otherwise. "
+			+ (
+				"Something internal was asked for, so this is the blank of a thing not built "
+				"yet; the conventions doc records what it is."
+				if (profile.get("internal_tooling") or {}).get("wanted")
+				else "Nothing internal was asked for, so this is the blank of a deliberate "
+				     "decision; the conventions doc records it as settled."
+			),
+		),
 		"OWNER_TECH_LEVEL": (owner_level, owner_note),
 		"END_USER_TYPE": (product.get("end_user_type", ""), None),
 	}
@@ -713,6 +729,10 @@ def render_conventions_doc(profile, repo_root):
 			f"Yes: {sentence(internal.get('what') or 'something internal was asked for but not described')}\n"
 			"`skills/private-networking/SKILL.md` is the home for how anything internal gets\n"
 			"reached without being published on the public internet.\n\n"
+			"`INTERNAL_DASHBOARD_PATH` in `.env` is blank, and this section is the home for\n"
+			"which blank it is: nothing has been built yet, not a decision against building\n"
+			"one. Whoever copies `templates/internal-dashboard/` out fills that variable in as\n"
+			"part of the same change.\n\n"
 		)
 		body += judgment_or_todo(
 			profile, "internal_tooling", "private_network",
@@ -727,7 +747,9 @@ def render_conventions_doc(profile, repo_root):
 			"Nothing internal exists yet, so nothing is set up. This is settled, not open: no\n"
 			"network gets built for a tool that does not exist.\n"
 			"`skills/private-networking/SKILL.md` is where to look when the first internal tool\n"
-			"arrives.\n"
+			"arrives.\n\n"
+			"`INTERNAL_DASHBOARD_PATH` in `.env` is blank, and this section is the home for\n"
+			"which blank it is: a deliberate decision against building one, not a gap.\n"
 		)
 	parts.append(section("Whether anything internal needs to be privately reachable", body))
 
