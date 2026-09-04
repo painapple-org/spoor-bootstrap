@@ -125,6 +125,22 @@ What that means for you, concretely:
 - **Large speculative restructuring** ahead of anyone needing it. See the
   "no state that isn't real right now" principle below.
 
+## Dependency updates
+
+Don't hand-bump a pinned action version in
+[`.github/workflows/ci.yml`](./.github/workflows/ci.yml) as its own PR —
+[`.github/dependabot.yml`](./.github/dependabot.yml) already opens one,
+batched, on a schedule that file owns. It is also the one place that records
+what is and isn't tracked and why, including the deliberate decision not to
+track [`templates/`](./templates/README.md)'s own dependency files; read it
+there rather than trusting a summary here. Bumping an action version as part
+of a change that actually needs the new version is normal and welcome.
+
+Two things sit outside that file, because they're repo settings rather than
+config: Dependabot alerts and Dependabot security updates are both enabled,
+so a CVE in something the repo pins gets its own PR without waiting for the
+scheduled run.
+
 ## Conventions this repo already follows
 
 These aren't new rules for contributors — they're what the existing files

@@ -93,7 +93,11 @@ In this order, because each step makes the next one obvious.
    `Dockerfile` to `uv sync --frozen --no-dev`.** The template ships no
    lockfile on purpose — versions resolved on the day it was written are stale
    state, not a starting point — but your copy wants one, so a rebuild can't
-   pick up a different dependency tree.
+   pick up a different dependency tree. That lockfile is also what makes
+   dependency-freshness tracking worth turning on: point your own repo's
+   Dependabot config at this directory once it exists. Upstream deliberately
+   does not track it, for reasons
+   [`.github/dependabot.yml`](../../.github/dependabot.yml) records.
 4. **Add a read-only bind mount to `docker-compose.yml` for every path in
    `DASHBOARD_REPO_PATHS`**, at the same path inside the container as on the
    host, so what a page prints as its source is a path that means something on

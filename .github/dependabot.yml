@@ -1,0 +1,68 @@
+version: 2
+
+# Freshness tracking for this repo's own dependencies. Dependabot rather than a
+# script in .github/ci/: the repo already runs a shell/Python-only CI suite it
+# maintains by hand, and "is actions/checkout still current, and does this
+# version have a known CVE" is a question GitHub already answers against its own
+# advisory database. A custom checker here would be a worse copy of that.
+#
+# One ecosystem entry, because an audit of what this repo actually depends on
+# turns up exactly one thing Dependabot can track:
+#
+#   - GitHub Actions, in .github/workflows/ — the only pinned third-party
+#     versions anywhere in the repo. Covered below.
+#
+#   - Python. Nothing to track: spoor-doctor, spoor-profile and every script
+#     under .github/ci/ are stdlib-only by design (the workflow's own step
+#     comments say so, which is why no job has a setup-python or an install
+#     step), so there is no requirements file, pyproject.toml or lockfile at the
+#     repo root for an updater to read. Add a `pip`/`uv` entry here in the same
+#     change that introduces the first one.
+#
+#   - Container images. The only image this repo's own CI names is the throwaway
+#     ubuntu tag in the install-execution job's `docker run`, which is a string
+#     inside a `run:` block — Dependabot's docker ecosystem reads Dockerfiles and
+#     compose files, not shell inside a workflow step, so it cannot see it and
+#     adding an entry pointing at / would find nothing. That tag is also the
+#     deliberate subject of the test rather than a dependency of it: which OS
+#     release install.sh is proven to bootstrap on is a decision for whoever
+#     changes that job, not a version to keep bumped.
+#
+#   - templates/internal-dashboard/ has a pyproject.toml, a Dockerfile and a
+#     compose file, and is deliberately NOT tracked here. It is a template meant
+#     to be copied out and specialized, and the thing that needs a patched
+#     dependency tree is the adopter's copy, not the origin: the template ships
+#     no lockfile on purpose (its Dockerfile explains why), so an updater would
+#     have only `>=` floors to raise — which changes what the template asks for
+#     without changing what anyone runs, and resolves to the same current
+#     versions in a fresh copy either way. Its image references are `:latest` or
+#     a minor-pinned base for the same reason: they resolve forward on rebuild
+#     in the copy. An adopter who wants this gets it by adding an entry to their
+#     own copy's config once they have a lockfile to pin, which is the point at
+#     which the answer stops being no.
+
+updates:
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Amsterdam
+
+    # One PR for everything, not one per action. Routine action bumps are read
+    # and merged as a batch or not at all, and this repo's action list is short
+    # enough that a grouped diff stays reviewable. A bump that turns out to need
+    # discussion on its own can be split back out by hand.
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+    # With the group above there is normally one open PR at a time; the ceiling
+    # only matters if one sits unmerged while the next week's runs.
+    open-pull-requests-limit: 2
+
+    commit-message:
+      prefix: ci
