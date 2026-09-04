@@ -211,10 +211,14 @@ are worth holding in mind while writing it:
   different amounts.
 - **Describing the capability instead of the operating decisions.** A file
   that restates a vendor's own documentation is worse than a link to it and
-  goes stale faster. What a skill is for is the part the documentation
-  cannot know: which half is the owner's and which is yours, what is
-  irreversible, what has to be verified before anything is reported as
-  working, where the local fact lives.
+  goes stale faster. Check whether the vendor publishes instructions
+  written for *coding agents* rather than for people, too — several now
+  ship a maintained, machine-readable set, and where one exists, prose here
+  about their API is not merely redundant but actively worse, since theirs
+  updates and yours doesn't. What a skill is for is the part no vendor's
+  documentation can know: which half is the owner's and which is yours,
+  what is irreversible, what has to be verified before anything is reported
+  as working, where the local fact lives.
 - **Inventing the boundary with the guardrails.** Where a capability
   touches money, credentials, identity, public reach or anything else on
   [`AGENTS.md`](../../AGENTS.md)'s "Default guardrails" list, a new skill

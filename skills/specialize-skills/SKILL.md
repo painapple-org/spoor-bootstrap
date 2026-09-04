@@ -149,7 +149,8 @@ Work through them in order; later ones depend on earlier answers:
    invent. "Nothing is sold yet" is the expected first-boot answer and a
    real one, and it finishes this item legitimately by leaving the markers
    below it moot. Where it *is*
-   yes: the provider and whose account it is, what is actually sold, the
+   yes: the provider and whose account it is, what is actually sold, which
+   payment methods are enabled and where the customers are, the
    environment-variable names holding the test and live keys and the
    webhook signing secret, where entitlement is stored and read in the
    product's code, who handles tax and invoicing, and which named human
