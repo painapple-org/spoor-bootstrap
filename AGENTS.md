@@ -306,7 +306,11 @@ rather than assuming:
   the time you hand this list over some of it is already resolved.** A
   remote for the bootstrap checkout is a *precondition* of the setup, not
   an outcome of it: `README.md`'s item 2 requires one before `install.sh`
-  runs, and `install.sh` refuses to continue without it. So an owner who
+  runs, and [`STARTUP.md`](./STARTUP.md) step 5 verifies a real push to it
+  and stops the whole flow where it can't (its own steps 5(d) and 5(f)).
+  Don't credit `install.sh` with that: it only refuses an `origin` whose
+  URL is literally upstream's, and where it cannot read one at all it says
+  NOT VERIFIED and carries on. So an owner who
   reached this list at all already has somewhere to push — most likely the
   bare-repo answer above — and writing "you need a git remote" here as
   though nothing existed contradicts the three changes this flow just
