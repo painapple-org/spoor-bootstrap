@@ -67,9 +67,14 @@ Work through them in order; later ones depend on earlier answers:
    find that section still carrying a marker, the fix is to go verify a
    real push, not to fill it in here from what you assume worked.
 3. [`skills/comms-channel`](../comms-channel/SKILL.md) — the channel's send
-   and receive mechanisms, the literal allowlist of who may instruct this
-   agent, the single alert destination, and the interrupt-versus-digest
-   policy the owner actually wants.
+   and receive mechanisms, what the allowlist *means* on this deployment
+   (who each identity is, who with channel access is deliberately off it),
+   the single alert destination, and the interrupt-versus-digest policy the
+   owner actually wants. The literal allowlist is **not** part of this pass:
+   it's `COMMS_ALLOWLIST` in `.env`, written back at
+   [`STARTUP.md`](../../STARTUP.md) step 4 from the interview answer, well
+   before this pass runs. Read it from there rather than re-collecting it,
+   and don't copy its values into the SKILL file.
 4. [`skills/work-pipeline`](../work-pipeline/SKILL.md) — which stages this
    deployment runs, what triggers each, and which proactive stages (if any)
    the owner wants. Where the prompts live is already answered — it's
@@ -78,9 +83,16 @@ Work through them in order; later ones depend on earlier answers:
    marker-filling, one file per stage kept, from that directory's template.
    Anything you can't finish in this pass is outstanding work to hand back
    with the shopping list, not a marker to leave in this SKILL.
-5. [`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md) — the
-   deploy trigger and command, the rollback procedure, the health signals
-   that actually exist, and what the agent may fix unattended.
+5. [`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md) — how many
+   environments there are and what gates promotion between them (including
+   saying so explicitly when there is only one), the deploy trigger and
+   command, the rollback procedure, **what is backed up and whether a
+   restore has ever been verified**, the health signals that actually
+   exist, and what the agent may fix unattended. The backup half is a
+   whole section of that file rather than one bullet, and on a product that
+   already has users it is the most load-bearing thing in this pass — an
+   honest "nothing is backed up" belongs on the shopping list, not in a
+   hedge.
 6. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
    to specialize. It is already a finished, deliberately non-negotiable
    requirement. Do not edit it to suit a preference; if it applies, follow

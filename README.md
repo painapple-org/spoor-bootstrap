@@ -178,13 +178,15 @@ default; every file it quotes remains the home for its own content.
      with the first boot itself. That needs an `origin` you can push to.
    - **Once specialized, this checkout holds real operational detail about
      your business.** Filling in the skill stubs (item 5 below) writes down
-     things like which identities on your comms channel are allowed to
-     instruct the agent, which account its pushes authenticate as and at
-     what permission level, your tracker's scope and host specifics, and
-     which of your branches must never be force-pushed. None of that is a
-     credential — actual secrets live in `.env`, which is gitignored — but
-     all of it is identifying, operational detail about a specific
-     deployment, and it gets committed here.
+     things like who the people on your comms channel are and which of
+     them is deliberately excluded from instructing the agent, which
+     account its pushes authenticate as and at what permission level, your
+     tracker's scope and host specifics, and which of your branches must
+     never be force-pushed. None of that is a credential — actual secrets
+     live in `.env`, which is gitignored, and so does the literal
+     allowlist of identities permitted to instruct the agent
+     (`COMMS_ALLOWLIST`) — but all of it is identifying, operational detail
+     about a specific deployment, and it gets committed here.
 
    Pulling later template updates doesn't need a fork: a private copy can
    add upstream as a second remote (`git remote add upstream <this repo's

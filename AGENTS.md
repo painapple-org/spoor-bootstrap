@@ -108,7 +108,10 @@ assume:
    Don't guess this from context — ask directly. Where question 5 turns up
    more than one person, ask it about each of them: they will not all be at
    the same level, and the per-person answer is what the conventions doc
-   records, since `.env` has one switch and not one per person.
+   records, since `.env` has one switch and not one per person. You can't
+   do that on the first pass, because you don't know yet that there is more
+   than one person — question 5 is what surfaces them, so question 5 is
+   where the circling back is instructed.
 
 2. **Who the end product is for.** Specifically: is the product being
    built here aimed at a technical end-user/audience, or a non-technical
@@ -140,6 +143,12 @@ assume:
    the whole setup, for the reason
    [`skills/comms-channel`](./skills/comms-channel/SKILL.md) gives, and it
    cannot be guessed later.
+
+   **Then go back to question 1 for every person this answer turned up
+   beyond the one you already asked it about**, and ask each of their
+   technical levels before moving on. Don't leave it to be inferred: you
+   asked question 1 when you still believed there was one person, and
+   nothing later in this list comes back to it.
 
 6. **The single destination for urgent alerts** on that channel — one
    chat, user or channel id, or an email address if no real-time channel

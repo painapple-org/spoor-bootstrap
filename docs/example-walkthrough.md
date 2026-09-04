@@ -155,6 +155,19 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > both of your Slack member IDs, not your display names — a display name is
 > something any member can change to match yours.
 >
+> And back to my first question, now that there are two of you: I asked how
+> comfortable *you* are with servers, git and code when I still thought
+> there was one person to write to. Where's Dan?
+>
+> **Priya:** Dan's more technical than me. He did a computing degree, he
+> reads the code sometimes. He's not a professional developer either.
+>
+> **Agent:** Then the two of you get written to differently, and I'll
+> record both answers in the conventions doc, since `.env` has one switch
+> and not one per person. The switch itself goes to the less technical of
+> the two — you — because that's the register for anything with no specific
+> recipient, like a digest or a post in `#tech`.
+>
 > Sixth, and I'm asking this separately rather than reading it off the last
 > two answers: a single destination for urgent alerts. Not a group to pick
 > from — one target, so an escalation never has to guess. Is `#tech` that
@@ -384,6 +397,10 @@ COMMS_ALLOWLIST=U04H2J1K9PQ,U05T8N6RB2C
 # shopping list item 1.
 AGENT_EMAIL_ADDRESS=
 
+# Rounded to the less technical of the two people on COMMS_ALLOWLIST, so
+# this is the register for a message with no specific recipient. Dan reads
+# code and gets written to accordingly — that per-person half is in the
+# conventions doc, which overrides this whenever the recipient is known.
 OWNER_TECH_LEVEL=non-technical
 END_USER_TYPE=non-technical
 ```

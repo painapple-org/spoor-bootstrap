@@ -100,5 +100,7 @@ whole-folder symlinks described above.
   stage owns, and why the reviewing session must not be the implementing
   one.
 - [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* How a
-  merged change reaches the running product, how the agent knows it's
+  merged change reaches the running product across however many
+  environments it has, how it's rolled back, whether the data is backed up
+  and whether a restore has ever been verified, how the agent knows it's
   healthy, and what it may fix unattended.
