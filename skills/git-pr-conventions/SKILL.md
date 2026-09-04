@@ -260,6 +260,27 @@ reads back as the review history. Don't add a sibling approvals file or a
 `reviews/` directory in the tree: that's a second home for a fact git
 already owns, and it drifts.
 
+**The very first change to a repo created empty is the one exception, and
+git says so outright.** There is no default branch to merge into yet — the
+shipping loop's step 1 above is the home for that state — so the merge
+refuses with `fatal: Non-fast-forward commit does not make sense into an
+empty head`, and that is git being right rather than something to work
+around. Create the default branch at the review branch's tip instead
+(`git push origin origin/review/<slug>:refs/heads/<default>` from the
+scratch clone, the fully-qualified refspec for the same reason step 1
+gives), then delete the review branch per step 6.
+
+Don't read that as licence to skip the merge commit generally, and don't
+manufacture one with an empty root commit to merge into — that is a
+placeholder for a state this repo never had. What the merge commit buys is
+a single point to `git revert -m 1`, and on a repo whose entire history is
+this one change there is no prior state to revert *to*: reverting it means
+deleting the repo's only commit. So nothing is lost here that a later
+merge commit would have provided. The review still happened, and its
+record for this one change is the review branch's own commit and the work
+item. Every change after it gets the merge commit, because by then there
+is something to merge into.
+
 **Rejection is not recorded in git at all**, because nothing gets merged.
 It goes in the work item, which is the one home for work-item state (see
 [`skills/work-tracker`](../work-tracker/SKILL.md)). Then either fix it

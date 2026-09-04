@@ -194,7 +194,21 @@ building any product code until all of it is done.
       local `git init` with no remote will fail this check rather than pass
       it — and it has to exist at all, since step 6 has nowhere to land
       otherwise. If you can't get there, say so rather than skipping the
-      check. Creating the *repo* is fine to do for me if I ask you to and
+      check.
+
+      **On a repo you just created empty, this particular check cannot run
+      at all, and that is not the same as failing it.** There are no
+      commits, so there is nothing for the throwaway branch to point at and
+      git refuses the refspec — `error: src refspec HEAD does not match
+      any` — before ever asking the remote about access. Don't read that as
+      a refusal, don't commit something just to have something to push, and
+      don't report it to me as a blocker: on a repo I have only just handed
+      you there was never a permissions question to answer. The first real
+      write to it is step 6's own push, so that push *is* this check on this
+      one repo, and (e) is where you record that it went that way. Every
+      other repo in this step — an existing product repo, and this
+      bootstrap checkout, which always has commits — takes the dry-run
+      unchanged. Creating the *repo* is fine to do for me if I ask you to and
       you have the access, on either shape — it's creating an *account*
       that's mine alone, per (b).
 
@@ -456,10 +470,17 @@ building any product code until all of it is done.
    branch to branch off yet**, and that is not a reason to fall back to
    committing on it directly. An empty repo has no commits and therefore no
    branch of any kind, so this doc *is* the commit that creates the first
-   one: make the branch, put the doc on it, push it, and let the merge be
-   what creates the default branch, on either shape. `git-pr-conventions`'
-   shipping loop is the home for that case and for the push-refspec detail
-   it turns on.
+   one: make the branch, put the doc on it, and push it.
+   `git-pr-conventions`' shipping loop is the home for that case and for
+   the push-refspec detail it turns on.
+
+   **What brings the default branch into existence differs by shape, so
+   don't carry one answer across to the other.** On a remote with PRs, the
+   merge does it. On the review-branch protocol it cannot: there is nothing
+   to merge into, and git refuses a `--no-ff` merge into an empty head
+   outright. That protocol's own approval step is the home for what happens
+   instead, and for why nothing is lost by it — read it there rather than
+   improvising, and don't read the refusal as the push having failed.
 
    **Then ship step 5(e)'s edit too — same loop, different repo.** That
    auth answer went into a tracked file in this bootstrap checkout, whose
