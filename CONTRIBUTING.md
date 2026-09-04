@@ -5,11 +5,13 @@ admired, and contributions back are welcome — especially from anyone who
 has actually run it on a box and hit something wrong.
 
 Note the asymmetry before you fork: a fork is the right mechanism for
-sending changes *back here*, and the wrong one for running your own
-instance, because a fork of a public repo is permanently public and a
-specialized checkout holds real operational detail about its deployment
-([`README.md`](./README.md)'s "Path to a running instance" owns that
-choice). If you do both, keep them as two separate repos.
+sending changes *back here*, and not the one to run your own instance on,
+because a fork of a public repo is permanently public and a specialized
+checkout holds real operational detail about its deployment.
+[`README.md`](./README.md)'s "Path to a running instance" owns that
+choice, and note what it actually says: a fork is a supported shape for
+your own instance with that cost attached, not a shape that doesn't work.
+If you do both, keep them as two separate repos.
 
 It's also an early draft (see [`README.md`](./README.md)), so "this is
 wrong / misleading / missing" is a perfectly good contribution on its own.

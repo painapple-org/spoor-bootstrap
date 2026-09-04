@@ -384,8 +384,8 @@ same wording the agent itself reads.
 ## Contributing
 
 This repo is public and meant to be copied, diverged from, and contributed
-back to. Contributing back is the one case where a GitHub fork is the right
-mechanism — a fork you send PRs from, not the checkout your own instance
+back to. Contributing back is what a GitHub fork is for here — a fork you
+send PRs from, kept separate from the checkout your own instance
 specializes itself in (item 2 above says why). See
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) for what kinds of changes are
 welcome and the conventions to follow. MIT licensed — see

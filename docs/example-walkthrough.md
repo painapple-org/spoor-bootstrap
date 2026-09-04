@@ -389,6 +389,11 @@ COMMS_CHANNEL=slack
 # Blocked: the app doesn't exist yet — shopping list item 2.
 COMMS_CHANNEL_TOKEN=
 
+# Deliberately empty, not blocked: Slack's own API is one well-known
+# global host that the client library already knows. This key is for a
+# self-hosted server or a mail host, and there is none here.
+COMMS_CHANNEL_ENDPOINT=
+
 # #tech in the northlight workspace. Both the working channel and the one
 # escalation target — which happens to be safe here only because every
 # member of #tech is on COMMS_ALLOWLIST below.
