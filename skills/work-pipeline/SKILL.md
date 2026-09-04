@@ -13,6 +13,12 @@ themselves, the triggering mechanism, and the concrete tracker/git calls
 each stage makes. Those are `TODO(specialize)` — see
 [`skills/specialize-skills`](../specialize-skills/SKILL.md).
 
+The prompt files are the biggest single piece of that work, and they have a
+home waiting for them: [`prompts/`](../../prompts/README.md) at this repo's
+root, which owns where they live, how they're named, and the structural
+skeleton each one fills in. This SKILL stays the home for what each stage is
+*responsible* for; a prompt points back here rather than restating it.
+
 This SKILL depends on two others and does not restate them: work-item
 operations live in [`skills/work-tracker`](../work-tracker/SKILL.md), and
 git/PR mechanics in
@@ -73,8 +79,10 @@ Two rules that apply to every stage:
 `TODO(specialize)`: the stage list above is the shape this repo assumes, not
 a mandate. Record which stages this deployment actually runs — a small
 product may collapse refine/critique/resolve into one, and that's a real
-choice, not a shortcut. Then write the prompt file for each stage kept, and
-record where those prompts live.
+choice, not a shortcut. Then write one prompt file per stage kept, from the
+template in [`prompts/`](../../prompts/README.md); that directory is the one
+home for where they live and what each one has to contain, so record the
+stage set here and don't restate the layout.
 
 `TODO(specialize)`: record what triggers each stage (a schedule, a tracker
 webhook, a manual invocation) and where that trigger is configured.
@@ -89,9 +97,10 @@ deployment usually also wants stages that *fill* the queue, and stages that
 watch for things going wrong:
 
 `TODO(specialize)`: decide with the owner which of these this deployment
-wants, and write a prompt for each one kept. Do not create these
-speculatively — an unused stage that runs on a schedule is worse than no
-stage. Candidates worth discussing:
+wants, and write a prompt for each one kept — same directory, same template
+as the reactive stages ([`prompts/`](../../prompts/README.md)). Do not
+create these speculatively — an unused stage that runs on a schedule is
+worse than no stage. Candidates worth discussing:
 
 - **ideation** — proposes new items into the unrefined inbox, assigned to
   the *human*, so they stay inert until the owner reassigns them. This

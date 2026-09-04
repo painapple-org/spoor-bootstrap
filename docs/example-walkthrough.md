@@ -697,9 +697,12 @@ Priya could correct them cheaply:
   she files issues from the web UI.
 
 None of that is a finished deployment. Wiring up the Slack listener,
-writing the per-stage pipeline prompts, and getting a deploy to actually
-run are all follow-on work — this repo's own README is explicit that it
-gets you to a documented starting point, not to a working agent.
+finishing the per-stage pipeline prompts (the pass agreed the stage set and
+wrote `refine` and `implement`; `critique` and `review` were handed back as
+outstanding work, in [`../prompts/`](../prompts/README.md) where that
+directory says they go), and getting a deploy to actually run are all
+follow-on work — this repo's own README is explicit that it gets you to a
+documented starting point, not to a working agent.
 
 ---
 

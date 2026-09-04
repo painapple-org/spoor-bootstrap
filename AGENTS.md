@@ -197,6 +197,11 @@ that depends on it.
   wherever it's needed, not copied. That file is the one home for both how
   the harness-native symlinks are wired and, in its "Current skills" list,
   what exists there — neither is restated here.
+- [`prompts/`](./prompts/README.md) — where this deployment's per-stage
+  pipeline prompts live, and the template each one starts from. Ships with
+  no stage prompt in it: which stages run is a per-deployment decision, and
+  writing those files is part of the specialization step below. That README
+  is the one home for the layout, naming and required contents.
 - **This deployment's own conventions doc** — everything specific to this
   owner, product and host: the autonomy model they actually agreed to,
   their git/PR conventions, their vocabulary. It lives outside this repo

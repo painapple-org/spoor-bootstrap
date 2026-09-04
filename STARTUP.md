@@ -314,6 +314,20 @@ building any product code until all of it is done.
    provision a GitHub account of your own, verify a real push as that
    account and rewrite the section from what actually worked.
 
+   One part of this pass is writing rather than filling in a blank, so
+   don't let it disappear into the marker list: specializing
+   skills/work-pipeline means deciding which pipeline stages this
+   deployment actually runs, and then writing one prompt file per stage
+   kept — that's the biggest deliverable of the whole pass, three to five
+   substantial files rather than a line each. They live in prompts/ in this
+   repo; read prompts/README.md for where they go, how they're named and
+   what each one has to contain, and start each from
+   prompts/STAGE_TEMPLATE.md. Tell me which stages you're proposing before
+   you write them. If you can't finish them all today, that's fine — say
+   which ones are still to write and carry them into step 8 as outstanding
+   work, rather than leaving an empty file or a stub prompt a scheduled run
+   could pick up and act on.
+
    Two things I care about here: don't invent a specific to make a file look
    finished (a marker that still says "unknown" is better than a confident
    wrong value), and don't leave a marker unanswered that you could have

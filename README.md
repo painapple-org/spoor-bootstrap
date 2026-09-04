@@ -19,7 +19,7 @@ this repo was extracted from.
 
 ## What you actually get
 
-Three things, and nothing more:
+Four things, and nothing more:
 
 - **[`install.sh`](./install.sh)** — mechanical OS-level bootstrap. It
   installs three tools and sanity-checks the checkout. It asks no
@@ -31,6 +31,11 @@ Three things, and nothing more:
 - **[`skills/`](./skills/README.md)** — harness-agnostic instructions the
   agent operates from, with [`AGENTS.md`](./AGENTS.md) as the entrypoint
   that ties them together.
+- **[`prompts/`](./prompts/README.md)** — the home for the per-stage
+  pipeline prompts the agent runs on, plus the template each one starts
+  from. It ships with no stage prompt in it, deliberately: which stages your
+  deployment runs is one of the things the first boot decides, and writing
+  those files is part of it.
 
 It is explicitly **not**:
 

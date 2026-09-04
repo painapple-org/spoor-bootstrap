@@ -68,8 +68,13 @@ Work through them in order; later ones depend on earlier answers:
    agent, the single alert destination, and the interrupt-versus-digest
    policy the owner actually wants.
 4. [`skills/work-pipeline`](../work-pipeline/SKILL.md) — which stages this
-   deployment runs, where each stage's prompt lives, what triggers each,
-   and which proactive stages (if any) the owner wants.
+   deployment runs, what triggers each, and which proactive stages (if any)
+   the owner wants. Where the prompts live is already answered — it's
+   [`prompts/`](../../prompts/README.md) — but the prompt files themselves
+   are the one part of this pass that is real writing rather than
+   marker-filling, one file per stage kept, from that directory's template.
+   Anything you can't finish in this pass is outstanding work to hand back
+   with the shopping list, not a marker to leave in this SKILL.
 5. [`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md) — the
    deploy trigger and command, the rollback procedure, the health signals
    that actually exist, and what the agent may fix unattended.
