@@ -524,9 +524,11 @@ and confirm they actually exist in the tracker. [...]
 
 `TODO(specialize)` — fill in, for the chosen tracker:
 
-- **Access mechanism**: an MCP server, an official SDK, a CLI, or raw HTTP.
+- **Access mechanism**: an MCP server, an official SDK, a CLI, or raw
+  HTTP. [...]
 - **The identity the agent acts as.** [...]
-- **The scope identifier**: team/project/board key, repo, or file path.
+- **The scope identifier**: team/project/board key, repo, or file
+  path. [...]
 - **Where a second auth value comes from, if this tracker's auth needs
   one.** [...] If this tracker's auth is token-only, say that instead of
   deleting the point.
