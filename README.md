@@ -19,7 +19,7 @@ this repo was extracted from.
 
 ## What you actually get
 
-Five things, and nothing more:
+Six things, and nothing more:
 
 - **[`install.sh`](./install.sh)** — mechanical OS-level bootstrap. It
   installs three tools and sanity-checks the checkout. It asks no
@@ -42,6 +42,10 @@ Five things, and nothing more:
   otherwise rebuild the same scaffold from a blank page on every deployment.
   Real code that builds and starts, with its own script to prove it. That
   README is the one enumeration of what's in there.
+- **[`spoor-doctor`](./spoor-doctor)** — a read-only health check you or the
+  agent can run at any point after the first boot, for the states a
+  deployment can be silently broken in. See
+  [Checking a live deployment](#checking-a-live-deployment) below.
 
 It is explicitly **not**:
 
@@ -373,6 +377,34 @@ channel, deploy automation, SSH access for whatever automation needs to
 reach the box, scheduling — is deliberately left to you and the agent you're
 running. This repo gets you to a box with the right tools installed and a
 documented starting point; it doesn't hand you a finished agent.
+
+## Checking a live deployment
+
+`./spoor-doctor` ([source](./spoor-doctor)) is a read-only health check for
+a deployment that is already up. Run it whenever you want to know that this
+instance is still in a state it can be trusted in — after first boot, after
+pasting new secrets into `.env`, after a tracker or channel change, or on a
+schedule:
+
+```sh
+./spoor-doctor            # every check, including live credential probes
+./spoor-doctor --offline  # skip anything that touches the network
+./spoor-doctor --json     # machine-readable, for a scheduled run to act on
+```
+
+It prints one PASS/WARN/FAIL/SKIP line per check with the reasoning
+attached, and exits non-zero if anything failed. It writes nothing, changes
+nothing, and never prints a secret's value.
+
+What it is for is the class of problem that doesn't announce itself: a
+world-readable `.env`, a tracker token that stopped working, an `origin`
+still pointing at this repo so no PR can ever land, an empty allowlist on a
+channel that can verify identities, a stage prompt still carrying `<...>`
+placeholders that a cron line will run anyway. Each of those keeps looking
+fine indefinitely. The script's own header is the one home for the full
+check list and for what each check is guarding against — read it there
+rather than from a list restated here, and note what it deliberately does
+*not* do.
 
 ## What the skills are, and what "stub" means here
 

@@ -572,6 +572,25 @@ building any product code until all of it is done.
    couldn't finish. If it turns out I don't have a git hosting account at
    all, say so plainly as the item everything else is waiting on rather
    than phrasing it as an upgrade to something I already have.
+
+9. Last thing: run `./spoor-doctor` and show me what it says. It's the
+   read-only health check in this repo for the states a deployment can be
+   silently broken in, and README.md's "Checking a live deployment" is the
+   home for what it is and how to run it. Everything above just wrote this
+   deployment's `.env`, its remote, its conventions doc and its skill
+   files, so this is the cheapest possible confirmation that the result
+   actually holds together rather than only looking like it does.
+
+   Read its output rather than reporting the summary line at me. A FAIL is
+   something to go and fix now, while I'm still sitting here — most of them
+   are one command. A WARN or a SKIP is often the correct end state at this
+   point (a stub still blocked on an account from step 8, a credential
+   probe skipped because the secret isn't provisioned yet), and where it is,
+   say which shopping-list item it is waiting on rather than presenting it
+   as a problem. Don't fix a finding by editing the check.
+
+   Then tell me to run it again myself once I've pasted the secrets in,
+   since that's the point where the skipped probes become real ones.
 ```
 
 ---
@@ -580,7 +599,8 @@ That's the whole first-boot flow: read `AGENTS.md`, interview, defer to the
 stack SKILL if relevant, agree on an autonomy model, write `.env`, get a git
 identity that actually pushes to both repos, ship the conventions doc and the
 auth answer through real PRs, specialize the skill stubs and ship those
-through one more, hand back a provisioning list. Three shipped changes, in
+through one more, hand back a provisioning list, check the result actually
+holds together. Three shipped changes, in
 two repos: the product repo gets the conventions doc, this one gets the
 edits first boot makes to itself. Three *PRs*, on a remote that has them —
 on one that doesn't, each ships through the review-branch protocol step 5(e)
@@ -599,3 +619,12 @@ file, each time one of those provisioning blockers clears and a
 `TODO(specialize)` marker becomes answerable; each of those re-runs ships as
 its own PR, from a scratch clone rather than the primary checkout, since by
 then nobody is sitting there watching.
+
+`./spoor-doctor` outlives first boot too, and step 9 is only its first run.
+Every one of those follow-on changes — a secret pasted in, a tracker swapped,
+a scoped step 7 re-run, a mesh joined — moves something it checks, and none
+of them announce it when they go wrong. Re-run it after each, and schedule it
+alongside whatever else this host runs on a timer; a health check nobody runs
+is the same as not having one. README.md's "Checking a live deployment" owns
+what it covers and how to invoke it, and *when* it runs is host scheduling,
+which this repo deliberately leaves to you per AGENTS.md's note on that.

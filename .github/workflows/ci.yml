@@ -156,6 +156,27 @@ jobs:
       - name: Check skills/ against its own indexes and cross-references
         run: .github/ci/check-skills-consistency.py
 
+  # `spoor-doctor` is the one thing in this repo whose whole value is being
+  # trusted when it says a deployment is healthy — a diagnostic that misses a
+  # break converts a fixable problem into a documented absence of one. So it
+  # is not enough for it to run: every check it makes has to be shown to
+  # actually catch its own failure. The test script builds a real fixture
+  # deployment per case (its own git repos on disk, a real `.env`, local
+  # servers standing in for the tracker and mail host), breaks one thing, and
+  # asserts the doctor names that check. What each case injects, and why the
+  # fixture is shaped the way it is, lives in that script's own header.
+  doctor-self-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      # Stdlib-only python3 and git, both preinstalled on the runner image.
+      # The test binds only loopback sockets and pushes only to bare repos in
+      # a temp directory, so it needs no network and no credentials.
+      - name: Prove spoor-doctor catches a broken deployment
+        run: .github/ci/test-doctor.py
+
   symlinks:
     runs-on: ubuntu-latest
     steps:
