@@ -382,7 +382,11 @@ observable at rung 2. A checkout session, freshly created, reports itself:
 ```
 
 `unpaid`, `open`, and no total. Everything a naive success-page handler
-would grant access on, the provider is explicitly declining to assert yet.
+would grant access on, the object is declining to assert. Rung 2's caveat
+applies and is worth applying to a result that supports the argument, not
+only to ones that don't: nothing was computed here, and what this shows is
+the *shape* the API gives a session it has not been told anything about
+yet. That the shape's default is `unpaid` is the point.
 
 **Where entitlement lives, and the finding the stub asked for.** The stub
 says to record the one place that reads entitlement, and that more than one
