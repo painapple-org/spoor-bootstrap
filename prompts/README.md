@@ -71,7 +71,10 @@ assumes:
   one: what this owner accepts as a problem statement and acceptance
   criteria, when work is big enough to decompose into sub-items and how the
   parent is left behind, and the exact conditions under which the "refined"
-  and "needs human sign-off" markers get applied (never as a default hedge).
+  and "needs human sign-off" markers get applied — by reference to
+  [`skills/work-tracker`](../skills/work-tracker/SKILL.md)'s label
+  vocabulary, which owns the bar for the sign-off marker, rather than
+  restating it here.
 - **critique** — needs its comment-only boundary stated as a hard rule, plus
   a concrete list of what it is checking *for*, or it degenerates into
   agreeing with the refinement. Its value is entirely in not being the

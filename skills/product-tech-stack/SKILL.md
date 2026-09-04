@@ -11,8 +11,15 @@ Use this SKILL whenever the product you (the agent) are building or
 operating is aimed at a **non-technical end-user or client** — i.e. the
 human who owns this deployment told you, during the first-boot interview
 in [`AGENTS.md`](../../AGENTS.md), that the end product is for a
-non-technical audience. That answer is recorded as `END_USER_TYPE` in
-`.env` — read it rather than re-asking or guessing.
+non-technical audience.
+
+Where that answer comes from depends on when you're reading this file. On
+first boot you are reading it *during* the interview — that question is
+what sends you here — so the answer is the one the owner just gave you in
+the conversation. It has no `.env` slot filled in yet: `.env` is written
+later, at [`STARTUP.md`](../../STARTUP.md) step 4. On any later run, the
+answer is recorded as `END_USER_TYPE` in `.env`, and that is where to read
+it from rather than re-asking or guessing.
 
 If the product is aimed at a technical end-user (developers, technical
 teams, internal tooling for technically fluent users), this SKILL does not

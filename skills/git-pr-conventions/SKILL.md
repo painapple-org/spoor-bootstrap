@@ -223,9 +223,10 @@ for the reason step 6 gives.
 force-pushed, and whether a mechanical guard exists (a wrapper that refuses
 a force-push regardless of caller is worth far more than a documented rule).
 
-Force-pushing, deleting branches, deleting volumes or backups, and
-`git reset --hard` over someone else's work are stop-and-ask by default —
-they're on [`AGENTS.md`](../../AGENTS.md)'s "Default guardrails" list, which
-holds unless this deployment's conventions doc explicitly says otherwise.
-Read that doc at `CONVENTIONS_DOC_PATH` in `.env` for any deltas; silence
-there means the default stands.
+Which git operations are stop-and-ask by default is deliberately not listed
+here, not even in part: [`AGENTS.md`](../../AGENTS.md)'s "Default
+guardrails" list is its one home, and a partial restatement of a security
+boundary is the worst version of it. Go and read it there — it holds unless
+this deployment's conventions doc explicitly says otherwise, so read that
+doc at `CONVENTIONS_DOC_PATH` in `.env` for any deltas; silence there means
+the default stands.

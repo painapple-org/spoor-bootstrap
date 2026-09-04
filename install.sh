@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 #
 # install.sh — pure OS-level bootstrap for a spoor-bootstrap instance:
-# sanity-checks the skill symlinks, installs the three tools this repo
+# sanity-checks the skill symlinks, refuses to continue while `origin` is
+# still literally upstream's URL, installs the three tools this repo
 # bootstraps (docker, uv, gh cli) plus the handful of apt packages they need
-# to be fetchable at all, and checks the docker daemon is reachable — starting it
+# to be fetchable at all, adds the invoking user to the docker group when run
+# under sudo, and checks the docker daemon is reachable — starting it
 # where the box has systemd, and saying NOT VERIFIED where it has none.
 # Nothing else.
 #

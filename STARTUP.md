@@ -67,12 +67,13 @@ building any product code until all of it is done.
    - `chmod 600 .env` right after creating it, and tell me you did. A copy
      inherits `.env.example`'s mode, which is world-readable because it
      holds nothing but field names — while `.env` ends up holding this
-     deployment's tracker token and comms-channel token. Every other local
-     account and service on the box can read a world-readable file, and
-     gitignoring it does nothing about that. Do this at creation rather
-     than at step 8 when the secrets actually land: a file that starts out
-     0600 is never briefly wrong, and there is no second moment to
-     remember.
+     deployment's tracker token and comms-channel token.
+     skills/deploy-and-monitor/SKILL.md's secrets section is the one home
+     for *why* that mode matters and for the fact that 0600 is a standing
+     invariant rather than a step at creation; read the reasoning there
+     rather than from here. Do it at creation rather than at step 8 when
+     the secrets actually land: a file that starts out 0600 is never
+     briefly wrong, and there is no second moment to remember.
 
      **This applies to the leave-it-untouched branch above too.** A `.env`
      that already existed was written by something other than this step
@@ -82,9 +83,7 @@ building any product code until all of it is done.
      changed it to. Tightening a file's own permissions is not a
      stop-and-ask: it takes access away from nobody who should have it, and
      it's reversible in one command. Leaving the contents alone does not
-     mean leaving the mode alone — 0600 is the standing invariant on this
-     file, per skills/deploy-and-monitor/SKILL.md's secrets section, not a
-     one-time act of creating it.
+     mean leaving the mode alone, per the standing invariant above.
    - Leave `CONVENTIONS_DOC_PATH` blank here: step 6 is what fills it in,
      once you've actually decided where that doc lives.
 

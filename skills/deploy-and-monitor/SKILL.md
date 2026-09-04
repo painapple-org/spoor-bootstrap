@@ -159,8 +159,8 @@ whether one exists or whether it works.
   read its path from `CONVENTIONS_DOC_PATH` in `.env` — and only gets
   *pointed at* from here. Anything that doc doesn't explicitly permit
   unattended falls back to [`AGENTS.md`](../../AGENTS.md)'s "Default
-  guardrails" list, which is stop-and-ask for destroying data, deleting
-  backups or volumes, and anything with no concrete rollback.
+  guardrails" list, which is that list's one home — read it there rather
+  than from a subset restated here.
 - **Where an alert goes.** One destination, per
   [`skills/comms-channel`](../comms-channel/SKILL.md).
 
