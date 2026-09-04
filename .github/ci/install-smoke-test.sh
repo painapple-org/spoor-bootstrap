@@ -18,6 +18,16 @@
 # the docker install.sh produced can really run a container, not just answer
 # --version.
 #
+# install.sh runs twice per mode, back to back, before dockerd is ever
+# started (see start_dockerd below) — install.sh's own guards are what's
+# under test here, not anything about a running daemon. That proves the
+# per-step "already installed; skipping" guards actually fire on a rerun
+# rather than merely existing as prose: the second run must exit 0, its
+# output must show every guard's skip message (not the fresh-install
+# message), and the installed-tool/symlink state it leaves behind must be
+# byte-for-byte identical to what the first run left. CONTRIBUTING.md's
+# "every install step is idempotent" line is what this enforces.
+#
 # That last assertion needs the daemon up, and a container has no systemd for
 # install.sh to start dockerd with, so install.sh takes its own no-systemd
 # branch and reports NOT VERIFIED. This harness therefore starts dockerd
@@ -53,8 +63,76 @@ WORK="/work"
 TEST_USER="smoketest"
 DOCKERD_LOG="/tmp/dockerd.log"
 DOCKERD_START_TIMEOUT_SECONDS=60
+INSTALL_LOG_1ST_RUN="/tmp/install-run-1.log"
+INSTALL_LOG_2ND_RUN="/tmp/install-run-2.log"
+STATE_1ST_RUN="/tmp/install-state-1.txt"
+STATE_2ND_RUN="/tmp/install-state-2.txt"
 
 fail() { printf '\nSMOKE TEST FAILED (%s): %s\n' "$MODE" "$1" >&2; exit 1; }
+
+# Runs ./install.sh (cwd must already be $WORK) and captures its combined
+# output to log_file rather than letting a pipe hide the real exit code
+# behind `set -o pipefail`. Prints the captured output either way, so a
+# passing run is still visible in the CI log, not just a failing one.
+run_install() {
+	local log_file="$1" label="$2" status=0
+	./install.sh >"$log_file" 2>&1 || status=$?
+	printf '\n--- install.sh output (%s run, %s) ---\n' "$label" "$MODE"
+	cat "$log_file"
+	[[ "$status" -eq 0 ]] || fail "install.sh (${label} run) exited ${status} — see ${log_file} above."
+}
+
+# The second run is only proof of idempotency if its output shows the
+# per-step guards actually skipping, not merely exiting 0 while quietly
+# redoing (or re-failing) every step. Checks for both: the skip message
+# install.sh prints for every install step it already satisfied, and the
+# absence of the "Installing ..." messages those same steps print when they
+# are NOT skipping.
+assert_second_run_skipped_reinstall() {
+	local log_file="$1" pattern
+
+	for pattern in \
+		'apt prerequisites (curl, git, ca-certificates) already present; skipping' \
+		'docker already installed' \
+		'uv already installed' \
+		'gh cli already installed'
+	do
+		grep -qF "$pattern" "$log_file" \
+			|| fail "second install.sh run did not print the expected skip guard '${pattern}' — it may have tried to redo that step. See ${log_file}."
+	done
+
+	if [[ "$MODE" == "sudo-user" ]]; then
+		grep -qF "is already in the docker group" "$log_file" \
+			|| fail "second install.sh run did not report the invoking user as already in the docker group — see ${log_file}."
+	fi
+
+	if grep -qE '==> Installing (apt prerequisites|docker via|uv into|gh cli via)' "$log_file"; then
+		fail "second install.sh run printed a fresh-install message instead of only skip guards — it redid work that should have been skipped. See ${log_file}."
+	fi
+}
+
+# A fingerprint of everything install.sh is meant to leave behind, so a
+# second run that silently changes end state (a re-linked symlink, a
+# different resolved version, a tool that quietly dropped off PATH) is
+# caught even though every individual guard above printed the right message.
+# Written to log_file for a byte-for-byte comparison between runs.
+capture_installed_state() {
+	local log_file="$1" dir
+
+	{
+		printf 'docker: %s\n' "$(command -v docker && docker --version)"
+		printf 'uv: %s\n' "$(command -v uv && uv --version)"
+		printf 'gh: %s\n' "$(command -v gh && gh --version | sed -n 1p)"
+		for dir in .claude/skills .opencode/skills; do
+			if [[ -L "$dir" ]]; then
+				printf '%s: symlink -> %s (resolves to dir: %s)\n' \
+					"$dir" "$(readlink "$dir")" "$([[ -d "$dir" ]] && echo yes || echo no)"
+			else
+				printf '%s: NOT A SYMLINK\n' "$dir"
+			fi
+		done
+	} >"$log_file"
+}
 
 assert_bootstrap_result() {
 	local tool
@@ -139,8 +217,18 @@ case "$MODE" in
 			fail "this mode exists to prove install.sh needs no sudo at all, but sudo is present in this container."
 		fi
 		cd "$WORK"
-		./install.sh
+		run_install "$INSTALL_LOG_1ST_RUN" "first"
 		assert_bootstrap_result
+		capture_installed_state "$STATE_1ST_RUN"
+
+		run_install "$INSTALL_LOG_2ND_RUN" "second"
+		assert_bootstrap_result
+		assert_second_run_skipped_reinstall "$INSTALL_LOG_2ND_RUN"
+		capture_installed_state "$STATE_2ND_RUN"
+		diff -u "$STATE_1ST_RUN" "$STATE_2ND_RUN" \
+			|| fail "installed state differs after a second install.sh run (diff above) — a rerun should leave the exact same tools/symlinks behind."
+		printf '\nSecond install.sh run left the exact same installed state behind (%s).\n' "$MODE"
+
 		SUDO=()
 		start_dockerd
 		assert_docker_runs_a_container
@@ -159,8 +247,18 @@ case "$MODE" in
 			exec su "$TEST_USER" -c "bash '${WORK}/.github/ci/install-smoke-test.sh' sudo-user"
 		fi
 		cd "$WORK"
-		./install.sh
+		run_install "$INSTALL_LOG_1ST_RUN" "first"
 		assert_bootstrap_result
+		capture_installed_state "$STATE_1ST_RUN"
+
+		run_install "$INSTALL_LOG_2ND_RUN" "second"
+		assert_bootstrap_result
+		assert_second_run_skipped_reinstall "$INSTALL_LOG_2ND_RUN"
+		capture_installed_state "$STATE_2ND_RUN"
+		diff -u "$STATE_1ST_RUN" "$STATE_2ND_RUN" \
+			|| fail "installed state differs after a second install.sh run (diff above) — a rerun should leave the exact same tools/symlinks behind."
+		printf '\nSecond install.sh run left the exact same installed state behind (%s).\n' "$MODE"
+
 		SUDO=(sudo)
 		start_dockerd
 		assert_docker_runs_a_container
