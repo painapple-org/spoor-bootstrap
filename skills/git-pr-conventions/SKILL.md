@@ -38,6 +38,20 @@ from the work tracker:
 1. Branch off the default branch. `TODO(specialize)`: record this
    deployment's branch naming convention, if the owner wants one, and the
    name of the default branch if it isn't `main`.
+
+   **A repo that was created empty has no default branch to branch off**,
+   and won't until something commits to it — a first boot that creates the
+   product repo hits this on its very first change. There is nothing to
+   branch *from* there, so create the branch, commit onto it, and let the
+   merge in step 5 be what brings the default branch into existence.
+   Don't treat the absence as an error and don't route around it by
+   committing straight to the default branch that doesn't exist yet. One
+   mechanical consequence, worth knowing before it costs a confusing
+   failure: pushing at a branch that does not exist on the remote yet
+   requires the fully-qualified destination refspec
+   (`HEAD:refs/heads/<name>`). The unqualified `HEAD:<name>` form is
+   resolved by matching an existing remote ref, so it fails outright
+   against a repo where that ref isn't there.
 2. Commit. Include a trailer line in the commit body naming which process
    produced it (same style as `Signed-off-by`), so the history can be read
    back later. The literal trailer text is this deployment's own — it's
