@@ -134,22 +134,46 @@ building any product code until all of it is done.
    e. Write down what actually worked in the `Auth` section of
       skills/git-pr-conventions/SKILL.md: the exact push invocation that
       succeeded, which account it authenticates as, any protocol quirk you
-      hit, and what you found when you checked the PR-opening credential in
+      hit, what you found when you checked the PR-opening credential in
       (b) — including "it turned out to be the same one", which is a
-      finding about this deployment and not a general guarantee.
+      finding about this deployment and not a general guarantee — and
+      **whether this remote has a PR-opening mechanism at all.**
 
-      That section is the one home for this, and step 7 has
+      That last one is a real question here, not a formality. A plain git
+      remote — a bare repo on a box, a self-hosted host whose API nobody
+      has turned on — has no PR object at all, and step 6 hard-requires
+      opening one. Check it rather than inferring it from the push
+      working: the push and the API are different paths, which is the same
+      reason (b) makes you check two credentials. If it turns out there is
+      no PR mechanism on this remote, bring me the substitute before step
+      6 and record *that* — the `Auth` section's own guidance says what a
+      substitute has to preserve, including how the default branch gets
+      advanced without the local fast-forward that's hazardous here.
+
+      That section is the one home for all of it, and step 7 has
       nothing left to add to it — it's answered here because here is where
       it gets verified for real. Follow skills/specialize-skills/SKILL.md's
       "How to specialize one file" rules for how to write it, including
-      deleting the `TODO(specialize)` marker once it's answered.
+      deleting the `TODO(specialize)` marker — once *every* bullet under it
+      is answered, not once the first few are.
+
+      This is an edit to a tracked file in *this* repo, so it doesn't get
+      to stay in your working tree. Step 6 ships it, and says why it ships
+      there rather than here.
 
    f. If none of this can be made to work — no account you're willing to
-      use, no network, a repo neither of us can push to — **stop and tell
-      me, and don't route around it.** Don't commit straight to the default
-      branch instead. Write step 6's doc, leave it uncommitted, tell me
-      plainly that the first PR is blocked on git auth and nothing else,
-      and pick step 6 back up the moment it's fixed.
+      use, no network, a repo neither of us can push to, or no PR
+      mechanism on this remote at all — **stop and tell me, and don't
+      route around it.** Don't commit straight to the default branch
+      instead. Write step 6's doc, leave it uncommitted, tell me plainly
+      that the first PR is blocked on git auth and nothing else, and pick
+      step 6 back up the moment it's fixed.
+
+      The no-PR-mechanism case is the one on that list that behaves
+      differently: it doesn't block the push, only step 6's PR. It's still
+      not a licence to commit to the default branch — tell me what you'd
+      use instead, per (e), and get my agreement before step 6 rather than
+      picking a substitute on your own.
 
 6. Write a conventions doc in the target product repo (that repo's own
    `CLAUDE.md`/`AGENTS.md` if it doesn't have one yet, or a clearly-named
@@ -214,6 +238,20 @@ building any product code until all of it is done.
    establishes the convention, so it shouldn't be the one exception to it.
    Show me the PR link.
 
+   **Then ship step 5(e)'s edit too — same loop, different repo.** That
+   auth answer went into a tracked file in this bootstrap checkout, and
+   `install.sh` refused to start until `origin` here pointed at a repo I
+   control, precisely so that this is possible. Branch off this repo's
+   default branch, commit, push to `origin`, open a PR, merge it yourself.
+   Two PRs by the end of this step, then: one in the product repo for the
+   doc above, one here for the auth answer.
+
+   It happens in this step rather than back in step 5 for one reason: every
+   commit carries the process trailer, and the trailer's literal text is
+   agreed right here. Step 5 is where the auth answer gets verified and
+   written down; this is the earliest point it can be *committed* without
+   inventing a trailer neither of us agreed to.
+
 7. Now specialize the skill stubs. Read skills/specialize-skills/SKILL.md
    and follow it. The skills under skills/ ship deliberately generic, with
    an explicit `TODO(specialize)` marker everywhere a real answer depends
@@ -234,6 +272,28 @@ building any product code until all of it is done.
    genuinely blocked on an account I haven't created yet, leave the marker,
    name the blocker in one line, and carry it into step 8.
 
+   **Then ship the pass.** Everything you just rewrote is a tracked file in
+   this bootstrap repo, and specialization that exists only in one
+   uncommitted working tree has no revert point, no reviewable diff and no
+   backup — which is the whole reason step 6 went through a PR instead of
+   committing to the default branch. So: branch off this repo's default
+   branch, commit, push to `origin`, open a PR, merge it yourself, per
+   skills/git-pr-conventions/SKILL.md, exactly as in step 6.
+
+   One PR for the whole pass, not one per skill file. The scoped one-file
+   re-run this step is built for — when a step-8 provisioning blocker
+   clears and a marker becomes answerable — gets its own PR at that point,
+   and that's what keeps each of those independently revertable. Splitting
+   today's single pass into one PR per stub buys nothing: every file in it
+   was written from the same interview answers, in one sitting, with
+   nothing between them worth bisecting.
+
+   One thing to notice while you're here: you're editing the primary
+   checkout, and that's only acceptable because I'm sitting next to you.
+   Those later re-runs are unattended, and
+   skills/git-pr-conventions/SKILL.md's "Which repo are you even in?"
+   section is the one home for how they have to be done instead.
+
 8. Give me the self-provisioning shopping list exactly as AGENTS.md's
    "Self-provisioning: the shopping list" section defines it — that section
    owns what's on it and why, so don't work from a list restated here — so
@@ -248,14 +308,22 @@ building any product code until all of it is done.
 
 That's the whole first-boot flow: read `AGENTS.md`, interview, defer to the
 stack SKILL if relevant, agree on an autonomy model, write `.env`, get a git
-identity that actually pushes, generate the conventions doc through a real
-PR, specialize the skill stubs, hand back a provisioning list. The ordering
-is deliberate: nothing in it depends on something a later step promises to
-deliver, which is why git auth sits ahead of the first push rather than
-inside the specialization pass. Everything after that — actually wiring up
-the chosen work tracker and comms channel, writing product code, setting up
-scheduling — is follow-on work once the human has provisioned what's on that
-list and pasted the resulting secrets into `.env`. Step 7 is expected to be
-re-run, scoped to a
-single file, each time one of those provisioning blockers clears and a
-`TODO(specialize)` marker becomes answerable.
+identity that actually pushes, ship the conventions doc and the auth answer
+through real PRs, specialize the skill stubs and ship those through one
+more, hand back a provisioning list. Three PRs, in two repos: the product
+repo gets the conventions doc, this one gets the edits first boot makes to
+itself.
+
+The ordering is deliberate: nothing in it depends on something a later step
+promises to deliver, which is why git auth sits ahead of the first push
+rather than inside the specialization pass, and why nothing is committed
+before the step that agrees the commit trailer every commit carries.
+
+Everything after that — actually wiring up the chosen work tracker and comms
+channel, writing product code, setting up scheduling — is follow-on work
+once the human has provisioned what's on that list and pasted the resulting
+secrets into `.env`. Step 7 is expected to be re-run, scoped to a single
+file, each time one of those provisioning blockers clears and a
+`TODO(specialize)` marker becomes answerable; each of those re-runs ships as
+its own PR, from a scratch clone rather than the primary checkout, since by
+then nobody is sitting there watching.

@@ -107,6 +107,15 @@ For each `TODO(specialize)` marker:
    That heading is the file's own honest self-report; leaving it on a
    finished file trains readers to ignore it.
 
+Then, once the pass itself is done: **ship it through a branch and a PR**,
+per [`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md). These are
+tracked files in this repo, and specialization sitting uncommitted in one
+working tree has no revert point and no reviewable diff. One PR per pass:
+the whole first-boot pass in one, and each later scoped re-run in its own.
+A re-run is unattended, so it happens in a scratch clone and not the
+primary checkout — that SKILL's "Which repo are you even in?" section is the
+home for why and how.
+
 ## Rules for what you write
 
 - **Every fact has exactly one home.** Name the constant, file, or config

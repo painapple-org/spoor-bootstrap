@@ -118,6 +118,15 @@ Also beware: a stray `cd` into another repo earlier in a session can
 silently redirect the next isolated spawn there. Know your working
 directory before spawning.
 
+**The bootstrap repo is not exempt from the loop above.** First boot writes
+real edits into it — the `Auth` section below, and every stub the
+specialization pass rewrites — and those ship through a branch and a PR
+against the fork `origin` points at, exactly like product work
+([`STARTUP.md`](../../STARTUP.md) steps 6 and 7). First boot is also the
+only time that may happen in the primary checkout, because a human is
+sitting there for it; every later re-run is unattended and takes the
+scratch-clone path above.
+
 ## Auth
 
 This section is answered **first**, before this deployment's first push —
@@ -127,7 +136,8 @@ can already reach the remote, so leaving it for the same pass that fills in
 branch naming would make the first PR depend on a step that comes after it.
 A human is present at that point, which is also the only time an
 interactive login is possible at all — later runs are unattended with no
-terminal to prompt on.
+terminal to prompt on. It's *written* there and *shipped* one step later,
+for the reason step 6 gives.
 
 `TODO(specialize)` — record, for this deployment:
 
