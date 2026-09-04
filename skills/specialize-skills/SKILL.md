@@ -98,7 +98,19 @@ Work through them in order; later ones depend on earlier answers:
    already has users it is the most load-bearing thing in this pass — an
    honest "nothing is backed up" belongs on the shopping list, not in a
    hedge.
-6. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
+6. [`skills/private-networking`](../private-networking/SKILL.md) — which
+   mesh VPN this deployment already has or joins, what is exposed on it,
+   who besides this box can reach it, and where each node's auth key
+   lives. It comes after `deploy-and-monitor` because it is the same
+   question asked about the *internal* half: that pass establishes what
+   runs where and what access exists, and this one records how anything
+   built for the owner alone gets reached. **"Nothing internal exists yet,
+   so no mesh" is the expected first-boot answer, and it is a real one** —
+   record it as decided in the conventions doc, per that file's "When
+   nothing needs it yet", rather than provisioning a network for a tool
+   that doesn't exist. Anything the owner would have to provision on the
+   day one does joins the shopping list.
+7. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
    to specialize. It is already a finished, deliberately non-negotiable
    requirement. Do not edit it to suit a preference; if it applies, follow
    it.

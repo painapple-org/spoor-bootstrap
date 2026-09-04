@@ -100,6 +100,14 @@ whole-folder symlinks described above.
   (refine → critique → resolve-critique → implement → review), what each
   stage owns, and why the reviewing session must not be the implementing
   one.
+- [`private-networking`](./private-networking/SKILL.md) — *stub.* How
+  something this agent builds for the owner alone — an internal dashboard,
+  a preview environment, an admin tool — becomes privately reachable over a
+  mesh VPN instead of a public port and a real domain: the
+  defer-to-what-exists check, the Tailscale-by-default recommendation, the
+  sidecar-container pattern for exposing one containerized service, the
+  owner/agent split on keys and membership, and the deferred case where
+  nothing internal exists yet.
 - [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* Whether
   this deployment inherits an existing CI/CD pipeline or builds the deploy
   path itself, how a merged change reaches the running product across

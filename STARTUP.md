@@ -374,6 +374,19 @@ building any product code until all of it is done.
      deploy — per the monitoring section of
      skills/deploy-and-monitor/SKILL.md. Be concrete about the boundary;
      a vague "fix what breaks" is what leaves a future session guessing.
+   - **whether anything internal needs to be privately reachable yet, and
+     over what.** Once you build me something that's for me rather than for
+     the product's users — a dashboard, a preview environment, an admin
+     tool — it needs a way to reach me without being published on the
+     public internet. skills/private-networking/SKILL.md is the one home for
+     how that's done and for the check on what this box may already have;
+     this doc is the home for *this* deployment's answer. Ask whether I
+     already run a VPN or private network you should use, and record what I
+     say. **"Nothing internal exists yet, so nothing is set up" is the
+     expected answer today and a complete one** — record it as decided, not
+     as an open question, and don't set up a network for a tool that
+     doesn't exist. What matters is that a future session reads it as
+     settled and knows where to look when the first internal tool arrives.
    - **where the business's own content and docs live**, from the second
      half of the interview's repo question — a wiki, a drive folder, a docs
      directory in the product repo, a CMS. That answer has no `.env` slot
