@@ -139,9 +139,11 @@ assume:
 
 5. **Who is allowed to instruct you on that channel** — the literal,
    exhaustive list of identities, in the form the channel itself verifies.
-   Ask outright and ask for all of them: assume more than one, because a
-   business with two founders and a support person has three, and don't
-   let a singular question ("what's your username?") shape the answer.
+   Ask outright and ask for all of them: assume more than one — the
+   "Assume more than one identity" note in
+   [`skills/comms-channel`](./skills/comms-channel/SKILL.md) is the home
+   for why, and for the illustrative case — and don't let a singular
+   question ("what's your username?") shape the answer.
    Ask the two follow-ups that only surface if you raise them: whether
    anyone with access to that channel is deliberately *not* on the list (a
    contractor in the shared room is the common case), and whether the
@@ -162,8 +164,10 @@ assume:
    was chosen. Ask for it outright rather than deriving it from the
    channel answer, and rather than deriving it from the answer above: the
    skills that escalate need exactly one unambiguous target, not a group
-   to guess within, and the right target is not always someone on the
-   allowlist's own shared channel.
+   to guess within, and
+   [`skills/comms-channel`](./skills/comms-channel/SKILL.md) is the one
+   home for why the right target is not always someone on the allowlist's
+   own shared channel.
 
 7. **This agent instance's own email address**, if one exists yet. An
    email address isn't a secret, so ask for it directly; leave it

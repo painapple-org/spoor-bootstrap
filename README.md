@@ -214,6 +214,16 @@ default; every file it quotes remains the home for its own content.
    git push -u origin HEAD
    ```
 
+   **That last push is yours, on your own existing git credentials.** It
+   happens before `gh` is even on the box (item 3) and well before the
+   agent establishes a git identity of its own
+   ([`STARTUP.md`](./STARTUP.md) step 5), so whatever `git` on this box
+   already has — an SSH key your host account holds, a personal access
+   token in a credential helper — is what authenticates it. That's a
+   separate thing from `gh`'s own login, which comes later and is the
+   agent's. If the push is refused, the fix is at the OS/git level here,
+   not something a later step resolves for you.
+
    Two separate reasons it has to be a remote you own, and not upstream:
 
    - **The agent keeps maintaining this checkout.** It isn't a one-shot

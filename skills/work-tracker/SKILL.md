@@ -90,7 +90,10 @@ Three labels carry real behavioral meaning:
 - **a "needs human sign-off" marker** — set when an item cannot be closed
   until a specific named person replies on a specific thread. Its presence
   must be a narrow exception for genuine authority/capability gaps, never a
-  default hesitation device for ordinary work.
+  default hesitation device for ordinary work. This bullet is the one home
+  for that bar; the refine stage in
+  [`skills/work-pipeline`](../work-pipeline/SKILL.md) and the stage prompts
+  in [`prompts/`](../../prompts/README.md) point here for it.
 - **a "targets the agent's own tooling, not the product" marker** — set
   when an item's real fix lives in this bootstrap/pipeline repo rather than
   in the product repo at `PRODUCT_REPO_PATH`. Stages behave differently for

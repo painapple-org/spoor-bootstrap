@@ -43,8 +43,10 @@ tracker, and exits.
    into a real problem statement, scope, and acceptance criteria. Decomposes
    into sub-items when the work is too big for one change. Applies the
    "refined" marker only when the item is genuinely actionable. Applies the
-   "needs human sign-off" marker only for a genuine authority/capability
-   gap — never as a default hedge.
+   "needs human sign-off" marker only under the condition
+   [`skills/work-tracker`](../work-tracker/SKILL.md)'s label vocabulary
+   states for it — that file is the one home for what that marker means and
+   for when it is not warranted.
 2. **critique** — an independent second pass over the just-refined item.
    Comments only; never edits. Its value is entirely in not being the
    refining session.
