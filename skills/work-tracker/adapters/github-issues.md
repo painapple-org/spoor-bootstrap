@@ -154,16 +154,57 @@ directly: `PATCH /repos/{owner}/{repo}/issues/{number}` with a `labels`
 array **replaces** the full set. Prefer the CLI, or the dedicated
 `.../labels` sub-resource endpoints, over a `PATCH` with `labels`.
 
+## Parent / child links
+
+Not one of the contract's seven operations, but every stage that splits work
+into sub-items needs it — and **sub-issues are a separate API, invisible to
+`gh issue view`**. Nothing in the default issue payload mentions them, so a
+stage that doesn't ask concludes an issue has no children.
+
+The endpoints take an explicit API version header, and `gh api` will not
+add one for you:
+
+```sh
+gh api repos/OWNER/REPO/issues/<parent-number>/sub_issues \
+  -H 'X-GitHub-Api-Version: 2026-03-10'
+
+gh api repos/OWNER/REPO/issues/<child-number>/parent \
+  -H 'X-GitHub-Api-Version: 2026-03-10'
+```
+
+Adding one has the gotcha worth carrying: the path segment is an issue
+**number**, but the `sub_issue_id` in the payload is the child's internal
+**id**, a different and much larger integer. Read it off the child first:
+
+```sh
+sub_id=$(gh api repos/OWNER/REPO/issues/<child-number> --jq '.id')
+
+gh api --method POST repos/OWNER/REPO/issues/<parent-number>/sub_issues \
+  -H 'X-GitHub-Api-Version: 2026-03-10' \
+  -F sub_issue_id="$sub_id"
+```
+
+`-F` sends it as a number; `-f` would send the string `"12345"` and get a
+422. Passing the child's issue number instead of its id is the same class of
+failure, except it can *succeed* by linking whichever unrelated issue holds
+that id — check the response's `number` against the child you meant.
+
+Removal is the one path that is **singular**, which is easy to miss when
+copying the add call:
+
+```sh
+gh api --method DELETE repos/OWNER/REPO/issues/<parent-number>/sub_issue \
+  -H 'X-GitHub-Api-Version: 2026-03-10' \
+  -F sub_issue_id="$sub_id"
+```
+
+Both halves of a link must live in the same repository. This surface is new
+enough that it has been changing, so if a call 404s, check GitHub's own REST
+docs for sub-issues for the current paths and version value before assuming
+the credential is at fault.
+
 ## Other quirks worth knowing before they bite
 
-- **Sub-issues are a real, separate API, invisible to `gh issue view`.**
-  Parent/child links live under `/repos/{owner}/{repo}/issues/{n}/sub_issues`
-  and `/parent`, reachable via `gh api`, and they require an explicit REST
-  API version header. Nothing in the default issue payload mentions them, so
-  a stage that doesn't ask will conclude an issue has no children. Verify
-  the current endpoint paths and the exact `X-GitHub-Api-Version` value in
-  GitHub's own REST docs for sub-issues — this surface is new enough that
-  it has been changing.
 - **Issue numbers are per-repo and reused across nothing.** If the
   deployment ever tracks work for two repos, an issue reference must carry
   the repo, not just the number.

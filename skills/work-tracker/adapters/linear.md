@@ -52,6 +52,44 @@ makes the agent's own comments distinguishable from a human's by author.
 Scope identifier is the **team key** (the short prefix in issue
 identifiers). Resolve UUIDs from it at runtime; don't record UUIDs.
 
+### How to actually send the documents below
+
+Every operation in this file is one POST to `https://api.linear.app/graphql`
+carrying `{"query": ..., "variables": ...}`. The awkward part from a shell
+is that a GraphQL document is multi-line but has to arrive as a single JSON
+*string*, so build the payload with `jq -n` rather than hand-escaping it:
+
+```sh
+jq -n --arg q 'query { viewer { id name email } }' '{query: $q}' \
+  | curl -sS -X POST https://api.linear.app/graphql \
+      -H "Authorization: $WORK_TRACKER_API_KEY" \
+      -H 'Content-Type: application/json' --data @-
+```
+
+That call is also the one to run first: `viewer` is whoever the credential
+belongs to, so it both confirms the key works and yields the **agent's own
+user id**, which operation 1 needs. Variables go the same way:
+
+```sh
+jq -n --arg q 'query($teamKey: String!) { teams(filter: { key: { eq: $teamKey } }) { nodes { id name } } }' \
+      --arg teamKey '<TEAM-KEY>' \
+      '{query: $q, variables: {teamKey: $teamKey}}' \
+  | curl -sS -X POST https://api.linear.app/graphql \
+      -H "Authorization: $WORK_TRACKER_API_KEY" \
+      -H 'Content-Type: application/json' --data @-
+```
+
+**GraphQL answers 200 on failure.** A rejected mutation or a bad field name
+comes back as `{"errors": [...]}` with an HTTP 200, so a stage that checks
+only the status code reads every error as success. Check for an `errors` key
+on every response, and check the mutation's own `success` field on top of
+that. This is the single most important thing about this transport.
+
+For anything beyond a couple of calls, a thin Python helper over
+`urllib`/`httpx` with one function per query is the right shape — the `jq`
+form above is for one-off checks and for reading in this file, not for a
+pipeline stage.
+
 ## The seven operations
 
 ### 1. Query by state + owner
@@ -60,14 +98,19 @@ identifiers). Resolve UUIDs from it at runtime; don't record UUIDs.
 operator (`eq`, `neq`, `in`, `nin`, `gte`, `lte`), not a bare value:
 
 ```graphql
-query($teamKey: String!) {
-  issues(filter: {
-    team: { key: { eq: $teamKey } }
-    state: { name: { eq: "<ready-state>" } }
-    assignee: { name: { eq: "<agent-user-name>" } }
-    labels: { name: { eq: "<refined-label>" } }
-  }) {
+query($teamKey: String!, $agentId: ID!, $after: String) {
+  issues(
+    first: 100
+    after: $after
+    filter: {
+      team: { key: { eq: $teamKey } }
+      state: { name: { eq: "<ready-state>" } }
+      assignee: { id: { eq: $agentId } }
+      labels: { name: { eq: "<refined-label>" } }
+    }
+  ) {
     nodes { id identifier url title labels { nodes { name } } }
+    pageInfo { hasNextPage endCursor }
   }
 }
 ```
@@ -79,17 +122,18 @@ before relying on it.
 
 Two things to get right here:
 
-- **Matching an assignee by display `name` is fragile.** It's a mutable
-  profile field, and a human renaming themselves silently empties the
-  query. Resolve the agent's user id once per run
-  (`users(filter: { ... }) { nodes { id } }`) and filter on the id, or use
-  the API's "is me" assignee predicate if it's present in the schema —
-  verify that against Linear's schema rather than assuming it.
-- **`issues()` is paginated and does not tell you it truncated.** Any query
-  that means "all of them" needs `first: 100, after: $cursor` plus
-  `pageInfo { hasNextPage endCursor }` and a loop. Without it you get one
-  page and a plausible-looking wrong answer, which is the worst shape of
-  bug for a pipeline that decides what to work on from the result.
+- **Filter the assignee by id, not by display `name`** — which is why
+  `$agentId` above comes from the `viewer { id }` call in the transport
+  section. `name` is a mutable profile field, and a human renaming
+  themselves silently empties the query rather than erroring. To filter on
+  someone other than the agent, resolve their id first with
+  `users(filter: { email: { eq: $email } }) { nodes { id } }`.
+- **`issues()` is paginated and does not tell you it truncated**, which is
+  the other reason for the shape above: `first`/`after` plus
+  `pageInfo { hasNextPage endCursor }` and a loop that re-sends the query
+  with `after: endCursor` until `hasNextPage` is false. Omit it and you get
+  one page and a plausible-looking wrong answer — the worst shape of bug
+  for a pipeline that decides what to work on from the result.
 
 ### 2. Read one item in full
 
@@ -149,11 +193,36 @@ transition graph to satisfy: any state can be set from any state.
 
 ### 6. Create
 
-`issueCreate(input: { teamId, title, description, assigneeId, stateId })`.
+```graphql
+mutation($teamId: String!, $title: String!, $description: String!, $assigneeId: String, $labelIds: [String!]) {
+  issueCreate(input: {
+    teamId: $teamId
+    title: $title
+    description: $description
+    assigneeId: $assigneeId
+    labelIds: $labelIds
+  }) {
+    success
+    issue { id identifier url }
+  }
+}
+```
+
 `teamId` is required and is the UUID, not the key — resolve it from the key
-via `teams(filter: { key: { eq: $teamKey } })`. Omitting `stateId` lands the
-issue in the team's first backlog-category state, which is usually what you
-want for a newly-filed idea, but decide it rather than inherit it.
+first, and note the singular `team` query takes the UUID, so the key lookup
+goes through the plural one:
+
+```graphql
+query($teamKey: String!) {
+  teams(filter: { key: { eq: $teamKey } }) { nodes { id name } }
+}
+```
+
+`description` is markdown. Omitting `stateId` lands the issue in the team's
+first backlog-category state, which is usually what you want for a
+newly-filed idea, but decide it rather than inherit it. `labelIds` on create
+is the one place the replace-semantics problem in operation 7 doesn't
+arise — there is nothing to preserve yet.
 
 ### 7. Labels
 
@@ -172,18 +241,50 @@ and a label in a group may be mutually exclusive with its siblings —
 worth checking how the owner's labels are organized before assuming two
 can coexist.
 
+## Parent / child links
+
+Not one of the contract's seven operations, but every stage that splits work
+into sub-items needs it. Parent/child is `parentId` on the same
+`issueUpdate` as everything else — there is no dedicated link mutation:
+
+```graphql
+mutation($id: String!, $parentId: String!) {
+  issueUpdate(id: $id, input: { parentId: $parentId }) {
+    success
+    issue { identifier parent { identifier } }
+  }
+}
+```
+
+`parentId` also works inside operation 6's `issueCreate` input, which files
+a sub-issue in one call. Passing `parentId: null` detaches it.
+
+Reading the relation back has two traps, both of which have produced real
+wrong conclusions:
+
+- **Parent/child is not in the generic "relations" surface.** It's the
+  dedicated `parent` / `children` field, so a query that inspects
+  `relations` generically reports no parent for an issue that plainly has
+  one in the UI. Select it explicitly:
+
+  ```graphql
+  query($id: String!) {
+    issue(id: $id) {
+      identifier
+      parent { id identifier title }
+      children { nodes { id identifier title state { name type } } }
+    }
+  }
+  ```
+
+- **A `parent` *filter* given a human identifier can silently return an
+  empty set** even when real sub-issues exist — `issues(filter: { parent: {
+  id: { eq: "TEAM-123" } } })` is the shape that fails. The `children` field
+  above is the reliable read; if you do filter, pass the parent's **UUID**,
+  and re-verify with the UUID before acting on any empty answer.
+
 ## Other quirks worth knowing before they bite
 
-- **Parent/child relations are not in the generic "relations" surface.** A
-  sub-issue's link to its parent is the dedicated `parent` / `children`
-  field, and a query that inspects issue relations generically will report
-  no parent for an issue that plainly has one in the UI. Select `parent { id
-  identifier }` and `children { nodes { id } }` explicitly.
-- **A parent filter given a human identifier can silently return an empty
-  set** even when real sub-issues exist. If a "does this have children"
-  check comes back empty and you have any reason to doubt it, re-run it
-  with the parent's **UUID** before acting on the answer. This one has
-  caused real wrong conclusions.
 - **The `Refined`-style eligibility label and the ready state are two
   separate conditions.** Linear will happily let a labelled issue sit in
   the wrong column, where the pipeline's query can never see it, forever.
