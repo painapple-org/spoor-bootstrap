@@ -392,6 +392,11 @@ rather than assuming:
   no stage prompt in it: which stages run is a per-deployment decision, and
   writing those files is part of the specialization step below. That README
   is the one home for the layout, naming and required contents.
+- [`templates/`](./templates/README.md) — runnable starting points to copy
+  out and specialize, for the few things a SKILL's prose can't carry on its
+  own. Each one is owned by exactly one skill, which stays the home for
+  whether to use it at all; the template's own README is the home for how to
+  drive it. That README is the one enumeration of what exists there.
 - **This deployment's own conventions doc** — everything specific to this
   owner, product and host: the autonomy model they actually agreed to,
   their git/PR conventions, their vocabulary. It lives outside this repo

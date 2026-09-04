@@ -43,7 +43,11 @@ A SKILL here explicitly does **not** include:
   directory) decides *when* to invoke it.
 - Harness-specific tool syntax, config formats, or file locations.
 - App-specific implementation code. A SKILL is instructions an agent
-  reads, not a library it imports.
+  reads, not a library it imports. Where a skill genuinely needs runnable
+  code as its starting point — a scaffold every deployment would otherwise
+  rebuild from the prose — that code lives in
+  [`../templates/`](../templates/README.md) and the SKILL points at it.
+  That README is the home for what qualifies.
 
 ## Adding a new SKILL
 
@@ -140,7 +144,9 @@ is added.
   the standalone-project shape that keeps it out of the product's repo and
   compose file, the service-naming prefix convention, the rule that a page
   shows real state or says out loud that it doesn't, and verifying it
-  serves rather than merely started. Owns *what it serves* only — reaching
+  serves rather than merely started. Specializes the runnable scaffold in
+  [`../templates/internal-dashboard/`](../templates/internal-dashboard/README.md)
+  rather than designing one from scratch. Owns *what it serves* only — reaching
   it privately is
   [`private-networking`](./private-networking/SKILL.md)'s, and the signals
   it displays are

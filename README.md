@@ -19,7 +19,7 @@ this repo was extracted from.
 
 ## What you actually get
 
-Four things, and nothing more:
+Five things, and nothing more:
 
 - **[`install.sh`](./install.sh)** — mechanical OS-level bootstrap. It
   installs three tools and sanity-checks the checkout. It asks no
@@ -37,6 +37,11 @@ Four things, and nothing more:
   from. It ships with no stage prompt in it, deliberately: which stages your
   deployment runs is one of the things the first boot decides, and writing
   those files is part of it.
+- **[`templates/`](./templates/README.md)** — runnable starting points, for
+  the few things where a description isn't enough and the agent would
+  otherwise rebuild the same scaffold from a blank page on every deployment.
+  Real code that builds and starts, with its own script to prove it. That
+  README is the one enumeration of what's in there.
 
 It is explicitly **not**:
 
