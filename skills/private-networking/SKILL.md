@@ -123,10 +123,14 @@ that deployment's own tailnet:
 3. **The sidecar terminates TLS and proxies to the service by its compose
    service name**, over the compose network. No shared network namespace is
    needed — the proxy target only has to be reachable from inside the
-   sidecar. Tailscale's own in-node proxy (`tailscale serve`) does both
-   halves, including a real certificate for the node's mesh hostname, so
-   the service needs no TLS config, no reverse proxy of its own, and no
-   certificate handling.
+   sidecar. Tailscale's own in-node proxy does both halves, including a real
+   certificate for the node's mesh hostname, so the service needs no TLS
+   config, no reverse proxy of its own, and no certificate handling. In a
+   container that proxy is configured by handing the image a
+   serve-configuration file, not by running `tailscale serve` inside it: the
+   CLI form is for a client on a host, and reaching for it here is the first
+   thing to go wrong, because a config applied that way is invisible to
+   anyone reading the compose stack and has to be reapplied by hand.
 4. **Run the client in userspace mode**, so the sidecar needs no TUN device
    and no elevated network capability.
 5. **The auth key for that node lives in the `.env` of the compose stack
@@ -134,17 +138,44 @@ that deployment's own tailnet:
    repo's own `.env` has a slot for, and it should not be given one: it is
    per-node, single-use, and belongs next to the stack it joins.
 
-The exact environment variables the sidecar image reads — auth key,
-hostname, state directory, userspace mode, proxy config — are that image's
-own, and its documentation is their one home. Read them there rather than
-from a list copied into this file, which would go stale the first time the
-image changes one.
+**Which image, concretely, and where its documentation is**: on Tailscale
+the sidecar is the official `tailscale/tailscale` image, and
+[Tailscale's own guide to running it in a container](https://tailscale.com/kb/1282/docker)
+is the one home for the environment variables it reads — the auth key, the
+node hostname, the state directory, userspace mode, and the path to the
+serve-configuration file above. Read them there rather than from a list
+copied into this file, which would go stale the first time the image changes
+one. On another mesh the equivalent is that image's own documentation, and
+the five things to look for are the same.
+
+Name it and go and read it rather than working from recollection of the
+variable names: the specialization step below asks for the auth-key variable
+*by name*, and that answer comes from the image's docs, not from this file
+and not from a guess.
 
 **One non-obvious constraint, worth knowing before you design around it:**
 a separate node is required rather than adding a port to the box's existing
 one. The in-node proxy can only add ports and paths under a node's *own*
 existing hostname, so a distinct hostname needs a distinct node. Discovering
 this after building the other way is a rewrite, not a config change.
+
+### Verify the node actually answers
+
+A running sidecar is not the same as a reachable service, and the two fail
+for different reasons. Before telling the owner a private URL exists:
+
+- **Confirm the node actually joined**, by asking the client inside the
+  sidecar for its own status rather than reading the container's logs. A
+  container holding an expired or already-consumed auth key keeps running
+  and looks healthy.
+- **Load the URL from this box**, which is itself on the mesh, and assert on
+  something the response contains.
+- **Say which of those two you checked.** Whether the *owner's* device
+  reaches it depends on that device being on the mesh, which is theirs to do
+  per the split above — so a URL verified from here is verified from here,
+  and claiming more than that is the failure
+  [`skills/internal-dashboard`](../internal-dashboard/SKILL.md)'s reporting
+  rule is about.
 
 ### What this does and does not give you
 
