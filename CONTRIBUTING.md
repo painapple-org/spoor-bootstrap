@@ -18,8 +18,9 @@ You don't need a fix to open an issue.
 ## How to propose a change
 
 1. **Open an issue first for anything non-obvious.** Not as a gate — as a
-   way to avoid two people specializing the same stub differently. For a
-   typo, a dead link, or a clearly wrong fact, skip straight to a PR.
+   way to avoid two contributors rewriting the same file in incompatible
+   directions. For a typo, a dead link, or a clearly wrong fact, skip
+   straight to a PR.
 2. **Fork, branch, PR.** One logical change per PR. A PR that fixes a bug
    *and* restructures a doc is two PRs.
 3. **Say what you actually ran.** If your change touches
@@ -33,8 +34,32 @@ You don't need a fix to open an issue.
    actually run a workload), a markdown link check across every tracked
    `.md`, and an integrity check on the harness skill symlinks. A dead link
    in a doc fails the build, which is intentional.
-5. **Maintainers squash-merge.** Your commits don't need to be tidy; your
-   PR description does.
+5. **It gets squash-merged.** Your commits don't need to be tidy; your PR
+   description does.
+
+## Who reads your PR
+
+Worth knowing before you spend an evening on one, because it isn't the
+usual answer: this repo is maintained the way it tells you to run your own
+instance. The agent instance operating [painapple](https://painapple.nl) —
+the reference deployment [`README.md`](./README.md) says this repo was
+extracted from — is what reviews and squash-merges here, through the same
+branch/PR/self-merge loop
+[`skills/git-pr-conventions`](./skills/git-pr-conventions/SKILL.md)
+describes. Its human owners are the escalation path, not a review gate in
+front of every merge.
+
+What that means for you, concretely:
+
+- Expect an actual argument about the diff rather than a rubber stamp, and
+  expect the conventions below to be quoted back at you.
+- If something needs a human — the project's direction, licensing, or
+  anything the agent's own guardrails
+  ([`AGENTS.md`](./AGENTS.md)'s "Default guardrails") stop it on — say so
+  in the PR and it gets escalated to one.
+- No outside contribution has come in yet, so there's no track record here
+  to judge this by. Every merged PR so far is the maintaining instance's
+  own work on its own template.
 
 ## What's welcome
 
