@@ -146,6 +146,17 @@ is added.
   however many environments it has, how it's rolled back, whether the data
   is backed up and whether a restore has ever been verified, how the agent
   knows it's healthy, and what it may fix unattended.
+- [`synthetic-monitoring`](./synthetic-monitoring/SKILL.md) — *stub.*
+  Continuously re-proving the product's own user-facing flows still work:
+  picking the flows whose silent breakage would embarrass the business,
+  proving the real side effect rather than a 200, breaking the product once to
+  prove the check catches it, keeping marked test data out of production's
+  numbers, what the cadence has to satisfy, and why something outside the
+  check has to notice when it stops running. Specializes the runnable runner
+  in [`../templates/synthetic-check/`](../templates/synthetic-check/README.md).
+  Owns *whether the product's flows still work*;
+  [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) owns the deploy path
+  and the inventory of every other health signal.
 - [`private-networking`](./private-networking/SKILL.md) — *stub.* How
   something this agent builds for the owner alone — an internal dashboard,
   a preview environment, an admin tool — becomes privately reachable over a
