@@ -5,9 +5,12 @@
 # still literally upstream's URL, installs the three tools this repo
 # bootstraps (docker, uv, gh cli) plus the handful of apt packages they need
 # to be fetchable at all, adds the invoking user to the docker group when run
-# under sudo, and checks the docker daemon is reachable — starting it
-# where the box has systemd, and saying NOT VERIFIED where it has none.
-# Nothing else.
+# under sudo (and says NOT VERIFIED where there is no invoking user to add),
+# and checks the docker daemon is reachable — starting it where the box has
+# systemd, and saying NOT VERIFIED where it has none. Installing the gh cli
+# also leaves an apt keyring and a source list behind under /etc/apt, which
+# outlive this script; README.md's "Before you run install.sh" is the one home
+# for what that grants. Nothing else.
 #
 # Scope, deliberately narrow: this script is purely mechanical OS/dependency
 # setup. It asks no questions and writes no config — the first-boot
@@ -223,9 +226,11 @@ fi
 #
 # The user in question is whoever invoked this script: SUDO_USER when it was
 # escalated with sudo, otherwise the current user. A plain root shell has no
-# invoking user to infer and root already reaches the socket, so this is skipped
-# there — README.md's "Before you run install.sh" says what the human has to do
-# by hand in that case for the account that will actually run the agent.
+# invoking user to infer and root already reaches the socket, so there is
+# nothing this script can do there — but it says so rather than skipping in
+# silence, the same way every other step it cannot complete does. README.md's
+# "Before you run install.sh" says what the human has to do by hand in that
+# case for the account that will actually run the agent.
 docker_group_user="${SUDO_USER:-}"
 if [[ -z "$docker_group_user" && "$(id -u)" -ne 0 ]]; then
 	docker_group_user="$(id -un)"
@@ -240,6 +245,8 @@ if [[ -n "$docker_group_user" ]]; then
 			|| fail "Could not add ${docker_group_user} to the docker group. Fix that (or add them manually with 'usermod -aG docker ${docker_group_user}') and re-run this script — without it, every docker command from that account needs sudo."
 		log "Added ${docker_group_user} to the docker group (log out/in for it to take effect). Note what that grants: socket access to the docker daemon is root-equivalent access to this host. README.md's 'Before you run install.sh' is the one home for why, and for what to do instead if that is not acceptable here."
 	fi
+else
+	log "NOT VERIFIED: this ran as root with no invoking user to infer, so no account was added to the docker group. Root itself reaches the socket, but the account that will actually run the agent does not — add it once that account exists ('usermod -aG docker <account>') or every docker command from it needs sudo. README.md's 'Before you run install.sh' is the one home for what that membership grants."
 fi
 
 # A docker binary on PATH says nothing about whether the daemon is actually

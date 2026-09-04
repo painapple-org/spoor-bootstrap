@@ -124,6 +124,13 @@ then point an AI agent at that box. What that actually involves:
     downloaded before running it, so you at least have a record of what
     executed on your box and can compare two installs. That's an audit
     trail after the fact, not a check that stops anything.
+  - The keyring for `gh` is fetched the same unverified way, and what it
+    leaves behind outlives the script: an apt trust anchor plus a source
+    entry, both written under `/etc/apt`. The two installers above execute
+    once; this one is a standing grant, so that repository can install
+    packages as root on every later `apt-get upgrade` too. Delete both
+    files if you'd rather get `gh` some other way — `install.sh` skips the
+    whole step when `gh` is already on PATH.
   - `get.docker.com` is Docker's own convenience script, and
     [Docker's documentation states it is not recommended for production
     environments](https://docs.docker.com/engine/install/ubuntu/#install-using-the-convenience-script).
