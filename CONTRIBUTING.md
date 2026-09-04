@@ -34,8 +34,13 @@ You don't need a fix to open an issue.
    real execution of `install.sh` in throwaway containers (root and
    sudo-user, asserting docker/uv/gh end up runnable and that docker can
    actually run a workload), a markdown link check across every tracked
-   `.md`, and an integrity check on the harness skill symlinks. A dead link
-   in a doc fails the build, which is intentional.
+   `.md`, a consistency check on [`skills/`](./skills/README.md) and the
+   docs that index it, and an integrity check on the harness skill
+   symlinks. A dead link in a doc fails the build, which is intentional —
+   so does a stub whose `Status:` heading disagrees with its own
+   `TODO(specialize)` markers, a skill missing from
+   [`skills/README.md`](./skills/README.md)'s index, and a "`STARTUP.md`
+   step N" reference pointing at a step that no longer exists.
 5. **It gets squash-merged.** Your commits don't need to be tidy; your PR
    description does.
 
