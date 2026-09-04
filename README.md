@@ -44,7 +44,9 @@ Seven things, and nothing more:
   README is the one enumeration of what's in there.
 - **[`spoor-doctor`](./spoor-doctor)** — a read-only health check you or the
   agent can run at any point after the first boot, for the states a
-  deployment can be silently broken in. See
+  deployment can be silently broken in, plus
+  **[`spoor-doctor-watch`](./spoor-doctor-watch)**, which runs it on a
+  schedule and messages you when its verdict changes. See
   [Checking a live deployment](#checking-a-live-deployment) below.
 - **[`spoor-profile`](./spoor-profile)** — the non-interactive way through
   the first boot, for an owner who'd rather fill in a file than be
@@ -449,6 +451,53 @@ fine indefinitely. The script's own header is the one home for the full
 check list and for what each check is guarding against — read it there
 rather than from a list restated here, and note what it deliberately does
 *not* do.
+
+### Watching it on a schedule
+
+Running it by hand answers the question at the moment you thought to ask.
+Every state it looks for arrives without being asked about, so
+`./spoor-doctor-watch` ([source](./spoor-doctor-watch)) is what a schedule
+invokes: it runs the doctor, compares the verdict against the previous run,
+and sends a message only when that verdict *changed* — once per distinct
+failure, once on recovery, and never again for a break already reported.
+Its own header is the one home for what it does with each kind of change
+and for the two environment variables it reads; nothing about that is
+restated here.
+
+Where the message goes is not this file's and not that script's:
+[`skills/comms-channel`](./skills/comms-channel/SKILL.md) owns the
+destination, and the script only takes the name of a command that delivers
+one.
+
+To turn it on, paste the line it prints for your own checkout into
+whatever this host schedules with:
+
+```sh
+./spoor-doctor-watch --schedule-line   # prints a crontab line, installs nothing
+./spoor-doctor-watch                   # one run, by hand, exactly as the schedule runs it
+```
+
+It prints rather than installs because *how* this host triggers anything is
+a per-deployment decision this repo deliberately doesn't standardize (see
+[`AGENTS.md`](./AGENTS.md)) — a systemd `--user` timer or a harness
+scheduler running that same command is as correct as cron. The cadence in
+the printed line is a starting point, not a recommendation: it is really a
+statement about how long this deployment is willing to be silently broken,
+which is yours to decide.
+
+Two things it does *not* solve, worth knowing before trusting it:
+
+- **A watcher that stopped running produces no alerts at all**, which looks
+  exactly like a healthy deployment. It leaves a `last-run.json` behind and
+  will ping a `DOCTOR_HEARTBEAT_URL` if you give it one, but something
+  outside it has to be what alarms on the silence —
+  [`skills/synthetic-monitoring`](./skills/synthetic-monitoring/SKILL.md)'s
+  "Scheduling, and who notices when the check stops" is the home for that
+  argument, and it applies here unchanged.
+- **It says nothing about your product.** The doctor checks *this agent's
+  own deployment*; whether a user could still complete the thing the
+  business exists for is a different question with its own home, in that
+  same skill.
 
 ## What the skills are, and what "stub" means here
 

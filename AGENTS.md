@@ -455,6 +455,12 @@ rather than assuming:
   after anything that changes configuration. That script's own header is the
   one home for what it checks and what it deliberately doesn't; a finding is
   fixed by fixing the deployment, never by editing the check.
+- [`spoor-doctor-watch`](./spoor-doctor-watch) — the same check on a
+  schedule, alerting when its verdict *changes* rather than on every run.
+  This is what a timer invokes, so don't build a second thing that polls the
+  doctor; README.md's "Checking a live deployment" is the home for turning
+  it on, and the script's own header for what it does with each kind of
+  change.
 - **This deployment's own conventions doc** — everything specific to this
   owner, product and host: the autonomy model they actually agreed to,
   their git/PR conventions, their vocabulary. It lives outside this repo
