@@ -43,9 +43,10 @@ any of that, they only say how it lands in one tracker's API.
    deployment.
 4. **Delete the per-tracker adapter files you didn't use, once `SKILL.md` is
    specialized** — but keep this file. A deployment runs one tracker;
-   keeping notes for two others is exactly the "state that isn't real right
-   now" the deployment conventions doc rules out. Git holds them if the
-   owner ever migrates trackers. This README stays because it's the
+   keeping notes for two others is exactly the "no state that isn't real
+   right now" rule this repo applies to itself — see
+   [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#no-state-that-isnt-real-right-now).
+   Git holds them if the owner ever migrates trackers. This README stays because it's the
    permanent index for the directory and several files across the repo link
    to it; remove the bullet for each deleted adapter from "Available
    adapters" above instead.

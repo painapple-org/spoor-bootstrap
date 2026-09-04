@@ -89,7 +89,9 @@ Name the owner, or leave it out.
 
 ### No state that isn't real right now
 
-Also named in [`skills/README.md`](./skills/README.md). No placeholder for
+Also named in
+[`skills/specialize-skills/SKILL.md`](./skills/specialize-skills/SKILL.md#rules-for-what-you-write),
+as one of the rules the specialization pass writes under. No placeholder for
 something that doesn't exist yet, and no legacy scaffolding for something
 that's gone. A plausible-looking placeholder value is indistinguishable
 from a real one until something acts on it — which is why unanswerable

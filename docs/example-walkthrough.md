@@ -28,8 +28,9 @@ at the end for the side-by-side.
 **Northlight Coffee Roasters** — a speciality coffee roastery in Leeds,
 five people. Most of the revenue is wholesale: 41 accounts, mainly
 independent cafés plus a handful of office subscriptions. Roasting happens
-Tuesday and Thursday; wholesale orders for the Tuesday roast close Monday
-at 18:00.
+Tuesday and Thursday; wholesale orders for each roast close at 18:00 the
+evening before — Monday for the Tuesday roast, Wednesday for the Thursday
+one.
 
 **The software.** Two years ago they paid a freelancer to build
 `northlight-orders`, a wholesale ordering portal: accounts log in, set a
@@ -277,11 +278,22 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > six and we roast Tuesday. If the portal is down Monday at five, that's
 > the worst possible moment.
 >
-> **Agent:** Recorded as a deploy freeze window, and I'll treat a fix
-> during it as a stop-and-ask rather than routine — including a fix for
-> something broken inside the window, because "deploy a rushed change at
-> the worst moment" is how a small outage becomes a big one. Anything
-> else?
+> **Agent:** Then let me check the other roast day rather than assume it's
+> different, because you told me earlier you roast Thursday too and orders
+> close the evening before: does Wednesday afternoon through Thursday
+> morning need the same protection, or is there something about the
+> Thursday roast that makes it less exposed?
+>
+> **Priya:** No, it's the same. Smaller volume, but the same problem. I
+> just think of Monday first because that's the one that's bitten us.
+>
+> **Agent:** Recorded as two freeze windows then, one per roast cutoff,
+> identical in effect — and I'll treat a fix during either as a
+> stop-and-ask rather than routine, including a fix for something broken
+> inside the window, because "deploy a rushed change at the worst moment"
+> is how a small outage becomes a big one. That leaves Tuesday afternoon
+> through Wednesday noon, and Thursday afternoon through Monday noon, as
+> the windows where routine work ships. Anything else?
 >
 > **Priya:** One thing. I want every change to have an issue, even a
 > one-line text change. Not to slow you down — it's the only way I can see
@@ -431,11 +443,17 @@ layout, and how to run the test suite.
 > editing live order data. **Editing or deleting order data is Priya's,
 > not this agent's** — she reserved it explicitly.
 >
-> **Deploy freeze: Monday 12:00 through Tuesday 12:00 Europe/London.**
-> Wholesale orders close Monday 18:00 and roasting is Tuesday. No deploys
-> in that window, including a fix for something broken *during* it — that
-> becomes a stop-and-ask, because a rushed deploy at the worst hour of the
-> week is how a small outage becomes a large one. Merge on Wednesday.
+> **Deploy freeze: Monday 12:00 → Tuesday 12:00, and Wednesday 12:00 →
+> Thursday 12:00, Europe/London.** One window per roast: orders close at
+> 18:00 the evening before each, and roasting is Tuesday and Thursday. The
+> two windows are deliberately identical — the Thursday roast is smaller
+> but no less exposed, and a rule that protects only the roast day that
+> has already caused trouble protects nothing on the other one. No deploys
+> in either window, including a fix for something broken *during* one —
+> that becomes a stop-and-ask, because a rushed deploy at the worst hour
+> of the week is how a small outage becomes a large one. Routine work
+> ships Tuesday afternoon to Wednesday noon, or Thursday afternoon to
+> Monday noon.
 >
 > ## Open conflict: the mandated stack versus this codebase
 >
@@ -506,9 +524,14 @@ and confirm they actually exist in the tracker. [...]
 
 `TODO(specialize)` — fill in, for the chosen tracker:
 
-- **Access mechanism**: an MCP server, an official SDK, a CLI, or raw HTTP.
+- **Access mechanism**: an MCP server, an official SDK, a CLI, or raw
+  HTTP. [...]
 - **The identity the agent acts as.** [...]
-- **The scope identifier**: team/project/board key, repo, or file path.
+- **The scope identifier**: team/project/board key, repo, or file
+  path. [...]
+- **Where a second auth value comes from, if this tracker's auth needs
+  one.** [...] If this tracker's auth is token-only, say that instead of
+  deleting the point.
 - **Any known gotchas of that specific API.** [...]
 ````
 
@@ -576,6 +599,11 @@ closed at all until she answers.
   agent's; an issue without it is hers and is inert. Delete this paragraph
   and the label when the real account lands — until then every query below
   that would filter on assignee filters on `agent`.
+- **Second auth value**: none — this tracker's auth is token-only. `gh`
+  authenticates with the single credential `gh auth login` stored for it;
+  there is no email-plus-token pair to source, so no existing field gets
+  read for one. Recorded rather than deleted, so a later run doesn't
+  re-derive it or invent a key for it.
 - **Gotchas hit so far**, on this tracker:
   - `--label` repeated is an AND and there is no `--not-label`. Negation
     needs `--search` with `-label:`, which goes through the search index
@@ -647,7 +675,7 @@ Priya could correct them cheaply:
 
 - Reading her "anything touching email" tightening as *customer-facing*
   email specifically, with the boundary written out.
-- Treating a broken thing *inside* the freeze window as a stop-and-ask
+- Treating a broken thing *inside* either freeze window as a stop-and-ask
   rather than an emergency exception.
 - Choosing the "no state label" inbox query over an inbox label, because
   she files issues from the web UI.
@@ -673,7 +701,7 @@ it produce genuinely different deployments.
 | Comms channel | Slack | Telegram |
 | Product | inherited Django app, live, 41 paying accounts | greenfield, no live customers |
 | Autonomy posture | tightened around money and customer email | speed over ceremony; broad carve-outs |
-| Deploy freeze | Monday noon → Tuesday noon | none |
+| Deploy freeze | one window per roast day: Mon noon → Tue noon, Wed noon → Thu noon | none |
 | Bar for a tracked item | every change, including copy | small copy edits can ship direct |
 
 The two rows that drive most of the difference are the same one twice:

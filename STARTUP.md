@@ -105,7 +105,9 @@ building any product code until all of it is done.
       it's the better end state and AGENTS.md's self-provisioning section
       says why — but it is an upgrade to a git identity that already works,
       not a prerequisite for your first PR. When I do provision it, swapping
-      it in is a re-run of step 7 scoped to one section, nothing more.
+      it in is a *later*, deliberate re-run of step 7 scoped to that one
+      section, nothing more — not something step 7's first pass touches,
+      which is why that step tells you to leave the section alone today.
 
    d. Authenticating to GitHub is not the same as being able to write to
       *my* repo, so verify the thing you actually need: from the product
@@ -261,9 +263,12 @@ building any product code until all of it is done.
 
    One marker is already gone by the time you get here: the `Auth` section
    of skills/git-pr-conventions/SKILL.md, which step 5 answered against a
-   real push. Don't re-open it. If it somehow still carries a marker, that
-   means step 5's verification never happened — go back and do it rather
-   than filling it in from what you assume worked.
+   real push. Don't re-open it in this pass. If it somehow still carries a
+   marker, that means step 5's verification never happened — go back and do
+   it rather than filling it in from what you assume worked. A later,
+   deliberate scoped re-run *is* how that section changes, per 5(c): when I
+   provision a GitHub account of your own, verify a real push as that
+   account and rewrite the section from what actually worked.
 
    Two things I care about here: don't invent a specific to make a file look
    finished (a marker that still says "unknown" is better than a confident
