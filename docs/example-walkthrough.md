@@ -155,7 +155,10 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > both of your Slack member IDs, not your display names — a display name is
 > something any member can change to match yours.
 >
-> And back to my first question, now that there are two of you: I asked how
+> **Priya:** Had to look that up. Mine's `U04H2J1K9PQ` and Dan's is
+> `U05T8N6RB2C` — profile, three dots, "Copy member ID".
+>
+> **Agent:** And back to my first question, now that there are two of you: I asked how
 > comfortable *you* are with servers, git and code when I still thought
 > there was one person to write to. Where's Dan?
 >
@@ -346,6 +349,12 @@ has read [`../AGENTS.md`](../AGENTS.md).
 ---
 
 ## 3. The resulting `.env`
+
+**Shown in its final state, at the end of the whole flow.** Step 4 of
+[`../STARTUP.md`](../STARTUP.md) is where this file gets written, but that
+step explicitly leaves `CONVENTIONS_DOC_PATH` blank — step 6 fills it in,
+once the agent has actually decided where that doc lives. It's populated
+below because this is the after picture, not because step 4 knew it.
 
 Written from [`../.env.example`](../.env.example), whose field list is the
 schema — same keys, no invented ones. Secrets stay blank with a pointer to
@@ -739,8 +748,8 @@ in it was `work-pipeline`, because specializing that one means deciding
 which stages this deployment actually runs and then writing a prompt file
 per stage kept, in [`../prompts/`](../prompts/README.md).
 
-The stage set Priya agreed to: `refine`, `critique`, `implement`, `review`,
-and no proactive stage yet. **`resolve-critique` was deliberately dropped**,
+The stage set Priya agreed to: `refine`, `critique`, `implement`, and
+`review`. **`resolve-critique` was deliberately dropped**,
 and that is recorded as a choice rather than left as a silent shortcut —
 [`../skills/work-pipeline/SKILL.md`](../skills/work-pipeline/SKILL.md)
 explicitly allows collapsing or dropping stages like this, as a real choice
@@ -750,6 +759,23 @@ everything she cares about, and on a queue of a dozen inherited bug reports
 a separate stage whose whole job is answering critique comments was judged
 overhead she'd feel and never read. If the queue ever gets items big enough
 that critique produces real disagreement, adding the stage back is one file.
+
+**The proactive half of that decision did not land.** The agent proposed
+`ideation` — a stage that files work proposals into the inbox assigned to
+Priya, so they sit inert until she picks one up — and she didn't say yes or
+no. Her answer was that she'd rather see what the reactive pipeline does to
+the dozen inherited bugs before deciding whether she wants software
+proposing work to her at all, and the agent didn't push: it also can't read
+the wholesale handbook yet, so anything the stage proposed about pricing or
+lead times would be guesswork.
+
+So no proactive stage runs today, and that is *undecided rather than
+decided against* — the difference matters, because "no ideation stage"
+looks identical from the code either way. It goes on the shopping list in
+the next section as an open decision, with what it's waiting on, rather
+than being quietly resolved in the agent's favour in either direction.
+[`../AGENTS.md`](../AGENTS.md)'s second shopping-list category exists for
+exactly this, and names this exact question as its own example of one.
 
 `refine` and `implement` got written in that first sitting; `critique` and
 `review` didn't — which is what puts those two on the shopping list in the
@@ -763,12 +789,12 @@ The first boot ends with a shopping list, not a finished agent. Per
 [`../AGENTS.md`](../AGENTS.md)'s self-provisioning section, that list is
 "everything standing between this deployment and a working one that a human
 has to resolve", in three categories — so it is wider than a signup sheet.
-Items 1-4 below are its first category, identities to provision: those are
+Items 1-3 below are its first category, identities to provision: those are
 Priya's to create and the agent does not register itself for any of them.
-Items 5-6 are its third, work the agent identified and could not finish;
-nothing is Priya's to create there, and their blockers are named per item.
-Nothing landed in the second category on this run — every open decision in
-the interview got answered in words.
+Item 4 is its second, a decision nobody has made yet. Items 5-7 are its
+third, work the agent identified and could not finish; their blockers are
+named per item, and item 5 is the only one of them that needs anything from
+Priya at all.
 
 1. **An email address for the agent** on the roastery's mail domain.
    Blocks `AGENT_EMAIL_ADDRESS`.
@@ -780,16 +806,27 @@ the interview got answered in words.
    Blocks the one remaining marker in `work-tracker`, as shown above. It
    does *not* block pushing or opening PRs: both currently authenticate as
    Priya's own account, per section 4 above.
-4. **The wholesale handbook**, either exported into the repo as markdown or
-   shared with the account from item 1. Without it, any proactive work
-   proposal about pricing or lead times would be guesswork.
-5. **The `critique` stage prompt**, still to write in
+4. **Whether a proactive `ideation` stage gets built at all.** Open, not
+   declined: Priya wants to see the reactive pipeline work on the inherited
+   bugs before deciding whether she wants work proposed to her, per section
+   5 above. Blocks nothing that exists today. Also blocked *behind* item 5
+   — even a yes couldn't be acted on usefully until the handbook is
+   readable. The agent's recommendation is to leave it off until both the
+   queue has drained once and item 5 has landed, then revisit.
+5. **The wholesale handbook**, either exported into the repo as markdown or
+   shared with the account from item 1. Not an account to register — a
+   document Priya has to export or share, and the one piece of
+   category-three work here that is waiting on her rather than on the
+   agent's own unfinished writing. Without it, any proactive work proposal
+   about pricing or lead times would be guesswork, which is half of why
+   item 4 is still open.
+6. **The `critique` stage prompt**, still to write in
    [`../prompts/`](../prompts/README.md). Waiting on nothing, just
    unfinished — the stage set is agreed and the file has no open question in
    it, the first sitting simply ran out. Until it exists that stage has
    nothing to be invoked with, so a refined item goes straight to
    `implement` without a second pass over it.
-6. **The `review` stage prompt**, same directory, same blocker: waiting on
+7. **The `review` stage prompt**, same directory, same blocker: waiting on
    nothing, just unfinished. This one is the more expensive of the two to
    leave open: `work-pipeline` splits who implements from who merges, so
    until `review` exists every PR the pipeline opens sits waiting for Priya
@@ -806,7 +843,7 @@ Priya could correct them cheaply:
   she files issues from the web UI.
 
 None of that is a finished deployment. Wiring up the Slack listener,
-finishing the two per-stage pipeline prompts at items 5 and 6 above, and
+finishing the two per-stage pipeline prompts at items 6 and 7 above, and
 getting a deploy to actually run are all follow-on work — this repo's own
 README is explicit that it gets you to a documented starting point, not to
 a working agent.
