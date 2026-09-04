@@ -18,7 +18,11 @@ must be filled in before any outbound message is sent. See
 
 `COMMS_CHANNEL=none` is a legitimate answer. In that case the whole
 escalation section below collapses to email, and it must still be a channel
-the owner actually reads — a log file alone is silence.
+the owner actually reads — a log file alone is silence. Mail is a channel
+that has to be configured like any other, so treat it as one: it needs a
+host, a credential and a sending identity, and `.env.example` says which
+fields those are. An escalation path with nothing to send through is the
+same failure as no escalation path at all.
 
 That collapse covers **outbound** only, and the difference is load-bearing.
 The section below requires an instruction to arrive from an identity the
@@ -125,6 +129,12 @@ to prevent.
 - **Outbound**: the concrete mechanism for sending a message, and for
   sending a file/screenshot if the channel supports it. Prefer an existing
   client library or self-hosted server over hand-rolling an HTTP client.
+  Three `.env` fields carry what it needs and no deployment-invented fourth
+  one should appear: `COMMS_CHANNEL_TOKEN` for the credential,
+  `COMMS_CHANNEL_ENDPOINT` for the host or base URL where the channel has
+  one, and — on the `COMMS_CHANNEL=none` mail path — `AGENT_EMAIL_ADDRESS`
+  as the sending identity. Name which of them this deployment actually uses;
+  read `.env.example` for what each means.
 - **Inbound**: whether messages arrive by long-poll/websocket listener
   (real-time) or by scheduled fetch, and where that process runs. Note that
   this is host-level plumbing, deliberately not standardized by this repo
