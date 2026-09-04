@@ -432,6 +432,12 @@ AGENT_EMAIL_ADDRESS=
 # conventions doc, which overrides this whenever the recipient is known.
 OWNER_TECH_LEVEL=non-technical
 END_USER_TYPE=non-technical
+
+# Deliberately empty, not blocked: nothing internal has been built here
+# yet, so there is no dashboard project for this to point at. Recorded as
+# a decision in the conventions doc rather than left as an open question,
+# and filled in by whoever copies the scaffold out if that day comes.
+INTERNAL_DASHBOARD_PATH=
 ```
 
 Note what *isn't* here. The autonomy deltas, the deploy freeze window, the

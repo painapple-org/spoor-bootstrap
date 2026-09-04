@@ -579,6 +579,12 @@ OWNER_TECH_LEVEL=technical
 # skills/product-tech-stack/SKILL.md inapplicable, which is why the chosen
 # stack and the reasoning for it live in the conventions doc instead.
 END_USER_TYPE=technical
+
+# Deliberately empty, not blocked: nothing internal has been built here
+# yet, so there is no dashboard project for this to point at. Recorded as
+# a decision in the conventions doc rather than left as an open question,
+# and filled in by whoever copies the scaffold out if that day comes.
+INTERNAL_DASHBOARD_PATH=
 ```
 
 Note what *isn't* here. The autonomy deltas, the no-hosted-services rule,

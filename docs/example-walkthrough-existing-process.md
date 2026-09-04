@@ -676,6 +676,12 @@ OWNER_TECH_LEVEL=technical
 # skills/product-tech-stack/SKILL.md mandatory, and it conflicts with four
 # years of TypeScript — see the conventions doc and shopping list item 4.
 END_USER_TYPE=non-technical
+
+# Deliberately empty, not blocked: nothing internal has been built here
+# yet, so there is no dashboard project for this to point at. Recorded as
+# a decision in the conventions doc rather than left as an open question,
+# and filled in by whoever copies the scaffold out if that day comes.
+INTERNAL_DASHBOARD_PATH=
 ```
 
 Note what *isn't* here. The autonomy deltas, the validation-run merge gate,

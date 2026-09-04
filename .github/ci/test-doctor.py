@@ -194,10 +194,22 @@ def build_fixture(root, tracker_port, mail_port):
 	git("commit", "-q", "-m", "fixture product", cwd=product)
 	git("remote", "add", "origin", f"file://{product_origin}", cwd=product)
 
+	# A deployment that actually built an internal dashboard: a standalone
+	# project outside the product repo, with its own history. The healthy
+	# baseline includes one so the location checks are exercised against a
+	# real directory rather than only against a blank value.
+	dashboard = root / "dashboard"
+	dashboard.mkdir()
+	git("init", "-q", "-b", "main", cwd=dashboard)
+	(dashboard / "streamlit_app.py").write_text("# fixture dashboard\n", encoding="utf-8")
+	git("add", "-A", cwd=dashboard)
+	git("commit", "-q", "-m", "fixture dashboard", cwd=dashboard)
+
 	write_env(
 		checkout,
 		{
 			"PRODUCT_REPO_PATH": str(product),
+			"INTERNAL_DASHBOARD_PATH": str(dashboard),
 			"CONVENTIONS_DOC_PATH": "CONVENTIONS.md",
 			"WORK_TRACKER": "jira",
 			"WORK_TRACKER_API_KEY": FIXTURE_TRACKER_TOKEN,
@@ -354,6 +366,34 @@ def case_product_repo_missing(checkout):
 def case_product_repo_without_origin(checkout):
 	git("remote", "remove", "origin", cwd=Path(read_env(checkout)["PRODUCT_REPO_PATH"]))
 
+def case_internal_dashboard_none(checkout):
+	"""No dashboard is a healthy deployment, not a half-configured one: the
+	SKILL says not to build one speculatively, so the check has to stay quiet
+	rather than nagging about an empty value."""
+	edit_env(checkout, INTERNAL_DASHBOARD_PATH="")
+
+def case_internal_dashboard_path_stale(checkout):
+	# The project was moved or deleted and this variable kept its old value.
+	# Nothing else on the box names the dashboard, so this is the only place
+	# the loss is visible at all.
+	edit_env(checkout, INTERNAL_DASHBOARD_PATH=str(checkout.parent / "a-dashboard-that-was-moved"))
+
+def case_internal_dashboard_inside_product(checkout):
+	# The standalone-project rule broken in the way it actually gets broken:
+	# the scaffold copied into the product repo instead of next to it.
+	product = Path(read_env(checkout)["PRODUCT_REPO_PATH"])
+	nested = product / "ops-dashboard"
+	shutil.move(str(checkout.parent / "dashboard"), str(nested))
+	edit_env(checkout, INTERNAL_DASHBOARD_PATH=str(nested))
+
+def case_internal_dashboard_unversioned(checkout):
+	# A copy with no history anywhere above it: a warning rather than a
+	# failure, since it serves fine and only rolls back badly.
+	loose = checkout.parent / "loose-dashboard"
+	loose.mkdir()
+	(loose / "streamlit_app.py").write_text("# fixture dashboard\n", encoding="utf-8")
+	edit_env(checkout, INTERNAL_DASHBOARD_PATH=str(loose))
+
 def case_pipeline_specialized_without_prompts(checkout):
 	# The fixture is specialized, so stages were decided — and then the file
 	# a trigger would name isn't there. A cron line pointing at it fails with
@@ -437,7 +477,10 @@ def case_specialization_deleted_a_linked_file(checkout):
 	shutil.rmtree(checkout / "skills" / "work-tracker" / "adapters")
 
 CASES = [
-	("healthy fixture", case_healthy, [], False),
+	# The baseline asserts one PASS by name as well as the absence of
+	# failures: the fixture has a real dashboard project, and a check that
+	# silently skipped it would look identical here otherwise.
+	("healthy fixture", case_healthy, [("internal-dashboard", "PASS")], False),
 	(".env missing", case_env_missing, [("env-file", "FAIL")], True),
 	(".env world-readable", case_env_world_readable, [("env-permissions", "FAIL")], True),
 	(".env committed to git", case_env_committed, [("env-not-tracked", "FAIL")], True),
@@ -471,6 +514,30 @@ CASES = [
 	("conventions doc missing", case_conventions_doc_missing, [("conventions-doc", "FAIL")], True),
 	("product repo missing", case_product_repo_missing, [("product-repo", "FAIL")], True),
 	("product repo has no origin", case_product_repo_without_origin, [("product-repo", "FAIL")], True),
+	(
+		"no internal dashboard at all",
+		case_internal_dashboard_none,
+		[("internal-dashboard", "SKIP")],
+		True,
+	),
+	(
+		"dashboard path points at nothing",
+		case_internal_dashboard_path_stale,
+		[("internal-dashboard", "FAIL")],
+		True,
+	),
+	(
+		"dashboard project inside the product repo",
+		case_internal_dashboard_inside_product,
+		[("internal-dashboard", "FAIL")],
+		True,
+	),
+	(
+		"dashboard project under no version control",
+		case_internal_dashboard_unversioned,
+		[("internal-dashboard", "WARN")],
+		True,
+	),
 	(
 		"pipeline specialized with no stage prompts",
 		case_pipeline_specialized_without_prompts,

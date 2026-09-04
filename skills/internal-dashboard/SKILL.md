@@ -105,7 +105,13 @@ this step:
 
 - **Its own directory, its own dependency lockfile, its own git repo or
   subdirectory** — initialized as a standalone project, not added to an
-  existing one.
+  existing one. **Record where you put it in `INTERNAL_DASHBOARD_PATH` in
+  `.env`, in the same change that creates it.** That variable is this
+  project's one home; without it the deployment has two things with their
+  own history on disk and a name for only one of them, and a later session
+  looking for the dashboard has nothing to resolve. Its own comment in
+  `.env.example` is the home for what a blank there means and for why the
+  key isn't `DASHBOARD_*`.
 - **Its own self-contained compose file**, describing only the dashboard
   and the sidecar that exposes it. Never edit the product's compose file to
   add a dashboard service to it.

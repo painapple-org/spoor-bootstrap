@@ -86,6 +86,11 @@ building any product code until all of it is done.
      mean leaving the mode alone, per the standing invariant above.
    - Leave `CONVENTIONS_DOC_PATH` blank here: step 6 is what fills it in,
      once you've actually decided where that doc lives.
+   - Leave `INTERNAL_DASHBOARD_PATH` blank here too, and for a different
+     reason: nothing it could point at exists yet today, and its own comment
+     in `.env.example` says a value there is a claim that there is something
+     to open. Step 6's internal-tooling bullet is where the blank gets
+     written down as a decision rather than a gap.
 
 5. Establish a working git identity, and prove it works, before you try to
    push anything. Everything from step 6 on ships through a branch and a
@@ -409,6 +414,23 @@ building any product code until all of it is done.
      that nothing is exposed on it yet — which stays true until the tool
      actually answers, and is not the same statement as "no mesh". Don't
      record a settled deferral this conversation has already contradicted.
+   - **where an internal dashboard would live, if this deployment ever
+     builds one.** The bullet above is about *reaching* an internal tool;
+     this is about where the tool itself sits. Specializing
+     `templates/internal-dashboard/` produces a whole second project — its
+     own git history, its own dependency tree, its own compose file — and
+     skills/internal-dashboard/SKILL.md requires it to live outside the
+     product's repo, so "the product repo" stops being the only location a
+     future session has to be able to find. `INTERNAL_DASHBOARD_PATH` in
+     `.env` is that project's one home, filled in by whoever copies the
+     scaffold out as part of that same change, per
+     templates/internal-dashboard/README.md's first specialization step.
+     **Today it is blank, and the thing to record here is which kind of
+     blank it is** — no dashboard wanted, or none built yet — per that
+     variable's own comment in `.env.example`, which owns the distinction.
+     Record too whatever I said about where it should go and whether it gets
+     a remote of its own; neither has a `.env` slot, and both are what stop
+     the next session from picking a home by guess.
    - **whether the product charges anyone**, from the interview's
      charging question. `skills/billing-and-payments/SKILL.md` is the one
      home for the mechanism — the owner/agent split, the provider account,
@@ -444,7 +466,10 @@ building any product code until all of it is done.
      one line each on what lives where, and say plainly that a skill saying
      "the product repo" means the primary one unless it names another.
      Nothing else can record this, and a future session that only reads
-     `.env` will otherwise believe there is exactly one.
+     `.env` will otherwise believe there is exactly one. A dashboard project
+     is not one of the repos the product spans and doesn't belong on this
+     list — it has its own variable, per the internal-dashboard bullet
+     above.
    - anything from step 3.
 
    This is the file every future session of yourself should treat as this
