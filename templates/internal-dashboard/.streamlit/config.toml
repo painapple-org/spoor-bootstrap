@@ -1,0 +1,17 @@
+[server]
+port = 8501
+address = "0.0.0.0"
+headless = true
+# This service publishes no host port and is reached only through the mesh
+# sidecar, by the node's own mesh hostname rather than by the origin Streamlit
+# expects to see. The sidecar is the only thing that can reach this port at
+# all, so origin checking has nothing left to protect and only breaks widget
+# POSTs. Turn both of these back on if this ever gets published anywhere.
+enableXsrfProtection = false
+enableCORS = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "dark"

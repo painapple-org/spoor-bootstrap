@@ -1,17 +1,45 @@
 ---
 name: internal-dashboard
-description: How to build an internal operations dashboard — a small standalone app, separate from the product, that puts this deployment's own real state on one page for the owner and the agent. Covers when one is worth building at all, the standalone-project shape, the service-naming prefix convention, the rule that a page shows real state or says out loud that it doesn't, and how to verify one actually serves. Read when the owner asks for a dashboard, a status page, or somewhere to see what this instance is doing. Ships as a stub for the stack choice and what the pages actually show.
+description: How to build an internal operations dashboard — a small standalone app, separate from the product, that puts this deployment's own real state on one page for the owner and the agent. Ships with a runnable scaffold in templates/internal-dashboard/ to copy and specialize rather than a shape to rebuild from scratch. Covers when one is worth building at all, the standalone-project shape, the service-naming prefix convention, the rule that a page shows real state or says out loud that it doesn't, and how to verify one actually serves. Read when the owner asks for a dashboard, a status page, or somewhere to see what this instance is doing. Ships as a stub for what the pages actually show.
 ---
 
 # internal-dashboard
 
 ## Status: STUB — needs specialization
 
-The shape below is real and generic: a standalone project, a naming
-convention, an honesty rule, a verification step. What cannot exist until a
-deployment is configured is the stack and — most of all — which pages are
-worth building. Those are `TODO(specialize)` markers, per
+The scaffold and the rules below are real and generic: a running starter
+app, a standalone-project shape, a naming convention, an honesty rule, a
+verification script. What cannot exist until a deployment is configured is
+**which pages are worth building** — and whether this deployment wants a
+dashboard at all. Those are `TODO(specialize)` markers, per
 [`skills/specialize-skills`](../specialize-skills/SKILL.md).
+
+## Start from the scaffold, not from a blank page
+
+There is a real, running starter dashboard in this repo:
+[`templates/internal-dashboard/`](../../templates/internal-dashboard/README.md).
+Copy that directory and specialize it. Do not design one from this file's
+prose — every deployment that does gets a slightly different, slightly
+worse version of the same scaffold, and the parts that are identical
+everywhere (the container shape, the no-published-port compose file, the
+provenance and failure-reporting helpers, the verification script) are
+already written and already verified there.
+
+What it gives you on the first run, with no configuration: three pages
+reading live disk usage, the host's running containers off the runtime API,
+and `git log` across whatever checkouts are mounted in. Real readings, so
+you are editing something that works rather than filling in placeholders.
+
+That directory's own README is the home for how to drive it — what each
+file is, the ordered specialization steps, how to run it locally. **This
+file stays the home for the judgement**: whether to build one, what makes a
+page worth having, and the honesty rules the scaffold implements. Read this
+one for the why, that one for the how, and don't copy either into the
+other.
+
+The scaffold is a starting point, not a constraint. Its pages exist to be
+replaced, and its stack is a default rather than a requirement — see "Its
+stack is not the product's stack" below.
 
 ## What this covers, and what it doesn't
 
@@ -68,7 +96,9 @@ things: it can't break the product when it breaks, its dependency tree
 stays out of the product's lockfile, and its access to host internals never
 becomes reachable from the product's public surface.
 
-Concretely, the shape that works:
+Concretely, the shape that works — and the shape the scaffold above already
+has, so copying it out rather than adding it to something is the whole of
+this step:
 
 - **Its own directory, its own dependency lockfile, its own git repo or
   subdirectory** — initialized as a standalone project, not added to an
@@ -94,18 +124,27 @@ specific stack, and it deliberately does not apply here. That requirement
 is scoped to a product built for a **non-technical end-user**, for reasons
 that file owns. An internal dashboard's entire audience is the owner and
 this agent, both of whom are technical enough to read whatever it's written
-in — so pick the stack that gets a useful page up fastest, and record the
-choice.
+in — so what matters is getting a useful page up fastest, not conforming to
+the product's stack.
+
+**The scaffold's stack is the default answer, and it is already recorded.**
+It is a Python dashboard framework with two dependencies, and its stack is
+declared in the one place that owns it:
+[`templates/internal-dashboard/pyproject.toml`](../../templates/internal-dashboard/pyproject.toml).
+Read it there rather than from a list copied into this file. Taking the
+default costs one decision and zero writing, which is the point of it being
+a default.
+
+Deviating is allowed and occasionally right — a deployment whose owner
+already runs a metrics stack with dashboards in it should put the pages
+there instead of standing up a second surface. What is not allowed is
+deviating silently: a stack chosen on merits gets recorded in this
+deployment's conventions doc at `CONVENTIONS_DOC_PATH` in `.env`, with why,
+because a later session that finds an undocumented choice tends to
+relitigate it.
 
 Do not read this as licence to be exotic. The dashboard still gets
 maintained by whoever inherits it.
-
-`TODO(specialize)`: record the stack chosen for this deployment's
-dashboard, and where its project lives. A single-file Python dashboard
-framework, a small server-rendered app, or a static page regenerated on a
-schedule are all reasonable and materially different choices. Name the one
-picked and why — a later session that finds an undocumented choice tends to
-relitigate it.
 
 ### If the framework ships its own agent skill, install it
 
@@ -144,6 +183,10 @@ Apply it to all three — service name, container name, network hostname —
 not just the one that happens to be visible. They drift apart otherwise,
 and the hostname is the one people type.
 
+The scaffold reduces this to one value in its own `.env`, applied to all
+three from there, so the drift this rule guards against isn't possible in a
+copy of it. Its `.env.example` names the variable.
+
 `TODO(specialize)`: record this deployment's prefix and where it applies.
 It is usually the agent's own name.
 
@@ -171,6 +214,22 @@ Two related habits, both cheap:
   in exactly the setup this file recommends: a container sees a few
   read-only mounts, not the host, so anything checking whether a referenced
   file still exists has to know which roots it can actually see.
+
+**The scaffold gives both habits a function to call**, so a page gets them
+by using the helpers rather than by remembering the rules: one that prints
+what a panel's numbers were derived from, one that renders a reading that
+could not be taken without implying a result. Their module docstring is the
+home for what each is for. Keep calling them on every panel you add — a
+page showing a number with no source and no failure path is the one that
+eventually costs the whole surface its credibility, and it looks identical
+to a good one until then.
+
+Its three starter pages are also each a worked example of one of these
+failure modes surviving contact with a container, which is why they read
+live state rather than a fixture: an absence told apart from a failure, one
+unreadable input not blanking a whole page, a panel that names its own
+source. Read them before writing your own, and delete the ones that don't
+answer a real question here.
 
 `TODO(specialize)`: record the pages this deployment's dashboard has and
 the real source behind each one. Derive them from the owner's actual
@@ -211,6 +270,23 @@ live:
   ownership is wrong fails now rather than the first time the owner uses
   the page.
 
+**The scaffold ships this as a script**, so on the default stack there is
+nothing to write: `verify.sh` in
+[`templates/internal-dashboard/`](../../templates/internal-dashboard/README.md)
+runs the checks above and fails on each. Its own header is the home for
+what it asserts and in what order. Run it before reporting a dashboard as
+live, and again after any change to a page — and add each page you write to
+the list it exercises, or the per-page check silently stops covering the
+pages that matter.
+
+Two properties of it worth carrying to any other stack: it publishes no
+host port to do the checking (a verification step that publishes one is
+exactly what the no-published-port rule exists to prevent, and it has a way
+of surviving into production), and its per-page check runs the framework's
+own headless harness inside the built image rather than requesting each URL
+— because for a client-rendered app an HTTP request returns the same shell
+whether the page rendered or blew up on its first line.
+
 **Report the exposure honestly and separately from the app.** The two fail
 independently: the app can be running and verified while the private
 network side is blocked on something only the owner can provision, which
@@ -220,6 +296,9 @@ happens, say the app is up, say the sidecar is defined but not started, and
 say what the owner has to provide. Never report a private URL you have not
 actually loaded.
 
-`TODO(specialize)`: record the concrete verification commands for this
-deployment's stack, and whether the framework ships a headless test harness
-worth using for the per-page check.
+`TODO(specialize)`: only if this deployment's dashboard is **not** on the
+scaffold's stack — record the concrete verification commands for the stack
+it is on, and whether that framework ships a headless test harness worth
+using for the per-page check. On the default stack, delete this marker: the
+answer is the script above, and restating what it does here would be a copy
+that goes stale the first time it changes.

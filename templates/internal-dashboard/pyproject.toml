@@ -1,0 +1,19 @@
+[project]
+name = "internal-dashboard"
+version = "0.1.0"
+description = "An internal, mesh-only operations dashboard over this host's real state"
+readme = "README.md"
+requires-python = ">=3.12"
+
+# Two dependencies on purpose. Everything else this app does - the container
+# runtime API, disk usage, git history - is stdlib, so there is very little
+# here to keep patched and very little to understand before changing it.
+# Add to this list when a page needs something; don't pre-add for a page that
+# doesn't exist yet.
+dependencies = [
+    "streamlit>=1.50",
+    "pandas>=2.2",
+]
+
+[tool.uv]
+package = false

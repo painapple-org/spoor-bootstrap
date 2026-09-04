@@ -1,0 +1,86 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Two services, self-contained in this directory: the dashboard, and one mesh
+# sidecar that is the only route to it.
+#
+# Why it is shaped this way - no published port, a sidecar joining the mesh as
+# its own node with its own state volume, TLS terminated there, userspace mode,
+# the auth key living in this stack's own .env - is not restated here. All five
+# points, and the owner/agent split on who provisions what, live in
+# `skills/private-networking/SKILL.md`. Read that before changing anything in
+# the sidecar block below; this file is an instance of that pattern, not a
+# second description of it.
+#
+# Every service, container and mesh hostname carries this deployment's own
+# prefix, per `skills/internal-dashboard/SKILL.md`. Here that is one value,
+# DASHBOARD_NAME in .env, applied to all three.
+
+services:
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${DASHBOARD_NAME}
+    restart: unless-stopped
+    logging: *default-logging
+    mem_limit: 768m
+    cpus: 1.0
+    # Runs as the host user that owns the checkouts mounted below, added to the
+    # group that owns the runtime socket. Reading is all it does - the socket is
+    # mounted read-only and nothing in this app issues a write to it.
+    user: "${DASHBOARD_UID}:${DASHBOARD_GID}"
+    group_add:
+      - "${DASHBOARD_DOCKER_GID}"
+    environment:
+      - DASHBOARD_TITLE=${DASHBOARD_TITLE}
+      - DASHBOARD_DISK_PATH=${DASHBOARD_DISK_PATH}
+      - DASHBOARD_DOCKER_SOCKET_PATH=/var/run/docker.sock
+      - DASHBOARD_REPO_PATHS=${DASHBOARD_REPO_PATHS}
+    # No `ports:` at all - deliberately unreachable except through the sidecar
+    # below, which reaches it over the compose network by service name. This
+    # app has no auth layer of its own: mesh membership is the only access
+    # control, so nothing here may publish a host port.
+    #
+    # Mount each checkout at its real host path, read-only, and scope the
+    # mounts to individual directories rather than a whole home directory so
+    # credentials and keys living nearby stay out of this container. These
+    # paths have to match DASHBOARD_REPO_PATHS above.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /path/to/a/checkout:/path/to/a/checkout:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  dashboard-mesh:
+    image: tailscale/tailscale:latest
+    container_name: ${DASHBOARD_NAME}-mesh
+    restart: unless-stopped
+    logging: *default-logging
+    hostname: ${DASHBOARD_NAME}
+    environment:
+      # Single-use key, kept only in this stack's own .env, never committed.
+      - TS_AUTHKEY=${DASHBOARD_TS_AUTHKEY}
+      - TS_HOSTNAME=${DASHBOARD_NAME}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=true
+      - TS_SERVE_CONFIG=/config/serve.json
+    # Mounted as a directory rather than as the single file, which is what the
+    # image's own docs ask for: a file mount hides later edits from it.
+    volumes:
+      - dashboard_mesh_state:/var/lib/tailscale
+      - ./tailscale:/config:ro
+    depends_on:
+      dashboard:
+        condition: service_healthy
+
+volumes:
+  dashboard_mesh_state:
