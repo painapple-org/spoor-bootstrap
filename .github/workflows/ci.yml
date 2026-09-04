@@ -56,12 +56,13 @@ jobs:
           persist-credentials: false
 
       # install.sh refuses to run against a checkout whose origin is upstream,
-      # since an adopter is meant to work from their own fork — and a CI
-      # checkout is upstream by definition. Repoint origin at a stand-in URL so
-      # the guard's pass path is what gets exercised. Nothing ever contacts it;
+      # since an adopter is meant to work from their own copy (a private repo
+      # by default, or a fork if they opt into that) — and a CI checkout is
+      # upstream by definition. Repoint origin at a stand-in URL so the
+      # guard's pass path is what gets exercised. Nothing ever contacts it;
       # the check only reads the remote's string.
-      - name: Point origin at a stand-in fork
-        run: git remote set-url origin https://github.com/spoor-bootstrap-ci/stand-in-fork.git
+      - name: Point origin at a stand-in remote
+        run: git remote set-url origin https://github.com/spoor-bootstrap-ci/stand-in-remote.git
 
       # A steps-level docker run on the runner VM, deliberately not a job-level
       # `container:`. The test needs --privileged for the nested daemon, and
