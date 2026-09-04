@@ -158,18 +158,41 @@ point of the first run, not a preamble to skip.
 This is the one home for the shopping list and the reasoning behind it;
 `README.md` and `STARTUP.md` point here rather than restating either.
 
-Once the interview is done, you will need your own identity on several
-platforms, distinct from your owner's personal accounts:
+The list is **everything standing between this deployment and a working
+one that a human has to resolve** — which is accounts, but not only
+accounts. It has three kinds of entry, and an item that isn't the first
+kind still belongs on it:
+
+**1. Identities to provision.** Once the interview is done, you will need
+your own identity on several platforms, distinct from your owner's
+personal accounts:
 
 - your own email address,
 - a real-time comms channel account/token (if one was chosen),
-- your own GitHub account (separate from the human's own) — see the note
-  below on why this one is an upgrade rather than a blocker,
+- **a git identity and a hosted remote of your own** — see the note below,
+  which covers both the case where the owner already has a git hosting
+  account and the case where nobody involved has one yet,
 - an account/integration on whichever work tracker was chosen,
 - accounts on any other software your owner wants you actively working in.
 
+**2. Decisions nobody has made yet.** The interview and the specialization
+pass both surface questions with no answer rather than a missing account:
+which work tracker, whether a proactive stage the owner is unsure about
+gets built at all, whether an existing non-conforming codebase gets
+migrated. These are not accounts and they have nowhere else to land, so
+they go here — one line each, stating the decision that's open, what it
+blocks, and (where you have one) your recommendation. An open decision
+recorded as a question is honest; one you quietly resolved on the owner's
+behalf is the failure this whole section exists to prevent.
+
+**3. Work you identified and could not finish**, and what each piece is
+waiting on — a `TODO(specialize)` marker that stayed open, a prompt file
+still to write, a deploy path you couldn't verify. Name the blocker, not
+just the gap: "waiting on item 2 above" and "waiting on nothing, just
+unfinished" are very different things to the owner reading it.
+
 **Produce this as a list for the human to act on. Do not attempt to
-register for any of these yourself.** The provisioning step — creating the
+register for any of the accounts on it yourself.** The provisioning step — creating the
 account, verifying an email, generating an API key — is explicitly the
 human's job, not something you do autonomously, even if you could
 technically drive a signup form. The reason this matters isn't just
@@ -179,15 +202,32 @@ touch. If you reused the human's own accounts, or provisioned your own
 accounts yourself with no human oversight, that scoping breaks down. Ask
 for the shopping list to be filled in; don't fill it in yourself.
 
-**The GitHub account on that list is the one item that is an upgrade, not
-a blocker.** You need *some* working git identity long before this list
+**The git identity on that list is the one item that is an upgrade, not a
+blocker.** You need *some* working git identity long before this list
 exists — [`STARTUP.md`](./STARTUP.md) step 5 establishes and verifies one,
 ahead of the first push in step 6, and the owner's own account is an
-acceptable answer there. What the dedicated account buys is the RBAC
-scoping described above, which is worth having and worth asking for; what
-it must not do is hold up your first PR waiting on an account nobody has
-created yet. Every other item on the list genuinely does gate the work
-that depends on it.
+acceptable answer there. What a dedicated one buys is the RBAC scoping
+described above, which is worth having and worth asking for; what it must
+not do is hold up your first PR waiting on an account nobody has created
+yet. Every other item in category 1 genuinely does gate the work that
+depends on it.
+
+What that item actually says depends on what the owner already has, so
+find out rather than assuming:
+
+- **The owner already has a git hosting account.** Then the ask is an
+  account of your *own* on that same host, separate from theirs, with
+  write access to the repos you operate. That's the RBAC-scoping upgrade.
+- **Nobody involved has one.** Then the ask is a hosted git remote of any
+  kind, before the question of *whose* account it is arises at all — a
+  hosting account on any provider, or a remote the owner already
+  controls. A bare repo on a box they own is a legitimate answer, and
+  [`README.md`](./README.md)'s "Path to a running instance" is the home
+  for what that costs (no PR mechanism, so the shipping loop needs an
+  agreed substitute). Don't write this item as "a second account on
+  provider X" when there is no first one — it reads as an upgrade the
+  owner can defer, when it's actually the thing everything else is
+  waiting on.
 
 ## Where the rest of the instructions live
 

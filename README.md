@@ -149,6 +149,11 @@ default; every file it quotes remains the home for its own content.
    (`gh repo create --private --source=. --remote=origin --push`) isn't
    available to you yet at this point.
 
+   This is the default and the recommended shape, but not the only
+   supported one: forking on GitHub, and a plain git remote with no
+   GitHub-style host behind it at all, are both covered further down this
+   item. Read to the end of it before setting `origin`.
+
    ```
    git clone https://github.com/painapple-org/spoor-bootstrap.git
    cd spoor-bootstrap
@@ -194,7 +199,26 @@ default; every file it quotes remains the home for its own content.
    create a fresh private repo, push to it, and delete the fork — and
    anything already pushed to the fork has to be treated as public.
 
-   Either way, clone with `git`, not a "Download ZIP" — see
+   **A plain git remote is the third supported shape, and it's the right
+   answer if you don't have a GitHub-style host at all.** A bare repo on a
+   box you own (`git init --bare` and an SSH path), or a self-hosted server
+   whose API nobody has turned on, works as `origin` for both this checkout
+   and your product repo. Nothing in the setup requires GitHub as such.
+
+   What it costs is the pull request, which several things here assume
+   exists: a remote like that has no PR object, so "open a PR, merge it
+   yourself" has to become an agreed substitute that still leaves a
+   reviewable diff and a revert point, and that still advances the default
+   branch without the local fast-forward that races a concurrent deploy.
+   [`skills/git-pr-conventions`](./skills/git-pr-conventions/SKILL.md)'s
+   `Auth` section is where that substitute gets recorded, and
+   [`STARTUP.md`](./STARTUP.md) step 5 is where the agent checks for a PR
+   mechanism and brings you the substitute to agree on before it ships
+   anything. Expect that conversation in your first hour rather than
+   being surprised by it — and note that on this shape the privacy tradeoff
+   in the fork paragraph above doesn't apply at all: it's your box.
+
+   Whichever of the three you pick, clone with `git`, not a "Download ZIP" — see
    [`skills/README.md`](./skills/README.md) for what the harness skill
    symlinks are and the one thing that breaks them.
 
