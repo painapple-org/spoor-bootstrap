@@ -85,12 +85,12 @@ fi
 # harnesses discover these" for what these symlinks are and why a non-git
 # copy is the one thing that breaks them.
 
-for harness_skills_dir in .claude/skills .opencode/skills; do
+for harness_skills_dir in .claude/skills .opencode/skills .agents/skills; do
 	if [[ ! -L "$SCRIPT_DIR/$harness_skills_dir" ]] || [[ ! -d "$SCRIPT_DIR/$harness_skills_dir" ]]; then
 		fail "${harness_skills_dir} is not a working symlink into skills/. If you got this repo via a ZIP download instead of 'git clone', symlinks don't survive that — re-clone with git instead."
 	fi
 done
-log ".claude/skills and .opencode/skills resolve correctly."
+log "Harness-native skills paths resolve correctly."
 
 # ---------------------------------------------------------------------------
 # Privilege escalation

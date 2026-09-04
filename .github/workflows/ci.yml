@@ -90,7 +90,7 @@ jobs:
       # Ask git for the file list rather than globbing the filesystem, the same
       # way the shellcheck job does: tracked files are what a clone actually
       # gets, and a stray untracked .md in a working directory isn't this job's
-      # business. It also drops .claude/skills and .opencode/skills for free —
+      # business. It also drops the harness-native skills paths for free —
       # each is tracked as a single symlink to skills/, not as a second copy of
       # every SKILL.md, so globbing through them would re-check each file at a
       # fake path where its own relative links resolve to nothing. That the
@@ -169,7 +169,7 @@ jobs:
       - name: Verify harness skill symlinks
         run: |
           status=0
-          for dir in .claude/skills .opencode/skills; do
+          for dir in .claude/skills .opencode/skills .agents/skills; do
             mode="$(git ls-files --stage -- "$dir" | awk '{print $1}')"
             if [[ "$mode" != "120000" ]]; then
               echo "FAIL: $dir is committed with git mode '${mode:-missing}', expected 120000 (symlink)." >&2
