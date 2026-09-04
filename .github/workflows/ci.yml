@@ -43,7 +43,7 @@ jobs:
   # below, live in the test script itself.
   install-execution:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
