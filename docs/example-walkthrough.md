@@ -330,7 +330,13 @@ browser flow, and authenticated as her own GitHub account. A
 `git push --dry-run` of a throwaway branch name against
 `northlight-orders` confirmed write access rather than just a successful
 login, and the working invocation went into `git-pr-conventions`' `Auth`
-section.
+section — along with the finding that the same `gh` token covers both the
+push and the PR API here, and that GitHub does have a PR mechanism at all,
+which a bare git remote would not have.
+
+That `Auth` edit is a tracked file in Priya's fork of the bootstrap repo,
+so it shipped as its own PR there, alongside the conventions-doc PR in
+`northlight-orders`.
 
 Her own account, not the agent's. A GitHub account belonging to the agent
 is item 3 on the shopping list below and is the better end state, but it is
@@ -557,6 +563,11 @@ actually bite:
   directory's own instruction. Git holds them if Priya ever migrates.
   Keeping notes for two trackers she doesn't use is exactly the "no state
   that isn't real right now" rule this repo applies to itself.
+
+The PR that "same PR" refers to is one PR against Priya's fork of the
+bootstrap repo covering the whole pass — every stub the pass rewrote and
+the adapter deletions together. The one marker that survived comes back as
+its own scoped PR later, once item 3 on the shopping list below exists.
 
 ---
 
