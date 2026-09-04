@@ -128,6 +128,13 @@ and, where one command can settle it, against the real instance.
   that account; see `AGENTS.md`'s self-provisioning section.
 - **The scope identifier**: team/project/board key, repo, or file path,
   depending on tracker.
+- **Where a second auth value comes from, if this tracker's auth needs
+  one.** `WORK_TRACKER_API_KEY` is the only credential slot `.env.example`
+  defines. A tracker whose auth pairs the token with a second, non-secret
+  value (Jira Cloud's Basic auth is email-plus-token) reads that value from
+  an existing field rather than a new key — name the field here, as a
+  decision, so a later run doesn't re-derive it or invent a key. If this
+  tracker's auth is token-only, say that instead of deleting the point.
 - **Any known gotchas of that specific API.** Write these down the first
   time one bites, rather than rediscovering it every run — e.g. a
   parent/child relation that a "get one item" call silently omits, or a

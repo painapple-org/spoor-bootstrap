@@ -2,9 +2,8 @@
 
 This directory holds the harness-agnostic skill definitions for a
 spoor-bootstrap deployment. It's the top-level, portable, canonical
-source of truth. See [`../CLAUDE.md`](../CLAUDE.md) and
-[`../AGENTS.md`](../AGENTS.md) for why editing happens here, not at a
-harness-native path.
+source of truth, and the place edits are made — every harness-native path
+is a symlink back to here, per "How harnesses discover these" below.
 
 ## How harnesses discover these
 

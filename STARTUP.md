@@ -112,14 +112,24 @@ building any product code until all of it is done.
       repo at `PRODUCT_REPO_PATH`, run a `git push --dry-run` of a
       throwaway branch name against its remote. That contacts the remote
       and gets refused if the account lacks write access, while writing
-      nothing. If the product repo doesn't exist yet, say so and get it
-      created first — step 6 has nowhere to land otherwise. "Exists" here
-      means it has a remote you can reach: a brand-new repo is a valid
-      answer to the interview's repo question, and a local `git init` with
-      no remote will fail this check rather than pass it. Creating the
-      *repo* on my hosting account is fine to do for me if I ask you to and
-      you have the access — it's creating an *account* that's mine alone,
-      per (b).
+      nothing.
+
+      **Check first that there is somewhere to run it from.**
+      `.env.example` defines `PRODUCT_REPO_PATH` as a path *or a clone
+      target*, so on a first boot it often isn't a directory on this box
+      yet — and the command above needs a working tree. If it isn't one,
+      make it one before running the check: clone the remote to that path
+      for an existing repo, or for a brand-new one (a valid answer to the
+      interview's repo question) create the repo on my hosting account,
+      then clone it to that path.
+
+      Either way the repo has to end up with a remote you can reach — a
+      local `git init` with no remote will fail this check rather than pass
+      it — and it has to exist at all, since step 6 has nowhere to land
+      otherwise. If you can't get there, say so rather than skipping the
+      check. Creating the *repo* on my hosting account is fine to do for me
+      if I ask you to and you have the access — it's creating an *account*
+      that's mine alone, per (b).
 
    e. Write down what actually worked in the `Auth` section of
       skills/git-pr-conventions/SKILL.md: the exact push invocation that
@@ -182,6 +192,14 @@ building any product code until all of it is done.
      deploy — per the monitoring section of
      skills/deploy-and-monitor/SKILL.md. Be concrete about the boundary;
      a vague "fix what breaks" is what leaves a future session guessing.
+   - **where the business's own content and docs live**, from the second
+     half of the interview's repo question — a wiki, a drive folder, a docs
+     directory in the product repo, a CMS. That answer has no `.env` slot
+     and no other destination, so this doc is its home; without it recorded
+     here it gets collected and silently dropped, and a later ideation or
+     refinement pass has nothing non-generic to ground a proposal in.
+     Record it even when the answer is "nothing written down anywhere" —
+     that's a real answer and worth knowing.
    - anything from step 3.
 
    This is the file every future session of yourself should treat as this

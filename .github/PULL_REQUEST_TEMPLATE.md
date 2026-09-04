@@ -13,4 +13,4 @@
 - [ ] One logical change
 - [ ] No fact restated that another file already owns (linked instead)
 - [ ] No `TODO(specialize)` marker filled in with a deployment-specific value
-- [ ] CI green (shellcheck, markdown links, skill symlinks)
+- [ ] CI green (shellcheck, install execution, markdown links, skill symlinks)

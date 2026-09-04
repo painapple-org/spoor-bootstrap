@@ -61,10 +61,21 @@ on before deciding which one your queries read.
 
 ## Access and identity
 
-REST v3 over HTTPS at the site's `/rest/api/3/` base, authenticated with
-**HTTP Basic using the account's email address plus an API token** (not the
-account password). The token belongs to the agent's own Atlassian account,
-per the contract.
+REST v3 over HTTPS at the site's `/rest/api/3/` base. The site itself is
+per-customer, so the `https://<site>.atlassian.net` half of every path in
+this file is read from `WORK_TRACKER_BASE_URL` in `.env` — never hardcoded
+here or in the client, per [`../SKILL.md`](../SKILL.md)'s note on the three
+`WORK_TRACKER*` keys.
+
+Authenticated with **HTTP Basic using the account's email address plus an
+API token** (not the account password). The token is
+`WORK_TRACKER_API_KEY`. The email has no `.env` slot of its own on purpose:
+it reads from `AGENT_EMAIL_ADDRESS`, since Basic auth's username has to be
+the account the token was minted by, and that account is the agent's own.
+Record that as the answer to the second-auth-value marker in
+[`../SKILL.md`](../SKILL.md) — which is the home for the decision — rather
+than leaving a client to infer it. Both values belong to the agent's own
+Atlassian account, per the contract.
 
 There's no first-party CLI worth depending on. Official language SDKs exist;
 so does an Atlassian MCP server. If the harness supports MCP, that's the

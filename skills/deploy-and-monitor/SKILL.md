@@ -14,12 +14,15 @@ and product before this agent operates anything live — see
 [`skills/specialize-skills`](../specialize-skills/SKILL.md).
 
 Docker is the one safe assumption: it's a hard requirement `install.sh`
-installs and verifies, and the required stack for a non-technical end-user's
+installs, and the required stack for a non-technical end-user's
 product includes it (see
-[`skills/product-tech-stack`](../product-tech-stack/SKILL.md)). Compose is
-typically present too, since docker's own installer brings it along, but
-nothing here guarantees it — run `docker compose version` and check before
-relying on it. Everything else here is open.
+[`skills/product-tech-stack`](../product-tech-stack/SKILL.md)). That the
+*daemon* is up is a weaker claim: `install.sh` verifies it and starts it
+where the box has systemd, and on a box without systemd logs NOT VERIFIED
+and continues. Compose is typically present too, since docker's own
+installer brings it along, but nothing here guarantees it either. Run
+`docker info` and `docker compose version` and check both before relying on
+them. Everything else here is open.
 
 ## Deploying
 

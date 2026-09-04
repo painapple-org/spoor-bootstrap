@@ -21,9 +21,11 @@ You don't need a fix to open an issue.
    read it.
 4. **Get CI green.** Every PR runs the jobs in
    [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) — shellcheck, a
-   markdown link check across every tracked `.md`, and an integrity check on
-   the harness skill symlinks. A dead link in a doc fails the build, which
-   is intentional.
+   real execution of `install.sh` in throwaway containers (root and
+   sudo-user, asserting docker/uv/gh end up runnable and that docker can
+   actually run a workload), a markdown link check across every tracked
+   `.md`, and an integrity check on the harness skill symlinks. A dead link
+   in a doc fails the build, which is intentional.
 5. **Maintainers squash-merge.** Your commits don't need to be tidy; your
    PR description does.
 
