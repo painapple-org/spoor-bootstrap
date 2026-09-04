@@ -144,7 +144,10 @@ default; every file it quotes remains the home for its own content.
 2. **Create your own new, private repo and put this checkout in it.** Clone
    this repo onto that VPS (or wherever your harness will run), create an
    empty private repo on your own account, and repoint `origin` at it
-   before going further:
+   before going further. Create that empty repo in the GitHub web UI: `gh`
+   isn't on the box until item 3, so the one-command version
+   (`gh repo create --private --source=. --remote=origin --push`) isn't
+   available to you yet at this point.
 
    ```
    git clone https://github.com/painapple-org/spoor-bootstrap.git
@@ -183,8 +186,9 @@ default; every file it quotes remains the home for its own content.
    **Forking on GitHub is an opt-in alternative, with a real tradeoff.** A
    fork gets you that machinery and a one-click setup. But **a fork of a
    public repo cannot be made private** — GitHub permanently keeps it
-   public — so everything in the bullet above ends up publicly readable,
-   forever, along with the PRs that shipped it.
+   public — so everything in the "Once specialized, this checkout holds
+   real operational detail about your business" bullet ends up publicly
+   readable, forever, along with the PRs that shipped it.
    Fork only if you've read that sentence and are fine with it. If you fork
    and later change your mind, a fork can't be converted: you have to
    create a fresh private repo, push to it, and delete the fork — and

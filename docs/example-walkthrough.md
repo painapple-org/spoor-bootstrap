@@ -370,22 +370,38 @@ browser flow, and authenticated as her own GitHub account. A
 `northlight-orders` confirmed write access rather than just a successful
 login.
 
-Two credentials got checked there, not one, because pushing and opening the
-PR are separate paths — the push rides the git remote, the PR goes through
-GitHub's API. Here they turned out to be the same credential: the login
-Priya just did set up `gh`'s credential helper for HTTPS pushes *and* left
-`gh` holding an API token, so a read of the repo's own permissions through
-`gh api` confirmed the API path independently of the push. That's a finding
-about this box, not a rule — on a deployment where the push rode a
+Then the same pair of checks again, against a second repo: Priya's own
+private copy of the bootstrap checkout. Its `origin` is a different repo
+with its own permissions, and the first boot ships two of its three PRs
+there, so a working push to `northlight-orders` proves nothing about it. A
+throwaway-branch `git push --dry-run` from the bootstrap checkout passed,
+and a `gh api` read of that repo's own permissions came back with
+`push: true` for the PR-opening path. What `origin` actually is got settled
+by a check rather than by eyeballing its URL:
+`gh repo view --json isFork,visibility` against it reported
+`isFork: false`, `visibility: private`, so nothing about to be committed
+here was heading for a permanently-public fork.
+
+Two credentials got checked per repo, not one, because pushing and opening
+the PR are separate paths — the push rides the git remote, the PR goes
+through GitHub's API. Here they turned out to be the same credential: the
+login Priya just did set up `gh`'s credential helper for HTTPS pushes *and*
+left `gh` holding an API token, so a read of each repo's own permissions
+through `gh api` confirmed the API path independently of the push. That's a
+finding about this box, not a rule — on a deployment where the push rode a
 pre-existing SSH key, the API side would have needed a token of its own,
 and nothing about the working push would have told anyone so.
 
-Both invocations went into `git-pr-conventions`' `Auth` section, which is
-their one home, along with which account they authenticate as, the fact
-that they coincided here, and the fourth thing that section asks for:
-whether this remote has a PR mechanism at all. GitHub does, so the answer is
-a single line — but it was checked rather than assumed, because a bare git
-remote on a box wouldn't, and the whole shipping loop assumes one.
+All of it went into `git-pr-conventions`' `Auth` section, which is its one
+home: the invocations, which account they authenticate as, write access
+recorded **per repo** — `northlight-orders` and the bootstrap copy
+separately, since they're separate permissions — what `origin` here
+actually is (a private repo Priya created, not a fork of the upstream
+template), the fact that the push and API credentials coincided on this
+box, and the last thing that section asks for: whether this remote has a
+PR mechanism at all. GitHub does, so the answer is a single line — but it
+was checked rather than assumed, because a bare git remote on a box
+wouldn't, and the whole shipping loop assumes one.
 
 That `Auth` edit is a tracked file in Priya's own private copy of the
 bootstrap repo, so it doesn't get to sit uncommitted: it shipped as its own
