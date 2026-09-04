@@ -51,8 +51,9 @@ for someone to re-learn the codebase every time.
 
 That last point matters for reading the rest of this document: her failure
 mode isn't a wrong architectural call, it's an agent that quietly breaks
-invoicing during a Monday order cutoff. The autonomy negotiation in step 2
-is where that gets handled, and it's the part most worth reading closely.
+invoicing during a Monday order cutoff. The autonomy negotiation in
+section 2 is where that gets handled, and it's the part most worth reading
+closely.
 
 ---
 
@@ -128,10 +129,11 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > **Priya:** Slack. The five of us live in it. There's a `#tech` channel
 > that's basically dead since the developer left — you can have it.
 >
-> **Agent:** I'll use it, and I need one more thing: a single destination
-> for urgent alerts. Not a group to pick from — one target, so an
-> escalation never has to guess. Is `#tech` that target, or do you want
-> urgent things to come to you directly?
+> **Agent:** I'll use it. Fifth, and I'm asking this separately rather than
+> reading it off the last answer: a single destination for urgent alerts.
+> Not a group to pick from — one target, so an escalation never has to
+> guess. Is `#tech` that target, or do you want urgent things to come to you
+> directly?
 >
 > **Priya:** `#tech`. If it's on fire I want Dan to see it too, he covers
 > Mondays when I'm not in.
@@ -142,7 +144,24 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > "Priya:" into the channel, because a name prefix in a busy channel gets
 > missed.
 >
-> Fifth: where does the product repo live, and where does the business's
+> Sixth: do I have an email address of my own yet — one that belongs to me
+> rather than to any of you? I'm asking outright because an address isn't a
+> secret, so there's nothing for you to paste into a chat and nothing for me
+> to guess at.
+>
+> **Priya:** No. Our mail is on `northlightcoffee.co.uk` through the same
+> provider as the site. I'd have to make you one. Can you not use `info@`?
+>
+> **Agent:** I'd rather not, and it isn't squeamishness: `info@` is read by
+> five people and replied to by whoever gets there first, so nothing sent
+> from it can be attributed to me and nothing sent *to* it is reliably mine
+> to act on. So this one stays unanswered rather than answered wrongly —
+> the key for it stays blank and creating the address goes on the shopping
+> list at the end. It's genuinely blocking, not cosmetic: until it exists,
+> anything anyone grants access to *by email address* can't be granted to
+> me at all.
+>
+> Seventh: where does the product repo live, and where does the business's
 > own written context live — your public site, price lists, anything that
 > describes how the roastery actually works? I need the first to work at
 > all, and the second so that if you ever want me proposing work rather
@@ -279,7 +298,9 @@ has read [`../AGENTS.md`](../AGENTS.md).
 Written from [`../.env.example`](../.env.example), whose field list is the
 schema — same keys, no invented ones. Secrets stay blank with a pointer to
 where each comes from; Priya edits those in herself once the accounts
-exist.
+exist. A key that genuinely doesn't apply to this deployment stays blank
+too, but with the reason written next to it — a blank with no note reads
+as an oversight, and the next session can't tell the two apart.
 
 ```sh
 PRODUCT_REPO_PATH=/home/spoor/northlight-orders
@@ -294,6 +315,12 @@ WORK_TRACKER=github-issues
 # put on this box, which carries its own credential from `gh auth login`.
 # There is no separate tracker API key for this deployment.
 WORK_TRACKER_API_KEY=
+
+# Deliberately empty, not blocked: GitHub Issues has one global API host
+# that `gh` already knows. This key is for a tracker hosted per-customer —
+# a Jira Cloud site, a self-hosted instance — and there is no such URL to
+# record here.
+WORK_TRACKER_BASE_URL=
 
 COMMS_CHANNEL=slack
 
@@ -329,8 +356,21 @@ spot, with Priya still at the terminal: she ran `gh auth login`, picked the
 browser flow, and authenticated as her own GitHub account. A
 `git push --dry-run` of a throwaway branch name against
 `northlight-orders` confirmed write access rather than just a successful
-login, and the working invocation went into `git-pr-conventions`' `Auth`
-section.
+login.
+
+Two credentials got checked there, not one, because pushing and opening the
+PR are separate paths — the push rides the git remote, the PR goes through
+GitHub's API. Here they turned out to be the same credential: the login
+Priya just did set up `gh`'s credential helper for HTTPS pushes *and* left
+`gh` holding an API token, so a read of the repo's own permissions through
+`gh api` confirmed the API path independently of the push. That's a finding
+about this box, not a rule — on a deployment where the push rode a
+pre-existing SSH key, the API side would have needed a token of its own,
+and nothing about the working push would have told anyone so.
+
+Both invocations went into `git-pr-conventions`' `Auth` section, which is
+their one home, along with which account they authenticate as and the fact
+that they coincided here.
 
 Her own account, not the agent's. A GitHub account belonging to the agent
 is item 3 on the shopping list below and is the better end state, but it is
@@ -468,7 +508,11 @@ and confirm they actually exist in the tracker. [...]
 ### After — specialized for Northlight
 
 ````markdown
-## Status: STUB — one marker left (the agent's own GitHub account)
+## Status: PARTIAL STUB — needs specialization
+
+The state machine, the labels and the access mechanism below are real and
+usable as written. One marker is left, and only one: the identity the agent
+acts as, which waits on a GitHub account for this agent instance.
 
 ### The state machine, as it exists in this tracker
 
@@ -543,11 +587,17 @@ instructions in
 [`../skills/specialize-skills/SKILL.md`](../skills/specialize-skills/SKILL.md)
 actually bite:
 
-- **One marker survived, and the `Status:` heading survived with it.** The
+- **One marker survived, and a `Status:` heading survived with it.** The
   agent had every opportunity to write a plausible agent login and delete
   the marker. That would have produced a file that looks finished and is
   wrong. A stub that still says "unknown" beats one that confidently says
-  the wrong thing.
+  the wrong thing. What did change is which heading: `STUB` became
+  `PARTIAL STUB`, because everything except that one marker is now real.
+  Those two are the only phrasings
+  [`../CONTRIBUTING.md`](../CONTRIBUTING.md) allows, so *which* marker is
+  outstanding goes in a sentence under the heading rather than into the
+  heading text — a third phrasing is what stops the heading being skimmable
+  across files.
 - **The interim ownership rule was agreed, not invented.** "Never invent a
   specific" doesn't forbid recording a decision — it forbids manufacturing
   one. The distinction is whether a human said it.
@@ -574,8 +624,8 @@ is Priya's to create — the agent does not register itself for anything.
    has no way to reach her except the terminal she started it from.
 3. **A GitHub account for the agent**, with write access to the repo.
    Blocks the one remaining marker in `work-tracker`, as shown above. It
-   does *not* block pushing: those currently authenticate as Priya's own
-   account, per section 4 above.
+   does *not* block pushing or opening PRs: both currently authenticate as
+   Priya's own account, per section 4 above.
 4. **The wholesale handbook**, either exported into the repo as markdown or
    shared with the account from item 1. Without it, any proactive work
    proposal about pricing or lead times would be guesswork.
