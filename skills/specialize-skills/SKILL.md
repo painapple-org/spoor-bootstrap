@@ -108,7 +108,10 @@ Work through them in order; later ones depend on earlier answers:
    so no mesh" is the expected first-boot answer, and it is a real one** —
    record it as decided in the conventions doc, per that file's "When
    nothing needs it yet", rather than provisioning a network for a tool
-   that doesn't exist. Anything the owner would have to provision on the
+   that doesn't exist. Expected rather than required: where the interview's
+   internal-tooling question came back yes, the answer is the mesh agreed
+   on and what the owner has to provision for it, and item 7 is where the
+   tool itself lands. Anything the owner would have to provision on the
    day one does joins the shopping list.
 7. [`skills/internal-dashboard`](../internal-dashboard/SKILL.md) — whether
    this deployment wants an internal operations dashboard at all, and if

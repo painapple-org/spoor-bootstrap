@@ -233,6 +233,27 @@ assume:
    whether a merge to the default branch deploys to production by itself,
    which decides whether your own routine merges are production events.
 
+9. **Whether they want anything built for *them* rather than for the
+   product's users** — an internal ops dashboard, a status page, a log
+   viewer, somewhere to see what this instance is doing. Ask it outright,
+   because nothing else in this list surfaces it and the flow needs the
+   answer earlier than it looks: [`STARTUP.md`](./STARTUP.md)'s
+   conventions-doc step records how anything internal gets reached
+   privately, and that doc has already shipped by the time the
+   specialization pass reaches
+   [`skills/internal-dashboard/SKILL.md`](./skills/internal-dashboard/SKILL.md),
+   which is the home for the answer itself.
+
+   Read that file before asking, the way question 2 sends you to the stack
+   SKILL: it opens by saying not to build one speculatively, and the point
+   of asking is as much to let "no, I read the comms channel and that's
+   enough" be given as a real answer as to catch a yes. That no is the
+   common answer and a complete one. What must not happen is nobody asking
+   — a yes discovered later arrives after the doc that should have recorded
+   it, and a question nobody put lands on a future session as either
+   re-deriving the decision or publishing a port because nothing told it
+   there was another option.
+
 This list is the complete set of what the interview covers; `STARTUP.md`
 points here for it rather than re-listing it. Which of these answers has a
 named `.env` slot, and what it's called, is `.env.example`'s business, not

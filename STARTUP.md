@@ -387,6 +387,14 @@ building any product code until all of it is done.
      as an open question, and don't set up a network for a tool that
      doesn't exist. What matters is that a future session reads it as
      settled and knows where to look when the first internal tool arrives.
+
+     **Expected is not required, though: where the interview's
+     internal-tooling question came back yes, that deferral is the wrong
+     thing to write down.** Record the mesh we agreed on instead and what I
+     have to provision for it, per that file's default path, plus the fact
+     that nothing is exposed on it yet — which stays true until the tool
+     actually answers, and is not the same statement as "no mesh". Don't
+     record a settled deferral this conversation has already contradicted.
    - **where the business's own content and docs live**, from the second
      half of the interview's repo question — a wiki, a drive folder, a docs
      directory in the product repo, a CMS. That answer has no `.env` slot
