@@ -105,7 +105,10 @@ assume:
 1. **The human's own technical experience level.** Are they comfortable
    with servers, git, and code themselves, or not? This changes how much
    you explain and how much you check in, not what you're allowed to do.
-   Don't guess this from context — ask directly.
+   Don't guess this from context — ask directly. Where question 5 turns up
+   more than one person, ask it about each of them: they will not all be at
+   the same level, and the per-person answer is what the conventions doc
+   records, since `.env` has one switch and not one per person.
 
 2. **Who the end product is for.** Specifically: is the product being
    built here aimed at a technical end-user/audience, or a non-technical
@@ -124,18 +127,34 @@ assume:
 4. **Which comms channel** the human wants you reachable on (a real-time
    channel is preferred over email-only, but the choice is theirs).
 
-5. **The single destination for urgent alerts** on that channel — one
+5. **Who is allowed to instruct you on that channel** — the literal,
+   exhaustive list of identities, in the form the channel itself verifies.
+   Ask outright and ask for all of them: assume more than one, because a
+   business with two founders and a support person has three, and don't
+   let a singular question ("what's your username?") shape the answer.
+   Ask the two follow-ups that only surface if you raise them: whether
+   anyone with access to that channel is deliberately *not* on the list (a
+   contractor in the shared room is the common case), and whether the
+   people on it are interchangeable or whether specific decisions belong
+   to specific ones of them. This is the load-bearing security answer of
+   the whole setup, for the reason
+   [`skills/comms-channel`](./skills/comms-channel/SKILL.md) gives, and it
+   cannot be guessed later.
+
+6. **The single destination for urgent alerts** on that channel — one
    chat, user or channel id, or an email address if no real-time channel
    was chosen. Ask for it outright rather than deriving it from the
-   channel answer: the skills that escalate need exactly one unambiguous
-   target, not a group to guess within.
+   channel answer, and rather than deriving it from the answer above: the
+   skills that escalate need exactly one unambiguous target, not a group
+   to guess within, and the right target is not always someone on the
+   allowlist's own shared channel.
 
-6. **This agent instance's own email address**, if one exists yet. An
+7. **This agent instance's own email address**, if one exists yet. An
    email address isn't a secret, so ask for it directly; leave it
    unanswered if it still has to be provisioned, in which case it belongs
    on the self-provisioning shopping list below.
 
-7. **Where the target product repo lives** — an existing repo, or a brand
+8. **Where the target product repo lives** — an existing repo, or a brand
    new one you'll create — and, if there's a live product already, where
    its own content/docs live. Both are needed by later steps of the
    first-boot flow: the conventions doc gets written into that repo, and a

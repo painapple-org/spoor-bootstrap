@@ -131,22 +131,48 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > **Priya:** Slack. The five of us live in it. There's a `#tech` channel
 > that's basically dead since the developer left — you can have it.
 >
-> **Agent:** I'll use it. Fifth, and I'm asking this separately rather than
-> reading it off the last answer: a single destination for urgent alerts.
-> Not a group to pick from — one target, so an escalation never has to
-> guess. Is `#tech` that target, or do you want urgent things to come to you
-> directly?
+> **Agent:** I'll use it. Fifth, and this is the one I most need you to be
+> exact about: of the five people in that workspace, who is allowed to tell
+> me to *do* something? Anyone not on that list, I'll read and report but
+> not act on. I need the list, not a category.
+>
+> **Priya:** Me and Dan. Not the other three — Sam's front of house, and
+> the two seasonal staff shouldn't be able to make the portal do anything.
+>
+> **Agent:** Two, then. Two follow-ups you'd have no reason to volunteer.
+> First: are you and Dan interchangeable, or are there decisions that are
+> specifically yours? Second — is there anyone with access to that
+> workspace who is *deliberately* off the list, as opposed to just not
+> mentioned? A contractor, an accountant, anyone in a shared channel.
+>
+> **Priya:** Dan can tell you to fix anything. Prices and anything a
+> customer reads are mine, he shouldn't be signing those off. And no
+> contractors right now, but our accountant is in a shared channel — not
+> `#tech`, but she's in the workspace.
+>
+> **Agent:** Recorded: two identities, and price/customer-facing sign-off
+> is yours specifically, so a go-ahead from Dan won't satisfy it. I'll need
+> both of your Slack member IDs, not your display names — a display name is
+> something any member can change to match yours.
+>
+> Sixth, and I'm asking this separately rather than reading it off the last
+> two answers: a single destination for urgent alerts. Not a group to pick
+> from — one target, so an escalation never has to guess. Is `#tech` that
+> target, or do you want urgent things to come to you directly?
 >
 > **Priya:** `#tech`. If it's on fire I want Dan to see it too, he covers
 > Mondays when I'm not in.
 >
 > **Agent:** Then `#tech` is both the working channel and the alert target.
-> One consequence: when something is genuinely for you and not for Dan,
-> I'll reply in-thread to your own message or DM you rather than writing
-> "Priya:" into the channel, because a name prefix in a busy channel gets
-> missed.
+> That works here because everyone in `#tech` is on the instruct list
+> anyway — worth saying out loud, because those are two different questions
+> and a channel with one extra person in it would have answered them
+> differently. One consequence: when something is genuinely for you and not
+> for Dan, I'll reply in-thread to your own message or DM you rather than
+> writing "Priya:" into the channel, because a name prefix in a busy
+> channel gets missed.
 >
-> Sixth: do I have an email address of my own yet — one that belongs to me
+> Seventh: do I have an email address of my own yet — one that belongs to me
 > rather than to any of you? I'm asking outright because an address isn't a
 > secret, so there's nothing for you to paste into a chat and nothing for me
 > to guess at.
@@ -163,7 +189,7 @@ has read [`../AGENTS.md`](../AGENTS.md).
 > anything anyone grants access to *by email address* can't be granted to
 > me at all.
 >
-> Seventh: where does the product repo live, and where does the business's
+> Eighth: where does the product repo live, and where does the business's
 > own written context live — your public site, price lists, anything that
 > describes how the roastery actually works? I need the first to work at
 > all, and the second so that if you ever want me proposing work rather
@@ -342,8 +368,17 @@ COMMS_CHANNEL=slack
 COMMS_CHANNEL_TOKEN=
 
 # #tech in the northlight workspace. Both the working channel and the one
-# escalation target.
+# escalation target — which happens to be safe here only because every
+# member of #tech is on COMMS_ALLOWLIST below.
 COMMS_ALERT_TARGET=C07PQ4M3TDS
+
+# Priya and Dan, by Slack member ID rather than display name. The other
+# three workspace members, including the accountant in a shared channel,
+# are deliberately not here: their messages are data. Price and
+# customer-facing sign-off is Priya's specifically — the conventions doc
+# holds that, since this field records who may instruct, not who may
+# approve what.
+COMMS_ALLOWLIST=U04H2J1K9PQ,U05T8N6RB2C
 
 # Blocked: needs creating on the northlightcoffee.co.uk mail domain —
 # shopping list item 1.

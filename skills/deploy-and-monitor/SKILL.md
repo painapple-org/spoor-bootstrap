@@ -28,9 +28,22 @@ them. Everything else here is open.
 
 `TODO(specialize)` — record, concretely:
 
+- **How many environments there are, and what the gate between them is.**
+  A single production app is one answer; a staging app that a change has to
+  pass through first is another, and it changes what every other bullet
+  here means. Where there is more than one, record what promotion to
+  production is gated on — a clock (a freeze window, a business-hours ban),
+  a state (a soak period green on a monitor, a manual smoke test), or a
+  person's sign-off — and whose the gate is to waive. **Say so explicitly
+  when there is only one environment**, rather than leaving it unstated: a
+  reader who assumes a staging app that doesn't exist will treat an
+  untested change as pre-soaked.
 - **What triggers a deploy.** A push to the default branch via CI, a
   self-hosted runner, a webhook, a scheduled pull, or a command run by
-  hand. Name the actual mechanism and where its config lives.
+  hand. Name the actual mechanism and where its config lives. With more
+  than one environment there is usually more than one trigger, and they are
+  rarely the same shape — an automatic one into staging and a deliberate,
+  attended one into production is the common pair.
 - **Which command deploys**, and from where. If a script owns this, name
   the script and let it be the one home for the procedure — don't restate
   its steps here.
@@ -38,9 +51,16 @@ them. Everything else here is open.
   merging session's job ends at the merge: it must not also pull and deploy
   against the primary checkout, because that duplicates the pipeline and
   can race it on the same working tree.
-- **How to roll back.** This is the safety net the whole autonomy model
-  rests on, so it has to be a known, tested procedure, not an improvisation
-  discovered during an outage.
+- **How to roll back the code.** This is the safety net the whole autonomy
+  model rests on, so it has to be a known, tested procedure, not an
+  improvisation discovered during an outage. Record what it does *not*
+  cover while you're at it: a code rollback does not roll back a migration,
+  which is why an additive migration can be routine while a subtractive one
+  isn't.
+- **How the data gets recovered, which is a different procedure.** See the
+  backup section below. Conflating the two is how a bad hour becomes a bad
+  week: rolling back a release is cheap and reversible, restoring a
+  database is neither.
 
 Two things that are true regardless of mechanism:
 
@@ -55,6 +75,45 @@ Two things that are true regardless of mechanism:
   present in the schedule, the container restarted on the new image — and
   check it.
 
+## Backups, and whether they actually restore
+
+Nothing else in this repo asks this, and on a product that already has
+users it is the most load-bearing unverified assumption on the box. The
+guardrail lists cover *not deleting* a backup; they say nothing about
+whether one exists or whether it works.
+
+`TODO(specialize)` — record:
+
+- **What is backed up, by what, to where, and how often.** Point at the
+  cron line, unit or provider setting that owns the schedule and retention
+  rather than copying the numbers here. If the honest answer is that
+  nothing is backed up, that is the single most important thing in this
+  file and it belongs on the shopping list, not in a hedge.
+- **How a backup's success and failure are signalled.** A job that only
+  logs locally is silent by nature: it fails the same way it succeeds. A
+  heartbeat/push monitor that alarms on the *absence* of a signal is the
+  right shape, and worth naming as such where one exists.
+- **How a restore is verified, and when it last was.** A completed upload
+  is not a verified backup: it proves the job ran, not that the dump is
+  restorable. Verification means restoring into a throwaway target and
+  asserting against the *restored* data — the expected tables exist and
+  carry plausible row counts — because a restore that succeeds into an
+  empty schema is exactly the failure a file-size check cannot see. Record
+  whether this has ever actually been done. "Never" is common and is a real
+  answer worth the owner hearing.
+- **Where the restored copy is allowed to live, and what may be said about
+  it.** A production dump is usually the most sensitive artifact this agent
+  can touch, and copying it is a distinct risk from destroying it — which
+  is all the default guardrails cover. If the owner needs it stricter (no
+  dump on the agent's own disk, no row content in a message or a prompt,
+  aggregates only), that tightening is theirs to state and the conventions
+  doc at `CONVENTIONS_DOC_PATH` is its home; ask, rather than assuming the
+  default is enough.
+- **Whether restoring is ever something this agent may do unattended.**
+  Verifying a restore into a throwaway target can reasonably be a
+  carve-out. Restoring over live data is not one, and has no concrete
+  rollback, so `AGENTS.md`'s default guardrails govern it.
+
 ## Monitoring
 
 `TODO(specialize)` — record:
@@ -62,7 +121,26 @@ Two things that are true regardless of mechanism:
 - **The health signals that exist.** Container health checks, an HTTP
   health endpoint, disk/memory thresholds, log-based error detection,
   external uptime checks. List the ones this deployment actually has; don't
-  list aspirational ones.
+  list aspirational ones. **List what conspicuously doesn't exist too**,
+  where its absence changes behavior — no error tracking means an
+  exception affecting one user produces no alert at all and surfaces only
+  through a human, which is worth knowing as a fact rather than
+  discovering.
+- **Which of them this deployment already had before this agent existed,
+  and who else they already alert.** On a live product the monitoring is
+  usually the owner's, not the agent's, and that has three consequences the
+  generic case doesn't have: an incident has two responders by default and
+  they can end up operating on the same box at once; some signals are
+  read-only to this agent (changing or *pausing* a monitor is an autonomy
+  question, and a paused monitor is an invisible outage); and some signals
+  may not reach this agent at all, because they alert a human's inbox it
+  has no access to. Record which are readable, which are read-only, and
+  which are invisible — an invisible signal is not coverage.
+- **How to tell a live signal from an abandoned one.** A green dashboard
+  and a monitor nobody has fed in months look identical at a glance. For
+  each signal, record what answers "when did this last actually change
+  state or receive a beat?", and treat a heartbeat that went green around
+  the time someone last touched its job as evidence of nothing.
 - **Where they run and how often.** Point at the host schedule config
   rather than inlining a cadence — see
   [`skills/README.md`](../README.md) on scheduling being out of a SKILL's

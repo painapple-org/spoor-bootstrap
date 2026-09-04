@@ -54,8 +54,11 @@ Work through them in order; later ones depend on earlier answers:
    [`skills/work-tracker/adapters`](../work-tracker/adapters/README.md)
    first if the chosen tracker is one it covers, and follow its instruction
    to delete the per-tracker adapter files this deployment didn't use once
-   the SKILL is specialized. That directory's own README stays — it's the
-   index other files link to.
+   the SKILL is specialized. Where the chosen tracker *is* one of them,
+   that directory's own README stays, as the index other files link to;
+   where it's none of them, that README's own last step has the directory
+   go too, along with the links into it. Follow whichever case applies
+   rather than assuming the first.
 2. [`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md) — the
    default branch and naming convention, any protected branches. Its
    `Auth` section is **not** part of this pass: it's answered earlier, at
@@ -123,7 +126,8 @@ entry whose description no longer matches the file: the `work-tracker`
 entry in particular describes `adapters/` as holding notes for three
 trackers, which stops being true as soon as you follow
 [`adapters/README.md`](../work-tracker/adapters/README.md)'s instruction to
-delete the ones this deployment didn't use.
+delete the ones this deployment didn't use — and stops naming a real
+directory at all if that instruction's none-of-the-three case applied.
 
 Then, once the pass itself is done: **ship it through a branch and a PR**,
 per [`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md). These are
