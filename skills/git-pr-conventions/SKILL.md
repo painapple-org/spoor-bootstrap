@@ -63,6 +63,13 @@ from the work tracker:
    remote permits it. On a repo whose default branch is protected, it may
    not: see "When you are not allowed to merge your own PR" below.
 
+   **Where an existing CI/CD pipeline deploys on merge, this step is a
+   production event, not just a bookkeeping one**, and where that
+   pipeline's checks are the required ones they are the green-CI gate
+   rather than something to reproduce.
+   [`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md)'s "How
+   this interacts with the merge gate" is the home for both.
+
 The PR exists to give a clean revert point and a reviewable diff, **not** to
 gate on human approval. Do not wait for per-change confirmation for routine
 work. Rollbacks, not up-front caution, are the safety net — but only inside
