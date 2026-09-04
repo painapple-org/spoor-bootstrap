@@ -125,6 +125,18 @@ and, where one command can settle it, against the real instance.
   permissions able to scope it, and it's what makes "assigned to a human"
   vs "assigned to the agent" a meaningful signal at all. A human provisions
   that account; see `AGENTS.md`'s self-provisioning section.
+
+  **A tracker with no accounts at all** — markdown files in a repo, a
+  directory of text — has no answer to this, and "not applicable" is not
+  the whole answer either. Record what it actually costs: assignment
+  becomes a string the agent itself can rewrite, so the
+  assigned-to-a-human-is-inert rule below holds only because every stage
+  honors it, and the RBAC scoping that rule's enforcement normally comes
+  from does not exist. Say so in place of this bullet rather than deleting
+  it, and note that no tracker account belongs on the self-provisioning
+  shopping list in that case — what belongs there instead is the decision
+  to move to a tracker that has accounts, if the owner wants that
+  enforcement back.
 - **The scope identifier**: team/project/board key, repo, or file path,
   depending on tracker.
 - **Where a second auth value comes from, if this tracker's auth needs
@@ -133,7 +145,10 @@ and, where one command can settle it, against the real instance.
   value (Jira Cloud's Basic auth is email-plus-token) reads that value from
   an existing field rather than a new key — name the field here, as a
   decision, so a later run doesn't re-derive it or invent a key. If this
-  tracker's auth is token-only, say that instead of deleting the point.
+  tracker's auth is token-only, say that instead of deleting the point —
+  and if it has no credential at all, because it isn't a service, say
+  *that*, so a future session reads an empty `WORK_TRACKER_API_KEY` as
+  "nothing to authenticate against" rather than as "first boot never ran".
 - **Any known gotchas of that specific API.** Write these down the first
   time one bites, rather than rediscovering it every run — e.g. a
   parent/child relation that a "get one item" call silently omits, or a
