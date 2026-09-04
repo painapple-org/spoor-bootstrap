@@ -51,9 +51,25 @@ any of that, they only say how it lands in one tracker's API.
    to it; remove the bullet for each deleted adapter from "Available
    adapters" above instead.
 
+   **If the owner's tracker is none of the three**, every adapter goes and
+   this directory is left indexing nothing — which is the one case where
+   keeping this file is worse than removing it. Delete the whole
+   `adapters/` directory then, and repoint the links to it (in
+   [`../SKILL.md`](../SKILL.md) and
+   [`skills/README.md`](../../README.md)) at `../SKILL.md`'s own "How to
+   actually call the tracker" section, which by that point holds the real
+   answer for this deployment. See the next section for the notes worth
+   writing instead, and where.
+
 ## If the owner's tracker isn't one of these
 
-Write the equivalent notes for it as you discover them, in the same shape:
+With this directory gone per step 4 above, the notes below belong in the
+"Known gotchas" part of [`../SKILL.md`](../SKILL.md)'s own tracker section
+rather than in a new file here — there is no longer a directory for them to
+live in, and one deployment runs one tracker, so a separate adapter file
+buys nothing.
+
+Write them as you discover them, in the same shape:
 the seven contract operations, how state and labels are modeled, and where
 it diverges. The divergences are the valuable part — the happy path is in
 that tracker's own quickstart, the gotchas aren't.
