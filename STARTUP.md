@@ -296,8 +296,8 @@ building any product code until all of it is done.
    5(d) — that verification, not `install.sh`, is what makes this possible.
    (`install.sh` only refuses an `origin` whose URL is literally upstream's;
    it never tested write access.) Branch off this repo's default branch,
-   commit, push to `origin`, open a PR, merge it yourself — or the agreed
-   substitute from step 5(e), if this remote has no PR mechanism. Two
+   commit, push to `origin`, open a PR, merge it yourself — or run the
+   agreed substitute from step 5(e), if this remote has no PR mechanism. Two
    shipped changes by the end of this step, then: one in the product repo
    for the doc above, one here for the auth answer.
 
@@ -377,19 +377,20 @@ building any product code until all of it is done.
    uncommitted working tree has no revert point, no reviewable diff and no
    backup — which is the whole reason step 6 went through a PR instead of
    committing to the default branch. So: branch off this repo's default
-   branch, commit, push to `origin`, open a PR, merge it yourself — or the
-   agreed substitute from step 5(e), if this remote has no PR mechanism —
+   branch, commit, push to `origin`, open a PR, merge it yourself — or run
+   the agreed substitute from step 5(e), if this remote has no PR mechanism —
    per skills/git-pr-conventions/SKILL.md, exactly as in step 6, including
    naming the target repo explicitly on the PR and merge commands, for the
    reason step 6 gives.
 
-   One PR for the whole pass, not one per skill file. The scoped one-file
-   re-run this step is built for — when a step-8 provisioning blocker
-   clears and a marker becomes answerable — gets its own PR at that point,
-   and that's what keeps each of those independently revertable. Splitting
-   today's single pass into one PR per stub buys nothing: every file in it
-   was written from the same interview answers, in one sitting, with
-   nothing between them worth bisecting.
+   One PR for the whole pass, not one per skill file — one substitute for
+   the whole pass, likewise, on a remote that has no PRs. The scoped
+   one-file re-run this step is built for — when a step-8 provisioning
+   blocker clears and a marker becomes answerable — gets its own PR (or its
+   own substitute) at that point, and that's what keeps each of those
+   independently revertable. Splitting today's single pass into one PR per
+   stub buys nothing: every file in it was written from the same interview
+   answers, in one sitting, with nothing between them worth bisecting.
 
    One thing to notice while you're here: you're editing the primary
    checkout, and that's only acceptable because I'm sitting next to you.
