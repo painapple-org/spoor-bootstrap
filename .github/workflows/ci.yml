@@ -103,6 +103,23 @@ jobs:
             echo "No .md files tracked in git — nothing to check." >&2
             exit 1
           fi
+          # This list reaches the next step through `${{ }}` interpolation into
+          # lychee-action's `args`, and that action's entrypoint runs its args
+          # through `eval` — so a filename carrying shell metacharacters is
+          # executed as code on the runner, and a pull request from a fork
+          # controls every tracked filename in the tree. There is no quoting
+          # that survives an `eval` on the far side, so the list is constrained
+          # instead: a plain relative path, no leading dash to be mistaken for
+          # one of lychee's own flags. Every path this repo tracks already
+          # satisfies it, and a new one that doesn't fails here rather than
+          # being silently dropped from the link check.
+          for file in "${files[@]}"; do
+            if [[ ! "$file" =~ ^[A-Za-z0-9._][A-Za-z0-9._/-]*$ ]]; then
+              echo "FAIL: tracked markdown path '${file}' is not a plain relative path." >&2
+              echo "It would be interpolated into a shell-evaluated argument list. Rename the file." >&2
+              exit 1
+            fi
+          done
           printf 'Checking: %s\n' "${files[@]}"
           printf 'files=%s\n' "${files[*]}" >> "$GITHUB_OUTPUT"
 
