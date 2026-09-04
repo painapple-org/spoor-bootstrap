@@ -131,6 +131,18 @@ building any product code until all of it is done.
       section, nothing more — not something step 7's first pass touches,
       which is why that step tells you to leave the section alone today.
 
+      **Say the cost of that choice out loud before I make it, though,
+      rather than only calling it fine for now.** If the identity you push
+      as is my own personal account, your git write access is as broad as
+      that account's own reach — every repo and every org it can write to,
+      not just this deployment's two repos. Nothing about running as me
+      scopes you down to those two. Name that plainly, name which of my
+      accounts you are actually authenticated as (from (a)/(b)), and let me
+      choose with it in front of me. It remains an acceptable interim
+      choice and still isn't a blocker; AGENTS.md's "Self-provisioning: the
+      shopping list" is the home for why a dedicated account is the better
+      end state.
+
    d. Authenticating to GitHub is not the same as being able to write to
       *my* repo, so verify the thing you actually need: from the product
       repo at `PRODUCT_REPO_PATH`, run a `git push --dry-run` of a

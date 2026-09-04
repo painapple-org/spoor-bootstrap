@@ -89,11 +89,48 @@ then point an AI agent at that box. What that actually involves:
   that will run the agent may not exist yet. In that case add it yourself
   once it does — `usermod -aG docker <account>` — or every docker command
   from that account will need `sudo`.
-- **It runs two official upstream installers** — Docker's
-  (`get.docker.com`) and `uv`'s (`astral.sh`) — and adds GitHub's own apt
-  repository for `gh`. Those, plus the apt repos your box already trusts,
-  are the only network calls this repo makes. Nothing here phones home and
-  nothing reports to painapple.
+- **Docker-group membership is root-equivalent access to this host**, and
+  that is what the bullet above is granting, so decide it knowingly rather
+  than reading it as a convenience. Anyone who can talk to the docker
+  socket can start a container that bind-mounts `/` and `chroot` into it,
+  which is full root on the box by a different route — no `sudo` password,
+  no sudoers entry, nothing to audit. This is a well-known property of
+  Docker's architecture, not a flaw in this script; it is the reason
+  `install.sh` runs this step at all, since a containerized product the
+  agent deploys needs the socket. But it means the account you point the
+  agent at effectively has root here from install time, before any
+  guardrail in [`AGENTS.md`](./AGENTS.md) is in force. If that isn't
+  acceptable for your box, the answer is a rootless Docker setup (which
+  `install.sh` detects the absence of a `docker` group for and reports
+  rather than fighting), or a host you're willing to hand over entirely.
+- **It runs two upstream installer scripts as root, unverified** —
+  Docker's (`get.docker.com`) and `uv`'s (`astral.sh`) — and adds GitHub's
+  own apt repository for `gh`. Those, plus the apt repos your box already
+  trusts, are the only network calls this repo makes. Nothing here phones
+  home and nothing reports to painapple. Be precise about what is and
+  isn't protected here, because the two are easy to conflate:
+  - `install.sh` downloads each script to a tempfile and *then* executes
+    it, rather than piping `curl` straight into `sh`. That protects
+    against one failure mode only: a transfer that dies partway can't hand
+    `sh` a truncated script that runs half of itself.
+  - It does **not** verify what was downloaded — no pinned checksum, no
+    signature check. So if either endpoint were compromised, or the fetch
+    were MITM'd past TLS, you would be executing whatever it served, as
+    root, and this script would not notice. What you are trusting is
+    Docker's and Astral's own distribution security, plus your transport,
+    exactly as you would be piping into `sh`. The download-then-run
+    pattern buys robustness, not trust.
+  - As a partial mitigation it logs the `sha256sum` of each script it
+    downloaded before running it, so you at least have a record of what
+    executed on your box and can compare two installs. That's an audit
+    trail after the fact, not a check that stops anything.
+  - `get.docker.com` is Docker's own convenience script, and
+    [Docker's documentation states it is not recommended for production
+    environments](https://docs.docker.com/engine/install/ubuntu/#install-using-the-convenience-script).
+    It's here because it is the shortest path to a working daemon on a
+    fresh box. If this box matters, install Docker from its apt repository
+    per those same docs and let `install.sh` skip the step — it does skip
+    it when `docker` is already on PATH.
 - **It hands out no credentials and creates no accounts.** Every token the
   agent eventually uses is one *you* provision and paste into `.env`
   yourself (see [Self-provisioning](#self-provisioning-what-the-agent-needs-and-who-sets-it-up)),
