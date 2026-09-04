@@ -250,11 +250,22 @@ building any product code until all of it is done.
       has turned on — has no PR object at all, and step 6 hard-requires
       opening one. Check it rather than inferring it from the push
       working: the push and the API are different paths, which is the same
-      reason (b) makes you check two credentials. If it turns out there is
-      no PR mechanism on this remote, bring me the substitute before step
-      6 and record *that* — the `Auth` section's own guidance says what a
-      substitute has to preserve, including how the default branch gets
-      advanced without the local fast-forward that's hazardous here.
+      reason (b) makes you check two credentials.
+
+      **If there's no PR mechanism, you already have the answer — don't
+      bring me an open question.** skills/git-pr-conventions/SKILL.md's
+      "Shipping on a remote with no PR mechanism" section is a complete,
+      git-only default: push a `review/<slug>` branch, review it with
+      `git diff`, merge it with a `--no-ff` merge commit that records the
+      verdict, push the default branch from a scratch clone, delete the
+      review branch on the remote. Tell me in two or three sentences that
+      this is what you'll use and what it costs me (I inspect a diff in a
+      terminal instead of in a web UI), then **proceed on it unless I
+      object.** Don't wait for me to approve it and don't design an
+      alternative — I have no basis to choose one, and a default I can
+      silently accept is worth more to me here than a question. Record it
+      in the `Auth` section per that file's own instruction, which on this
+      shape means recording only whatever I asked to change.
 
       That section is the one home for all of it, and step 7 has
       nothing left to add to it — it's answered here because here is where
@@ -268,18 +279,16 @@ building any product code until all of it is done.
       there rather than here.
 
    f. If none of this can be made to work — no account you're willing to
-      use, no network, a repo neither of us can push to, or no PR
-      mechanism on this remote at all — **stop and tell me, and don't
-      route around it.** Don't commit straight to the default branch
-      instead. Write step 6's doc, leave it uncommitted, tell me plainly
-      that the first PR is blocked on git auth and nothing else, and pick
-      step 6 back up the moment it's fixed.
+      use, no network, or a repo neither of us can push to — **stop and
+      tell me, and don't route around it.** Don't commit straight to the
+      default branch instead. Write step 6's doc, leave it uncommitted,
+      tell me plainly that the first PR is blocked on git auth and nothing
+      else, and pick step 6 back up the moment it's fixed.
 
-      The no-PR-mechanism case is the one on that list that behaves
-      differently: it doesn't block the push, only step 6's PR. It's still
-      not a licence to commit to the default branch — tell me what you'd
-      use instead, per (e), and get my agreement before step 6 rather than
-      picking a substitute on your own.
+      **A missing PR mechanism is not on that list**, and it never blocks a
+      step: (e)'s default covers it in full, so a remote you can push to is
+      a remote you can ship through. If it's the *only* thing you found, you
+      have no blocker to report — say which shape this is and carry on.
 
 6. Write a conventions doc in the target product repo (that repo's own
    `CLAUDE.md`/`AGENTS.md` if it doesn't have one yet, or a clearly-named
@@ -354,20 +363,20 @@ building any product code until all of it is done.
 
    **Ship it the same way you'll ship everything else**: branch off the
    product repo's default branch, commit, push, open a PR, and merge it
-   yourself — or run the agreed substitute from step 5(e), if this remote
-   has no PR mechanism — per skills/git-pr-conventions/SKILL.md, using the
+   yourself — or, if this remote has no PR mechanism, run the review-branch
+   protocol from step 5(e) instead — per skills/git-pr-conventions/SKILL.md, using the
    identity and the invocation you verified and wrote down in step 5. Don't
    commit straight to the default branch — this is the first change that
    establishes the convention, so it shouldn't be the one exception to it.
-   Show me the PR link (or, on the substitute, whatever it produces in its
-   place).
+   Show me the PR link — or, on the review-branch protocol, the merge
+   commit and the commands I can read the diff with.
 
    **On a product repo you created empty in step 5(d) there is no default
    branch to branch off yet**, and that is not a reason to fall back to
    committing on it directly. An empty repo has no commits and therefore no
    branch of any kind, so this doc *is* the commit that creates the first
-   one: make the branch, put the doc on it, push it, and let the merge (or
-   the substitute) be what creates the default branch. `git-pr-conventions`'
+   one: make the branch, put the doc on it, push it, and let the merge be
+   what creates the default branch, on either shape. `git-pr-conventions`'
    shipping loop is the home for that case and for the push-refspec detail
    it turns on.
 
@@ -378,7 +387,7 @@ building any product code until all of it is done.
    (`install.sh` only refuses an `origin` whose URL is literally upstream's;
    it never tested write access.) Branch off this repo's default branch,
    commit, push to `origin`, open a PR, merge it yourself — or run the
-   agreed substitute from step 5(e), if this remote has no PR mechanism. Two
+   review-branch protocol from step 5(e), if this remote has no PRs. Two
    shipped changes by the end of this step, then: one in the product repo
    for the doc above, one here for the auth answer.
 
@@ -463,16 +472,16 @@ building any product code until all of it is done.
    backup — which is the whole reason step 6 went through a PR instead of
    committing to the default branch. So: branch off this repo's default
    branch, commit, push to `origin`, open a PR, merge it yourself — or run
-   the agreed substitute from step 5(e), if this remote has no PR mechanism —
+   the review-branch protocol from step 5(e), if this remote has no PRs —
    per skills/git-pr-conventions/SKILL.md, exactly as in step 6, including
    naming the target repo explicitly on the PR and merge commands, for the
    reason step 6 gives.
 
-   One PR for the whole pass, not one per skill file — one substitute for
-   the whole pass, likewise, on a remote that has no PRs. The scoped
+   One PR for the whole pass, not one per skill file — one review branch
+   for the whole pass, likewise, on a remote that has no PRs. The scoped
    one-file re-run this step is built for — when a step-8 provisioning
    blocker clears and a marker becomes answerable — gets its own PR (or its
-   own substitute) at that point, and that's what keeps each of those
+   own review branch) at that point, and that's what keeps each of those
    independently revertable. Splitting today's single pass into one PR per
    stub buys nothing: every file in it was written from the same interview
    answers, in one sitting, with nothing between them worth bisecting.
@@ -512,8 +521,8 @@ auth answer through real PRs, specialize the skill stubs and ship those
 through one more, hand back a provisioning list. Three shipped changes, in
 two repos: the product repo gets the conventions doc, this one gets the
 edits first boot makes to itself. Three *PRs*, on a remote that has them —
-on one that doesn't, each is the substitute agreed in step 5(e) instead,
-which is why that step settles the question before step 6 ships anything.
+on one that doesn't, each ships through the review-branch protocol step 5(e)
+names instead, which needs no agreement first and blocks nothing.
 
 The ordering is deliberate: nothing in it depends on something a later step
 promises to deliver, which is why git auth sits ahead of the first push

@@ -66,6 +66,14 @@ tracker, and exits.
    guardrails and this deployment's conventions doc at
    `CONVENTIONS_DOC_PATH`).
 
+**On a remote with no PR mechanism, stages 4 and 5 keep their shape.**
+"Opens a PR" becomes "pushes `review/<slug>`" and "merges" becomes the
+merge that protocol describes; the split between the session that writes
+and the session that reviews — the only thing the pipeline exists for — is
+untouched, since it never depended on a PR object.
+[`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md)'s "Shipping
+on a remote with no PR mechanism" is the one home for the mechanics.
+
 Two rules that apply to every stage:
 
 - **Recovery before new work.** Start by finding items already claimed by
