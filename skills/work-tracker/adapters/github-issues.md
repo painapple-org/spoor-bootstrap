@@ -30,6 +30,24 @@ Consequences to design around, because nothing in GitHub will stop them:
   anything created through the GitHub web UI by a human won't have one. Your
   unrefined-inbox query should be "open, and has no state label", not "open
   and has the inbox label", or human-filed work is invisible.
+
+  **That query is a trap on a repo whose issues predate this deployment**,
+  which is the ordinary case when the agent is being retrofitted onto a
+  team's existing tracker rather than starting one. Every open issue they
+  already had lacks a state label, so on the first run all of it — a
+  fourteen-month-old bug nobody triaged, a design discussion, work a human
+  is actively mid-way through — reads as fresh inbox. The
+  assigned-to-a-human-is-inert rule catches some of it and not the
+  unassigned remainder. Count them before the first run (`gh issue list
+  --state open --limit 100 | wc -l`) and settle it with the owner rather
+  than discovering it as a wave of refinement comments on their backlog.
+  Two workable answers: backfill a state label onto the existing open
+  issues once, deliberately, so "no state label" means what it says from
+  then on; or scope the inbox query to issues created after a cutoff date
+  (`--search 'is:open is:issue created:>=YYYY-MM-DD'`), which needs nothing
+  from them but permanently hides pre-existing work from the pipeline.
+  Whichever it is, record it in `SKILL.md` as part of the state mapping —
+  it changes what the inbox query *means* here.
 - **`gh` refuses to add a label that doesn't exist in the repo.** Create the
   whole family once during specialization with `gh label create`, and record
   in `SKILL.md` that they're repo-scoped — a second product repo needs them
@@ -231,3 +249,15 @@ otherwise it's real complexity bought for nothing. If you do, verify the
 current Projects API shape in GitHub's own docs rather than from these
 notes; it's the youngest and most-changed of the surfaces mentioned here,
 and nothing above was verified against it.
+
+Choosing it **replaces** the label family rather than sitting alongside it,
+and that retires the three rules above that only exist because labels are
+unconstrained: there is no family to create with `gh label create`, two
+states cannot coexist, and "open with no state label" stops being the inbox
+query — the equivalent is "open and not on the board", which on a
+pre-existing repo is a large set of human-owned work rather than an inbox.
+Don't carry both designs; the point of using their board is that the state
+the pipeline reads and the state the humans look at are the same one. The
+team's own non-state labels (a `type:`/`area:`/`priority:` scheme, whatever
+they have) are untouched by this and stay theirs — pass them back on every
+edit, per operation 7.

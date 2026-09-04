@@ -152,6 +152,13 @@ and, where one command can settle it, against the real instance.
   and if it has no credential at all, because it isn't a service, say
   *that*, so a future session reads an empty `WORK_TRACKER_API_KEY` as
   "nothing to authenticate against" rather than as "first boot never ran".
+
+  There's a third case with the same failure mode: a tracker whose
+  credential is real but **doesn't live in `.env` at all**, because the
+  access mechanism holds its own login — a CLI that stores its token in its
+  own config, an MCP server configured in the harness. `WORK_TRACKER_API_KEY`
+  is legitimately empty then too, and for a different reason again, so say
+  which it is and name where the credential actually lives.
 - **Any known gotchas of that specific API.** Write these down the first
   time one bites, rather than rediscovering it every run — e.g. a
   parent/child relation that a "get one item" call silently omits, or a
