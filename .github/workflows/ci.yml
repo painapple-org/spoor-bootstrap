@@ -138,6 +138,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # The links job above proves every link resolves to a file; nothing proves
+  # the docs are still telling the truth *about* those files. Every rule this
+  # script enforces was caught by hand during review at least once — a stub's
+  # Status heading outliving its TODO(specialize) markers, the skills/README.md
+  # index drifting out of the pass order specialize-skills defines, a "STARTUP.md
+  # step N" reference surviving a renumbering — which is exactly the kind of
+  # thing that regresses as soon as nobody happens to be reading. Which rule
+  # exists for which real failure lives in the script's own header.
+  skills-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Stdlib-only python3, preinstalled on the runner image — no setup-python
+      # step and no dependencies to pin.
+      - name: Check skills/ against its own indexes and cross-references
+        run: .github/ci/check-skills-consistency.py
+
   symlinks:
     runs-on: ubuntu-latest
     steps:
