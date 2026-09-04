@@ -55,7 +55,7 @@ building any product code until all of it is done.
    from a list of keys restated here. Fill in every field you now have a
    real answer for.
 
-   Three things that aren't obvious from `.env.example` alone:
+   Four things that aren't obvious from `.env.example` alone:
 
    - Anything from the interview that has no slot there — the autonomy
      model, product vocabulary, a domain name — goes in the conventions doc
@@ -63,6 +63,15 @@ building any product code until all of it is done.
    - Leave every secret blank, with a comment pointing at where it comes
      from. Don't ask me to paste a secret into this chat; I'll edit `.env`
      directly for those once they're provisioned (step 8).
+   - `chmod 600 .env` right after creating it, and tell me you did. A copy
+     inherits `.env.example`'s mode, which is world-readable because it
+     holds nothing but field names — while `.env` ends up holding this
+     deployment's tracker token and comms-channel token. Every other local
+     account and service on the box can read a world-readable file, and
+     gitignoring it does nothing about that. Do this at creation rather
+     than at step 8 when the secrets actually land: a file that starts out
+     0600 is never briefly wrong, and there is no second moment to
+     remember.
    - Leave `CONVENTIONS_DOC_PATH` blank here: step 6 is what fills it in,
      once you've actually decided where that doc lives.
 
