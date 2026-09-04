@@ -261,10 +261,11 @@ Record, concretely:
 - **Whether this deployment's product charges anyone at all**, and if not,
   that it deliberately doesn't yet. "Nothing is sold yet, so no provider
   and no integration" is a real, complete answer and the expected one on
-  first boot — record it as decided, in this deployment's conventions doc
-  at `CONVENTIONS_DOC_PATH` in `.env`, along with the fact that this file
-  is the home for the mechanism when that changes. Everything below is moot
-  until this answer is yes.
+  first boot. It is an interview answer rather than something to decide
+  here, and its home is this deployment's conventions doc at
+  `CONVENTIONS_DOC_PATH` in `.env`, which records it along with the fact
+  that this file is the home for the mechanism when that changes — read it
+  there. Everything below is moot until that answer is yes.
 - **Which provider, and whose account it is** — including whether the
   account already exists with live customers on it, per the
   what-already-exists check above, since that changes every later answer.

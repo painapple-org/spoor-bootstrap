@@ -125,9 +125,15 @@ Work through them in order; later ones depend on earlier answers:
 8. [`skills/billing-and-payments`](../billing-and-payments/SKILL.md) —
    **whether this deployment's product charges anyone at all**, which that
    file makes its first question because every other answer in it is moot
-   until it's yes. "Nothing is sold yet" is the expected first-boot answer
-   and a real one; record it as decided in the conventions doc, per that
-   file's own instruction, rather than leaving it unasked. Where it *is*
+   until it's yes. That answer is **not** collected here: it is an interview
+   question, and [`STARTUP.md`](../../STARTUP.md)'s conventions-doc step has
+   already recorded it in the conventions doc at `CONVENTIONS_DOC_PATH` by
+   the time this pass runs. Read it from there rather than asking the owner
+   a question they already answered — and if it genuinely isn't there, that
+   is a gap in the interview to go and close with them, not a specific to
+   invent. "Nothing is sold yet" is the expected first-boot answer and a
+   real one, and it finishes this item legitimately by leaving the markers
+   below it moot. Where it *is*
    yes: the provider and whose account it is, what is actually sold, the
    environment-variable names holding the test and live keys and the
    webhook signing secret, where entitlement is stored and read in the

@@ -24,9 +24,16 @@
 #      Renumbering a step list or renaming a heading leaves every such
 #      reference confidently wrong, and the links job can't see it: the link
 #      itself still resolves, only the thing it says about the target is false.
+#   5. templates/README.md's "Current templates" list makes the same
+#      one-enumeration claim about templates/ that rule 2 checks for skills/,
+#      and a template also claims to be owned by exactly one SKILL. Both go
+#      stale the same way and neither was checked: a runnable template is
+#      reached through that index, so one missing from it is invisible to the
+#      agent that was supposed to copy it instead of rebuilding it by hand.
 #
 # Nothing here is hardcoded to today's skill list — the skill set, the stub
-# labels, the pass order and the reference targets are all read off disk.
+# labels, the pass order, the template set and the reference targets are all
+# read off disk.
 #
 # Run from anywhere; it locates the repo root relative to its own path.
 
@@ -38,6 +45,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILLS_DIR = REPO_ROOT / "skills"
 SKILLS_INDEX = SKILLS_DIR / "README.md"
 SPECIALIZE_SKILL = SKILLS_DIR / "specialize-skills" / "SKILL.md"
+TEMPLATES_DIR = REPO_ROOT / "templates"
+TEMPLATES_INDEX = TEMPLATES_DIR / "README.md"
 
 # Files that carry cross-references into other files' step lists and headings.
 # skills/ is globbed rather than listed so a new skill is covered for free.
@@ -237,6 +246,57 @@ if index_stub_order != expected:
 		f"    specialize-skills: {expected}"
 	)
 
+# --- 5. templates/README.md's "Current templates" index ----------------------
+
+# Same one-enumeration claim as rule 2, about a different directory. Checked
+# here rather than in a script of its own because the claim it enforces is
+# skills/README.md's own boundary rule applied to templates/: a template is
+# owned by exactly one SKILL, so the two indexes are halves of one statement
+# about what this repo ships.
+if TEMPLATES_DIR.is_dir():
+	template_dirs = sorted(p.name for p in TEMPLATES_DIR.iterdir() if p.is_dir())
+	templates_index_text = read(TEMPLATES_INDEX) if TEMPLATES_INDEX.is_file() else ""
+	if not templates_index_text:
+		fail("templates/ exists but templates/README.md does not, so nothing enumerates it")
+	else:
+		section = re.search(
+			r"^##\s*Current templates\s*$(.*?)(?=^##\s|\Z)",
+			templates_index_text,
+			re.MULTILINE | re.DOTALL,
+		)
+		if not section:
+			fail("templates/README.md has no '## Current templates' section to check templates/ against")
+			listed = []
+		else:
+			listed = []
+			for entry in re.findall(r"^- (.*?)(?=^- |\Z)", section.group(1), re.MULTILINE | re.DOTALL):
+				link = re.search(r"\]\(\./([^/)]+)/", entry)
+				if not link:
+					fail(
+						"templates/README.md 'Current templates' has an entry with no "
+						f"./<template>/ link: {flatten(entry)[:80]!r}"
+					)
+					continue
+				listed.append(link.group(1))
+				# Each entry names the one SKILL that owns the template, per that
+				# file's own "What belongs here, and what doesn't". An entry with
+				# no owner leaves the judgement about when to use it homeless.
+				if not re.search(r"\]\(\.\./skills/[^/)]+", flatten(entry)):
+					fail(
+						f"templates/README.md's entry for '{link.group(1)}' names no owning skill — "
+						"that file requires each template to be owned by exactly one SKILL"
+					)
+
+		for name in listed:
+			if name not in template_dirs:
+				fail(f"templates/README.md lists '{name}' but templates/{name}/ does not exist on disk")
+		for name in template_dirs:
+			if name not in listed:
+				fail(
+					f"templates/{name}/ exists on disk but is not listed in templates/README.md's "
+					"'Current templates' — that list is meant to be the one enumeration of this directory"
+				)
+
 # --- 4. cross-references into another file's steps and headings -------------
 
 crossref_files = [REPO_ROOT / name for name in CROSSREF_ROOTS if (REPO_ROOT / name).is_file()]
@@ -335,6 +395,7 @@ if failures:
 print(
 	f"OK: {len(skill_dirs)} skill directories, all indexed in skills/README.md, "
 	"stub labels and Status headings agree with their TODO(specialize) markers, "
-	"index order matches the specialize-skills pass order, and every step/section "
+	"index order matches the specialize-skills pass order, every template is "
+	"indexed in templates/README.md with an owning skill, and every step/section "
 	"cross-reference resolves."
 )

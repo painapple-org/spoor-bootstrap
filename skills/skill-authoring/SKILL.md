@@ -1,6 +1,6 @@
 ---
 name: skill-authoring
-description: How to author a genuinely new skill for a capability this repo ships no stub for — billing, an on-call rotation, a compliance requirement, an analytics pipeline, anything the fixed set doesn't reach. Covers the cheaper answers to try first, the seam test that decides whether it is a new file or a section of an existing one, the file shape CI enforces, the stub-versus-finished decision, and how a new skill gets wired into the index and the specialization pass. Read before creating any directory under skills/, and before writing a second skill's worth of instructions into a file that already exists.
+description: How to author a genuinely new skill for a capability this repo ships no stub for — billing, an on-call rotation, a compliance requirement, an analytics pipeline, anything the fixed set doesn't reach. Covers the cheaper answers to try first, the seam test that decides whether it is a new file or a section of an existing one, the file shape CI enforces, the stub-versus-finished decision, when the answer is a runnable template rather than more prose, and how a new skill gets wired into the indexes and the specialization pass. Read before creating any directory under skills/, and before writing a second skill's worth of instructions into a file that already exists.
 ---
 
 # skill-authoring
@@ -58,6 +58,17 @@ expensive answer available here, and three cheaper ones come first:
    [`skills/specialize-skills`](../specialize-skills/SKILL.md) says it
    plainly: don't manufacture one from routine work just to have written
    one.
+
+And one answer that is not cheaper but is sometimes the *right* one, worth
+deciding here rather than after the file is written: **the instructions are
+not enough and what the capability needs is runnable code.** Where every
+deployment would otherwise rebuild the same scaffold from this file's prose,
+[`templates/README.md`](../../templates/README.md) is the one home for what
+belongs there and for why that directory exists — including that a template
+is owned by exactly one SKILL, which means this decision produces *two*
+artifacts rather than replacing the skill with a template. The skill still
+owns the judgement; the template owns the shape. Deciding it now is cheaper
+than discovering it after writing a file that describes an app.
 
 ## The seam test
 
@@ -216,8 +227,9 @@ are worth holding in mind while writing it:
 
 ## Wiring it in
 
-Two edits always, and a third where the seam test above says the seam is
-two-way. The skill isn't authored until they're made:
+Two edits always, a third where the seam test above says the seam is
+two-way, and a fourth where the skill ships a template. The skill isn't
+authored until they're made:
 
 1. **[`skills/README.md`](../README.md)'s "Current skills" entry.** That
    list is the one enumeration of this directory, so a skill missing from
@@ -240,6 +252,15 @@ two-way. The skill isn't authored until they're made:
    test above found a two-way seam. Skipping it on a peer seam leaves the
    neighbour silently incomplete; adding it on a one-way one is an edit to
    a file that shouldn't know you exist.
+4. **[`templates/README.md`](../../templates/README.md)'s "Current
+   templates" entry**, where and only where the new skill ships a runnable
+   template per the fourth answer above. That list makes the same
+   one-enumeration claim about `templates/` that the index in edit 1 makes
+   about `skills/`, and it fails the same way: a template missing from it is
+   a scaffold the next deployment rebuilds by hand, having never been told
+   it existed. The entry names the owning skill, since that file requires
+   exactly one. Both halves are machine-checked by the same script the next
+   section names.
 
 Then ship it the way every other tracked change here ships, through a
 branch and a PR per

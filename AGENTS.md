@@ -254,6 +254,29 @@ assume:
    re-deriving the decision or publishing a port because nothing told it
    there was another option.
 
+10. **Whether the product charges anyone, or is meant to.** Ask it
+    outright, for the same reason as question 9 and with the same failure if
+    nobody does: nothing else in this list surfaces it, and the flow needs
+    the answer earlier than it looks. A yes changes the product's data model
+    and puts an account with days of lead time on the shopping list, and
+    [`STARTUP.md`](./STARTUP.md)'s conventions-doc step is where it gets
+    recorded — a step that has already shipped by the time the specialization
+    pass reaches
+    [`skills/billing-and-payments/SKILL.md`](./skills/billing-and-payments/SKILL.md),
+    which is the home for the mechanism.
+
+    Read that file before asking, the way question 2 sends you to the stack
+    SKILL. "Nothing is sold yet" is the common answer and a complete one, and
+    it needs to read as decided rather than unasked. What must not happen is
+    nobody asking: the pass reaches that file with the owner no longer
+    sitting there, and either invents a provider or leaves the one question
+    everything else in the file depends on unanswered.
+
+    Don't take a yes as licence to start building. The owner/agent split in
+    that file puts the provider account, its verification and its live keys
+    on the owner's side, and the interview is not where an integration gets
+    designed.
+
 This list is the complete set of what the interview covers; `STARTUP.md`
 points here for it rather than re-listing it. Which of these answers has a
 named `.env` slot, and what it's called, is `.env.example`'s business, not
