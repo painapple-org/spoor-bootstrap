@@ -153,6 +153,17 @@ def run_doctor(checkout):
 	except ValueError:
 		return None, completed.returncode
 
+def conventions_doc_path(checkout, product):
+	"""Where the generated conventions doc is, resolved the way the doctor
+	resolves it: absolute as given, otherwise relative to PRODUCT_REPO_PATH.
+
+	Not a glob over the product repo: that repo has a README.md in it as well,
+	and directory order decides which one a glob returns — which passed locally
+	and failed in a container, for no reason connected to the generator."""
+	values = env_pairs((checkout / ".env").read_text(encoding="utf-8"))
+	doc = Path(values.get("CONVENTIONS_DOC_PATH", ""))
+	return doc if doc.is_absolute() else product / doc
+
 def env_pairs(text):
 	values = {}
 	for raw in text.splitlines():
@@ -181,12 +192,12 @@ def check_generated_deployment(name, checkout, product, profile):
 	code, output = run_generator(checkout, str(profile))
 	if code != 0:
 		fail(name, f"generator exited {code}:\n{output}")
-		return
+		return False
 
 	env_path = checkout / ".env"
 	if not env_path.is_file():
-		fail(name, "no .env was written")
-		return
+		fail(name, f"generator exited 0 but wrote no .env. Its report:\n{output}")
+		return False
 
 	mode = stat.S_IMODE(env_path.stat().st_mode)
 	if mode != 0o600:
@@ -206,16 +217,14 @@ def check_generated_deployment(name, checkout, product, profile):
 		if values.get(key):
 			fail(name, f"{key} holds a value; the generator must never write a secret")
 
-	doc_path = Path(values.get("CONVENTIONS_DOC_PATH", ""))
-	if not doc_path.is_absolute():
-		doc_path = product / doc_path
+	doc_path = conventions_doc_path(checkout, product)
 	if not doc_path.is_file():
 		fail(name, f"no conventions doc at {doc_path}")
 
 	report, _ = run_doctor(checkout)
 	if report is None:
 		fail(name, "spoor-doctor produced no parseable JSON against the generated deployment")
-		return
+		return True
 
 	observed = {check["id"]: check["status"] for check in report["checks"]}
 	unexpected = [
@@ -259,6 +268,7 @@ def check_generated_deployment(name, checkout, product, profile):
 				f"env-required reported {declared_count} problem(s) but only {len(empty)} of them "
 				f"are empty-but-required; the rest are generator bugs — {message}",
 			)
+	return True
 
 # --- case: the generated .env matches the narrated interview's own ----------
 
@@ -308,9 +318,9 @@ def check_judgement_boundary(name, checkout, product, profile):
 	Two things have to be true of the doc it generates: a TODO(owner) line per
 	omitted judgement field, and no settled deferral about private networking —
 	that profile's own internal-tooling answer contradicts one."""
-	doc = next(product.glob("*.md"), None)
-	if doc is None:
-		fail(name, "no conventions doc to inspect")
+	doc = conventions_doc_path(checkout, product)
+	if not doc.is_file():
+		fail(name, f"no conventions doc at {doc} to inspect")
 		return
 	text = doc.read_text(encoding="utf-8")
 
@@ -348,9 +358,9 @@ def check_no_invented_stack(name, checkout, product):
 	That is the case where product-tech-stack does not apply, so a generator
 	willing to guess would have nothing stopping it. The doc must say the
 	decision is missing rather than make one."""
-	doc = next(product.glob("*.md"), None)
-	if doc is None:
-		fail(name, "no conventions doc to inspect")
+	doc = conventions_doc_path(checkout, product)
+	if not doc.is_file():
+		fail(name, f"no conventions doc at {doc} to inspect")
 		return
 	text = doc.read_text(encoding="utf-8")
 	if "the product's stack is unrecorded" not in text:
@@ -466,7 +476,8 @@ def main():
 			name = profile_path.stem
 			with tempfile.TemporaryDirectory(prefix=f"{name}-", dir=outer) as directory:
 				checkout, product, profile = build_fixture(Path(directory), profile_path)
-				check_generated_deployment(name, checkout, product, profile)
+				if not check_generated_deployment(name, checkout, product, profile):
+					continue
 				if profile_path == GOLDEN_PROFILE:
 					check_matches_walkthrough(f"{name}: matches the narrated interview", checkout, product)
 				if name == "kweekhuis":
