@@ -189,8 +189,8 @@ choice this repo asks you to make, not something it assumes for you.
 ## Path to a running instance
 
 **See a worked example first, if you'd rather read than run.** There are
-two, covering deliberately different shapes — read whichever is closer to
-your own situation, or both:
+three, covering deliberately different shapes — read whichever is closest to
+your own situation, or all of them:
 
 - [`docs/example-walkthrough.md`](./docs/example-walkthrough.md) — a
   five-person coffee roastery with an inherited, half-maintained wholesale
@@ -202,13 +202,19 @@ your own situation, or both:
   tracker, no chat platform, and no git hosting account of any kind, so the
   remote is a bare repo on his own box and the pull request has to be
   replaced by an agreed substitute.
+- [`docs/example-walkthrough-existing-process.md`](./docs/example-walkthrough-existing-process.md) —
+  a four-engineer team with a working engineering process the agent has to
+  join rather than invent: a protected `main` it cannot merge to, CI it has
+  to satisfy, conventions already written down in a `CONTRIBUTING.md` it
+  defers to, and years of tracker issues that must not be swept into its
+  inbox on the first run.
 
 Each takes its fictional business through the whole of item 5 in the list
 below: the interview with plausible answers, the autonomy negotiation, the
 resulting `.env`, an excerpt of the conventions doc it produces, and one
 skill stub shown before and after specialization. They're illustrative, not
 defaults; every file they quote remains the home for its own content, and
-the two cross-link each other's closing comparison.
+each one's closing comparison cross-links the other two.
 
 1. **Get a VPS you can SSH into**, running Ubuntu, Debian or an apt-based
    derivative of either. Any provider works. Painapple's own instance runs
