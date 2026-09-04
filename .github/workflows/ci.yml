@@ -39,8 +39,8 @@ jobs:
   # prerequisite, an installer invoked in a way that leaves its binary off
   # PATH). This job actually executes it in a fresh ubuntu:24.04 container,
   # once per privilege shape install.sh supports, and asserts the result. The
-  # assertions and the reason the docker daemon is out of scope live in the
-  # test script itself.
+  # assertions, and why the container needs each of the flags it is given
+  # below, live in the test script itself.
   install-execution:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -63,9 +63,20 @@ jobs:
       - name: Point origin at a stand-in fork
         run: git remote set-url origin https://github.com/spoor-bootstrap-ci/stand-in-fork.git
 
+      # A steps-level docker run on the runner VM, deliberately not a job-level
+      # `container:`. The test needs --privileged for the nested daemon, and
+      # Actions gives no way to pass that to a container job — only the VM's
+      # own docker, driven from a step like this, can.
+      #
+      # --privileged and the anonymous volume on /var/lib/docker are both
+      # required for the nested dockerd the test script starts; the script's
+      # header records which failure each one prevents. -v with no source is
+      # an anonymous volume, which --rm cleans up with the container.
       - name: Execute install.sh in a fresh ubuntu:24.04 container
         run: |
           docker run --rm \
+            --privileged \
+            -v /var/lib/docker \
             -v "$PWD:/src:ro" \
             ubuntu:24.04 \
             bash /src/.github/ci/install-smoke-test.sh '${{ matrix.mode }}'
