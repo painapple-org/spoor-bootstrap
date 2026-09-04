@@ -1,6 +1,6 @@
 ---
 name: deploy-and-monitor
-description: How a merged change actually reaches the running product, and how this agent instance knows the product is healthy. Read before merging something that has to deploy, before touching the running deployment, or when investigating a failure. Ships as a stub — the deploy mechanism and health signals are per-deployment.
+description: How a merged change actually reaches the running product, how it gets rolled back, whether the data is backed up and whether a restore has ever been verified, and how this agent instance knows the product is healthy. Read before merging something that has to deploy, before touching the running deployment, before touching a backup or a dump, or when investigating a failure. Ships as a stub — the environments, deploy mechanism, backups and health signals are per-deployment.
 ---
 
 # deploy-and-monitor
@@ -73,7 +73,14 @@ Two things that are true regardless of mechanism:
 - **A merged change that isn't running is not shipped.** Name the
   observable — the running service serving the new behavior, the job
   present in the schedule, the container restarted on the new image — and
-  check it.
+  check it. **Where there is more than one environment, say which one you
+  mean**: a change merged into a staging branch is shipped to *staging*
+  when staging is observably running it, and not shipped to production at
+  all until it has passed the promotion gate recorded above and the same
+  observable is checked against production. Both halves are real, and
+  reporting the first as though it were the second is the mistake this
+  rule exists to prevent — "merged" is not one destination once there is
+  more than one environment.
 
 ## Backups, and whether they actually restore
 
@@ -182,6 +189,13 @@ Real credentials live only in `.env`, which is gitignored and disk-only.
 Never put a real secret in a committed file, a code comment, a doc, a work
 item, or a message. Reference the variable *name* when documenting
 configuration, never the value.
+
+`.env`'s mode is `0600`, and that is a standing invariant rather than a
+one-time step at creation: gitignoring a file does nothing about every
+other local account and service on the box being able to read it. Any run
+that touches or notices that file checks the mode and narrows it back if it
+has drifted — that's a permission taken away from nobody who should have
+it, and it isn't a stop-and-ask.
 
 Rotating or revoking a credential is stop-and-ask by default, per
 [`AGENTS.md`](../../AGENTS.md)'s "Default guardrails" list. Any deviation

@@ -79,9 +79,13 @@ the list has more than one entry, and both of them bite:
 `TODO(specialize)`: record the literal allowlist in `COMMS_ALLOWLIST` in
 `.env` — that variable is its one home, in the form the channel itself
 verifies rather than display names, which are usually user-settable — and
-record here what the list *means* on this deployment: who each identity is,
-who with channel access is deliberately off it, and which decisions belong
-to which of them. **An empty allowlist is a real answer** where the channel
+record here what the list *means* on this deployment: who each identity is
+and who with channel access is deliberately off it. **Which decisions
+belong to which of them is not recorded here**: that is per-person
+deployment specifics, and the conventions doc at `CONVENTIONS_DOC_PATH` is
+its one home, the same doc the "allowlisted is not interchangeable" bullet
+above sends you to read a gate off. Write it there and point at it from
+here. **An empty allowlist is a real answer** where the channel
 can't verify an identity at all, per the note at the top of this file:
 record it as empty, say what the instruction surface is instead, and don't
 fill it with email addresses that nothing checks.
@@ -146,9 +150,15 @@ rather than referring to one that doesn't exist.
 ## How to write to them
 
 - **Match the recipient's technical level**, which is a first-boot
-  interview answer recorded as `OWNER_TECH_LEVEL` in `.env`, not a guess. A
-  non-technical owner gets plain language and an explained term; a
-  technical one does not need jargon translated.
+  interview answer, not a guess. Where you know who you are writing to,
+  that person's own answer governs, and the conventions doc at
+  `CONVENTIONS_DOC_PATH` is the home for it — a deployment with several
+  people on `COMMS_ALLOWLIST` has several answers. `OWNER_TECH_LEVEL` in
+  `.env` is the *default* register, for a message with no specific
+  recipient (a digest, a post to a shared channel), and the per-person note
+  in that doc overrides it whenever the recipient is known. A non-technical
+  recipient gets plain language and an explained term; a technical one does
+  not need jargon translated.
 - **Address a specific person explicitly** in a group channel by replying
   to their own message or DMing them — a name prefix in a group post is
   easily missed.

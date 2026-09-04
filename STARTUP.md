@@ -48,8 +48,9 @@ building any product code until all of it is done.
    without re-explaining it.
 
 4. Once you have the answers, write `.env` from `.env.example` (copy it if
-   `.env` doesn't exist yet; if it already exists, leave it untouched and
-   tell me to edit it by hand instead). Read `.env.example` for the field
+   `.env` doesn't exist yet; if it already exists, leave its *contents*
+   untouched and tell me to edit it by hand instead — but still check its
+   mode, per the third bullet below). Read `.env.example` for the field
    list — it's the schema and the one home for what each key means, so use
    its names exactly as they are, don't invent new ones, and don't work
    from a list of keys restated here. Fill in every field you now have a
@@ -72,6 +73,18 @@ building any product code until all of it is done.
      than at step 8 when the secrets actually land: a file that starts out
      0600 is never briefly wrong, and there is no second moment to
      remember.
+
+     **This applies to the leave-it-untouched branch above too.** A `.env`
+     that already existed was written by something other than this step
+     and may well be world-readable — an earlier partial run, a copy made
+     by hand. So check the mode either way (`stat -c '%a %n' .env`), and
+     narrow it to 0600 if it isn't already, saying what it was and what you
+     changed it to. Tightening a file's own permissions is not a
+     stop-and-ask: it takes access away from nobody who should have it, and
+     it's reversible in one command. Leaving the contents alone does not
+     mean leaving the mode alone — 0600 is the standing invariant on this
+     file, per skills/deploy-and-monitor/SKILL.md's secrets section, not a
+     one-time act of creating it.
    - Leave `CONVENTIONS_DOC_PATH` blank here: step 6 is what fills it in,
      once you've actually decided where that doc lives.
 
@@ -368,13 +381,17 @@ building any product code until all of it is done.
 
    **Before you commit any of it, tell me what it contains.** A specialized
    pass writes real operational detail about my business into tracked files
-   here: which identities on my comms channel may instruct you, which
-   account your pushes authenticate as and at what permission level, my
-   tracker's scope identifier and host specifics, which of my branches must
-   never be force-pushed. None of it is a credential — those stay in `.env`,
-   which is gitignored — but all of it is identifying detail about a
-   specific deployment, and where it lands is decided by whatever `origin`
-   is. Summarize in a couple of lines what this pass is about to commit and
+   here: who the people on my comms channel are and which of them is
+   deliberately excluded from instructing you, which account your pushes
+   authenticate as and at what permission level, my tracker's scope
+   identifier and host specifics, which of my branches must never be
+   force-pushed. Nothing committed here is a credential — those stay in
+   `.env`, which is gitignored, along with the literal list of identities
+   permitted to instruct you (`COMMS_ALLOWLIST`), which isn't a credential
+   either but is exactly the kind of thing worth keeping off a tracked
+   file. What does get committed is all identifying detail about a specific
+   deployment, and where it lands is decided by whatever `origin` is.
+   Summarize in a couple of lines what this pass is about to commit and
    which repo it goes to, and if that repo is a public fork say so plainly
    and get my go-ahead first, per step 5(d) — which is also where the check
    for that lives (`gh repo view --json isFork,visibility` against this

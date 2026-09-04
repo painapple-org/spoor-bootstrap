@@ -56,19 +56,31 @@ any of that, they only say how it lands in one tracker's API.
    **If the owner's tracker is none of the three**, every adapter goes and
    this directory is left indexing nothing — which is the one case where
    keeping this file is worse than removing it. Delete the whole
-   `adapters/` directory then, this file included. Then repoint every link
-   that pointed here, which is more than the two obvious ones:
+   `adapters/` directory then, this file included. Then deal with every
+   link that pointed here, which is more than the two obvious ones:
    [`../SKILL.md`](../SKILL.md), [`skills/README.md`](../../README.md),
    [`skills/specialize-skills/SKILL.md`](../../specialize-skills/SKILL.md)
    (twice — its work-tracker step, and its skills-index bookkeeping step)
-   and [`CONTRIBUTING.md`](../../../CONTRIBUTING.md). Point them at
-   `../SKILL.md`'s own "How to actually call the tracker" section, which by
-   that point holds the real answer for this deployment — except
-   `CONTRIBUTING.md`, which is about contributing an adapter back
-   *upstream*, where the directory still exists: reword that one rather
-   than repointing it. Grep for `adapters` afterwards; a dead link in
-   `specialize-skills` is read on every later scoped re-run. See the next
-   section for the notes worth writing instead, and where.
+   and [`CONTRIBUTING.md`](../../../CONTRIBUTING.md).
+
+   Three of those five get *repointed* at `../SKILL.md`'s own "How to
+   actually call the tracker" section, which by that point holds the real
+   answer for this deployment: `skills/README.md` and both
+   `specialize-skills` mentions. The other two cannot be repointed at all:
+
+   - `CONTRIBUTING.md` is about contributing an adapter back *upstream*,
+     where the directory still exists — reword that one rather than
+     repointing it.
+   - `../SKILL.md`'s own link **is** the opening paragraph of "How to
+     actually call the tracker" (the one starting "Start from `adapters/`
+     …"), so repointing it would aim that section at itself. **Delete that
+     paragraph instead** — it exists only to send a reader to the adapters,
+     and with none left there is nothing for it to say; the markers below
+     it already state what has to be filled in.
+
+   Grep for `adapters` afterwards; a dead link in `specialize-skills` is
+   read on every later scoped re-run. See the next section for the notes
+   worth writing instead, and where.
 
 ## If the owner's tracker isn't one of these
 
