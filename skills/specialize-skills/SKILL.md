@@ -98,7 +98,16 @@ Work through them in order; later ones depend on earlier answers:
    already has users it is the most load-bearing thing in this pass — an
    honest "nothing is backed up" belongs on the shopping list, not in a
    hedge.
-6. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
+6. [`skills/internal-dashboard`](../internal-dashboard/SKILL.md) — whether
+   this deployment wants an internal operations dashboard at all, and the
+   real questions it would answer. Take the "no" answer seriously: that
+   file opens by saying not to build one speculatively, so recording "not
+   wanted, the comms channel is enough" finishes this item legitimately and
+   leaves the rest of its markers moot. If it is wanted, the stack, the
+   private-network product and hostname, the naming prefix, and the page
+   list all come from the owner. Do this one last — it depends on the
+   health signals from item 5.
+7. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
    to specialize. It is already a finished, deliberately non-negotiable
    requirement. Do not edit it to suit a preference; if it applies, follow
    it.
