@@ -212,12 +212,26 @@ assume:
    comments, a trailer on your own commits), that's an addition to their
    conventions to agree with them, not a replacement for them.
 
-   Two follow-ups worth asking outright, because the flow otherwise
+   **Ask how the product currently reaches production, and don't assume
+   you'll be the one building that.** A live product already deploys
+   somehow, and on a repo with a team in it that is normally a CI/CD
+   pipeline they own and rely on. It is the same shape of inheritance as
+   their branch conventions above, with a much sharper failure mode:
+   duplicating it or re-triggering it can ship or break something for real.
+   [`skills/deploy-and-monitor/SKILL.md`](./skills/deploy-and-monitor/SKILL.md)'s
+   "First: does a deploy pipeline already exist?" section is the one home
+   for what to read, what to ask on top of it, and where the boundary
+   between that pipeline's job and yours falls — read it before asking, the
+   way question 2 sends you to the stack SKILL.
+
+   Three follow-ups worth asking outright, because the flow otherwise
    silently assumes an answer: whether anyone other than you may merge to
-   the default branch (see [`STARTUP.md`](./STARTUP.md) step 5(d)), and
-   whether the tracker from question 3 is one they're already living in
+   the default branch (see [`STARTUP.md`](./STARTUP.md) step 5(d)), whether
+   the tracker from question 3 is one they're already living in
    with work in flight — an existing tracker with existing conventions is a
-   complete answer to that question and does not get re-litigated.
+   complete answer to that question and does not get re-litigated — and
+   whether a merge to the default branch deploys to production by itself,
+   which decides whether your own routine merges are production events.
 
 This list is the complete set of what the interview covers; `STARTUP.md`
 points here for it rather than re-listing it. Which of these answers has a

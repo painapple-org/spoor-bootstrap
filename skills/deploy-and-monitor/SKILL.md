@@ -1,6 +1,6 @@
 ---
 name: deploy-and-monitor
-description: How a merged change actually reaches the running product, how it gets rolled back, whether the data is backed up and whether a restore has ever been verified, and how this agent instance knows the product is healthy. Read before merging something that has to deploy, before touching the running deployment, before touching a backup or a dump, or when investigating a failure. Ships as a stub — the environments, deploy mechanism, backups and health signals are per-deployment.
+description: How a merged change actually reaches the running product, how it gets rolled back, whether the data is backed up and whether a restore has ever been verified, and how this agent instance knows the product is healthy — including the common case where the product already has a CI/CD pipeline this agent did not build and must not duplicate. Read before merging something that has to deploy, before touching the running deployment, before touching a backup or a dump, or when investigating a failure. Ships as a stub — the environments, deploy mechanism, backups and health signals are per-deployment.
 ---
 
 # deploy-and-monitor
@@ -24,6 +24,142 @@ installer brings it along, but nothing here guarantees it either. Run
 `docker info` and `docker compose version` and check both before relying on
 them. Everything else here is open.
 
+## First: does a deploy pipeline already exist?
+
+Answer this before reading any further, because the rest of this file reads
+naturally as instructions for *building* a deploy path, and on an inherited
+product it usually isn't yours to build. A product that already has users
+has been reaching production somehow for as long as it has had them, and
+that mechanism is normally a CI/CD pipeline the team owns: a workflow file
+in the repo, a self-hosted or hosted runner, a provider that builds on
+push, a release script somebody runs. Assuming otherwise produces the two
+worst outcomes available here — a second, competing deploy path, or a
+pipeline re-triggered by an agent that didn't know what triggering it does.
+
+The resolution has the same shape as an inherited stack, and is settled the
+same way — see
+[`skills/product-tech-stack`](../product-tech-stack/SKILL.md)'s "When the
+product repo already exists and doesn't match". **What is already there
+keeps its job. You fill the gaps around it and defer to it everywhere
+else.** Don't re-derive a different answer per deployment, and don't read
+this file's `TODO(specialize)` prompts as a mandate to build what those
+answers describe.
+
+**Read before you ask, then ask what reading couldn't settle.** The
+interview covers this — [`AGENTS.md`](../../AGENTS.md)'s first-boot
+interview question about an existing product repo is where it's asked, and
+that list is its home — but most of it is discoverable without spending the
+owner's time: pipeline config in the repo (a `.github/workflows/`
+directory, `.gitlab-ci.yml`, a `Jenkinsfile`, a provider config file), the
+deploy-shaped job names in it, the provider's own run history and
+deployment/environment records over its API, and the last few merges
+compared against what shipped. What reading cannot settle is exactly what's
+worth the owner's time:
+
+- **Which of it is live, and which is abandoned.** A workflow file that
+  hasn't run in a year and a workflow that runs on every merge are
+  indistinguishable in the diff. The provider's run history answers it; ask
+  only if it can't.
+- **Whether a production deploy is automatic on merge or a deliberate human
+  act.** This is the single most consequential answer in this section: it
+  decides whether *your* merge is what ships to production. See "How this
+  interacts with the merge gate" below.
+- **Who is notified when a deploy fails today**, and whether that
+  destination is one this agent can read. It usually isn't — see "What
+  'monitor' means when you don't have the host".
+- **What the pipeline does beyond deploying** — migrations, cache
+  invalidation, a customer-facing notification, a paid-minutes budget.
+  These are what make a casual re-run expensive rather than idempotent.
+
+`TODO(specialize)` — record the answer plainly, including the negative one.
+"There is an existing pipeline and this agent did not build it" and "there
+is no automated deploy pipeline at all" are both real answers a reader needs
+to know were *decided* rather than skipped. Name the file or provider
+setting that owns the pipeline and let it stay the one home for its own
+steps — don't restate them here, and don't copy its job names, branch
+filters or environment names into this file, since it owns those and this
+file goes stale the first time the team edits one. Any autonomy delta that
+comes out of the conversation (may this agent re-run a failed deploy? may
+it edit the pipeline config?) belongs in the deployment conventions doc at
+`CONVENTIONS_DOC_PATH`, which is the home for autonomy, and only gets
+pointed at from here.
+
+### What your job is when one exists, and what it isn't
+
+**Defer entirely, and don't duplicate:**
+
+- **Building, testing, releasing and deploying.** The "Whose job deploying
+  is" bullet below is the rule and this is its most common instance: your
+  session's job ends at the merge. Don't add a second deploy path, don't
+  run the deploy command by hand alongside the pipeline, and don't add a
+  workflow that overlaps one that's already there.
+- **Re-triggering anything.** A re-run is not a free retry: depending on
+  what the pipeline does it can redeploy, re-run a migration, invalidate a
+  cache, notify customers, or spend paid runner minutes. Deciding a failed
+  production deploy should be retried is the team's call unless the
+  conventions doc explicitly says it's yours, and the pipeline's own output
+  is what distinguishes a transient infra failure from a real one — the "a
+  green CI run is not proof a deploy happened" rule below already says to
+  only retry on the former, and inheriting someone else's pipeline is where
+  that restraint matters most.
+- **Editing the pipeline config as a side effect of unrelated work.** It is
+  revertable like any commit, but its blast radius is the team's entire
+  delivery path, and a break in it blocks every human on the team, not just
+  you. So it's a change agreed and shipped on its own, never a drive-by fix
+  inside a product change.
+
+**Yours, and worth doing precisely because the pipeline doesn't:**
+
+- **Confirming the outcome of a deploy your own merge caused.** "A merged
+  change that isn't running is not shipped" below survives an inherited
+  pipeline completely intact — you just read the outcome rather than
+  driving it.
+- **Getting the failure signal to this deployment's comms channel.** This
+  is very often a genuine gap rather than a duplication: an existing
+  pipeline notifies whoever set it up, on a channel this agent has no
+  access to, which means a failed deploy is invisible to it by default. A
+  read-only watcher this agent runs — poll the provider's run history,
+  alert on a failed or missing run — supplements without touching their
+  pipeline. Changing the pipeline itself to notify this agent is the
+  cleaner fix and is a change to *their* pipeline: propose it, don't just
+  make it.
+- **The gaps a deploy pipeline structurally doesn't cover**, which is most
+  of the rest of this file: backups and whether a restore has ever been
+  verified, health after the deploy has gone green, disk filling up. Check
+  each is actually a gap first — a team with a mature pipeline often has a
+  backup job too — but don't assume a pipeline's existence implies any of
+  them.
+
+Two responders on one box is the standing hazard here, not a one-off: the
+"which of them this deployment already had before this agent existed"
+bullet in the Monitoring section below is its home, and everything it says
+about read-only signals and paused monitors applies to an inherited
+pipeline the same way.
+
+### How this interacts with the merge gate
+
+[`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md)'s shipping
+loop merges once the change has been reviewed and its checks are green.
+Where the team's existing CI *is* the required status check on the default
+branch, **that is the gate already** — it is not something to reproduce.
+Don't stand up a second verification, and don't reach for that skill's
+run-the-tests-locally substitute, which exists specifically for a remote
+with no hosted CI. Two consequences:
+
+- **A red or pending required check blocks your merge even where the
+  provider wouldn't enforce it.** That skill's "Required status checks"
+  bullet is the home for the failure shapes here — a check that never runs
+  for your changed paths, or one the agent cannot influence such as a
+  human-gated environment approval. Read which checks are required and
+  confirm they run for the kind of change you're shipping; don't work
+  around one, and don't merge past a red one on the grounds that it looked
+  unrelated.
+- **Where the pipeline deploys on merge, merging is deploying.** The merge
+  stops being the cheap, reversible act the shipping loop treats it as, and
+  the rollback procedure recorded below — not the PR revert — is what
+  actually undoes it. Know which of the two shapes this deployment is
+  before merging anything that touches the running service.
+
 ## Deploying
 
 `TODO(specialize)` — record, concretely:
@@ -43,7 +179,10 @@ them. Everything else here is open.
   hand. Name the actual mechanism and where its config lives. With more
   than one environment there is usually more than one trigger, and they are
   rarely the same shape — an automatic one into staging and a deliberate,
-  attended one into production is the common pair.
+  attended one into production is the common pair. **Where the mechanism
+  predates this deployment, this bullet is a record of what you found, not
+  a design decision** — see "First: does a deploy pipeline already exist?"
+  above, and name the config that owns it rather than describing its steps.
 - **Which command deploys**, and from where. If a script owns this, name
   the script and let it be the one home for the procedure — don't restate
   its steps here.
@@ -163,6 +302,51 @@ whether one exists or whether it works.
   than from a subset restated here.
 - **Where an alert goes.** One destination, per
   [`skills/comms-channel`](../comms-channel/SKILL.md).
+
+### What "monitor" means when you don't have the host
+
+`AGENTS.md` says this agent monitors the product; nothing anywhere grants
+it access to the machine the product runs on. `install.sh` sets up the box
+the *agent* operates from — docker, `uv`, the `gh` binary, docker-group
+membership on that box — and that is the whole of its reach. It never
+touches the product's production host, which on an inherited product is
+routinely a different machine, or a managed platform with no shell to have
+access to at all. So don't write a monitoring procedure whose steps
+silently assume SSH, `sudo` or systemd on the product host. Split the
+signals by what they actually require:
+
+- **Black-box, needs no access to the product host.** An HTTP request from
+  this agent's own box against a health endpoint or a real user-facing URL,
+  asserting on status and on something in the body rather than only on a
+  connection succeeding. The CI/CD provider's run and deployment history
+  over its API (`gh run list` and the deployments/environments endpoints on
+  a GitHub-shaped remote, the equivalent elsewhere) — which is what makes
+  watching an inherited pipeline possible without touching it. An external
+  uptime checker. An error tracker's API. The platform's own status page.
+  These are available to a scheduled run with nothing but network and a
+  token, and they are the honest floor of what "monitoring" means here.
+- **White-box, needs to be on the product host.** `docker ps` / `docker
+  logs` / container health status, `journalctl` or `systemctl`, log files,
+  disk and memory thresholds. Real and much more informative — and
+  available for free when the product runs on this same box, which is the
+  single-box deployment this template's own defaults suit best. On any
+  other shape each of these needs access somebody has to grant.
+
+`TODO(specialize)` — record which of the two each signal is on this
+deployment, and whether the product runs on this box or elsewhere. A
+white-box check written down for a host this agent cannot reach is not
+coverage, for the same reason the invisible-signal bullet above gives: it
+reports nothing and looks like a plan. Where the useful signal needs access
+that doesn't exist yet, that access is an item for the owner's
+self-provisioning shopping list per [`AGENTS.md`](../../AGENTS.md) — asking
+for it is the route, and helping yourself to it (adding your own key,
+widening your own permissions) is on the default guardrail list, not a
+workaround.
+
+Where a black-box check is all there is, say what it cannot see rather than
+letting a green result overstate itself: a health endpoint answering 200
+says the process is up, not that a background job is running, that a queue
+isn't backing up, or that one user's requests are failing.
 
 ## When something breaks
 

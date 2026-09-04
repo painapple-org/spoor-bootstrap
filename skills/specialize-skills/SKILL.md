@@ -83,12 +83,17 @@ Work through them in order; later ones depend on earlier answers:
    marker-filling, one file per stage kept, from that directory's template.
    Anything you can't finish in this pass is outstanding work to hand back
    with the shopping list, not a marker to leave in this SKILL.
-5. [`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md) — how many
+5. [`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md) — **whether
+   a deploy pipeline already exists at all**, which that file makes the
+   first question because every other answer in it changes shape depending
+   on it: an inherited pipeline gets recorded and deferred to, not rebuilt.
+   Then how many
    environments there are and what gates promotion between them (including
    saying so explicitly when there is only one), the deploy trigger and
    command, the rollback procedure, **what is backed up and whether a
    restore has ever been verified**, the health signals that actually
-   exist, and what the agent may fix unattended. The backup half is a
+   exist — including which of them this agent can reach without access to
+   the product's host — and what the agent may fix unattended. The backup half is a
    whole section of that file rather than one bullet, and on a product that
    already has users it is the most load-bearing thing in this pass — an
    honest "nothing is backed up" belongs on the shopping list, not in a

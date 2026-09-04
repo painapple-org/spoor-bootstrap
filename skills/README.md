@@ -100,8 +100,9 @@ whole-folder symlinks described above.
   (refine → critique → resolve-critique → implement → review), what each
   stage owns, and why the reviewing session must not be the implementing
   one.
-- [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* How a
-  merged change reaches the running product across however many
-  environments it has, how it's rolled back, whether the data is backed up
-  and whether a restore has ever been verified, how the agent knows it's
-  healthy, and what it may fix unattended.
+- [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* Whether
+  this deployment inherits an existing CI/CD pipeline or builds the deploy
+  path itself, how a merged change reaches the running product across
+  however many environments it has, how it's rolled back, whether the data
+  is backed up and whether a restore has ever been verified, how the agent
+  knows it's healthy, and what it may fix unattended.
