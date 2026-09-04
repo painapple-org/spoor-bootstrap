@@ -1,17 +1,18 @@
-<!-- Keep it short. See CONTRIBUTING.md. -->
+**What this changes**
 
-**What this changes, and why**
+<!-- One or two sentences on what's different and why. -->
 
-**What you actually ran**
+**Where**
 
-<!-- OS + version if this touches install.sh; which agentic harness read it
-     if this touches a skill file or STARTUP.md. "Docs only, not run" is a
-     fine answer. -->
+<!-- install.sh, a skill file, README/STARTUP.md, CI, ... -->
 
-**Checklist**
+**How you checked it**
 
-- [ ] One logical change
-- [ ] No fact restated that another file already owns (linked instead)
-- [ ] No `TODO(specialize)` marker filled in with a deployment-specific value
-- [ ] No stage prompt added under `prompts/` (template and README changes only)
-- [ ] CI green (shellcheck, install execution, markdown links, skill symlinks)
+<!-- What you actually ran to convince yourself this works - a fresh
+     install.sh run, a skill file read end-to-end, CI passing on this PR,
+     a live dry-run of the interview, ... "I read it" is weaker than
+     "I ran it." -->
+
+**Anything you deliberately left out or deferred**
+
+<!-- If this is a partial fix or you scoped something out on purpose, say so. -->
