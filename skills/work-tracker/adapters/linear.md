@@ -71,7 +71,7 @@ belongs to, so it both confirms the key works and yields the **agent's own
 user id**, which operation 1 needs. Variables go the same way:
 
 ```sh
-jq -n --arg q 'query($teamKey: String!) { team(...) { ... } }' \
+jq -n --arg q 'query($teamKey: String!) { teams(filter: { key: { eq: $teamKey } }) { nodes { id name } } }' \
       --arg teamKey '<TEAM-KEY>' \
       '{query: $q, variables: {teamKey: $teamKey}}' \
   | curl -sS -X POST https://api.linear.app/graphql \
