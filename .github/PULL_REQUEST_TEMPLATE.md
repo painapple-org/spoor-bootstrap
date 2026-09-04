@@ -13,4 +13,5 @@
 - [ ] One logical change
 - [ ] No fact restated that another file already owns (linked instead)
 - [ ] No `TODO(specialize)` marker filled in with a deployment-specific value
+- [ ] No stage prompt added under `prompts/` (template and README changes only)
 - [ ] CI green (shellcheck, install execution, markdown links, skill symlinks)

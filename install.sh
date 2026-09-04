@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # install.sh — pure OS-level bootstrap for a spoor-bootstrap instance:
-# sanity-checks the skill symlinks, installs the three hard requirements
-# (docker, uv, gh cli) plus the handful of apt packages they need to be
-# fetchable at all, and checks the docker daemon is reachable — starting it
+# sanity-checks the skill symlinks, installs the three tools this repo
+# bootstraps (docker, uv, gh cli) plus the handful of apt packages they need
+# to be fetchable at all, and checks the docker daemon is reachable — starting it
 # where the box has systemd, and saying NOT VERIFIED where it has none.
 # Nothing else.
 #
@@ -337,7 +337,11 @@ else
 	log "gh cli installed ($(gh --version | sed -n 1p))."
 fi
 
-log "All three hard requirements are present: docker, uv, gh."
+# docker and uv are needed on every deployment; gh only on a remote with a
+# GitHub-style API behind it. README.md's "Hard requirements" section owns that
+# distinction. This script installs all three regardless, since it asks no
+# questions and cannot know which remote shape this deployment picked.
+log "Present: docker, uv, gh (docker and uv are required everywhere; gh only if this deployment's remote has a GitHub-style API - see README.md)."
 
 # ---------------------------------------------------------------------------
 # Summary

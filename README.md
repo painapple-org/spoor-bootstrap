@@ -142,19 +142,28 @@ intended way to trust it.
 
 ## Hard requirements
 
-These are the three things that must exist **on the box, for the agent
-itself to operate**, and `install.sh` sets all three up:
+These are the three things `install.sh` sets up **on the box, for the agent
+itself to operate**:
 
 - **Docker** — everything the agent builds and runs is containerized.
+  Required on every deployment.
 - **uv** — Python dependency management for whatever tooling the agent
-  writes for itself.
-- **GitHub CLI (`gh`)** — the agent operates through branches, PRs, and the
-  GitHub API; `gh` is how it authenticates and acts. `install.sh` installs
-  the binary only and never logs it in: authenticating it needs a
-  decision (which account, which protocol) and an interactive prompt, both
-  of which belong to the first-boot flow. [`STARTUP.md`](./STARTUP.md)'s
-  own step 5 is where a working git identity gets established and verified,
-  before anything tries to push.
+  writes for itself. Required on every deployment.
+- **GitHub CLI (`gh`)** — required for the two GitHub-shaped remotes in
+  [Path to a running instance](#path-to-a-running-instance) below (a private
+  repo of your own, or a fork). On those the agent operates through
+  branches, PRs and the GitHub API, and `gh` is how it authenticates and
+  acts. On the third shape — a plain git remote with no GitHub-style host
+  behind it — there is no such API to call and nothing for `gh` to
+  authenticate against, so it isn't a requirement there: plain `git` plus
+  the PR substitute that item settles are what that shape runs on.
+  `install.sh` installs the binary either way, since it asks no questions
+  and so cannot know which shape you picked. It never logs it in:
+  authenticating needs a decision (which account, which protocol) and an
+  interactive prompt, both of which belong to the first-boot flow.
+  [`STARTUP.md`](./STARTUP.md)'s own step 5 is where a working git identity
+  gets established and verified, before anything tries to push — and where
+  the plain-remote case skips the login instead.
 
 This is the agent's own host tooling, not a statement about what the
 product it builds is written in. That's a separate decision with its own
