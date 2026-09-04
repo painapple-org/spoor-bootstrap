@@ -74,6 +74,13 @@ This list is the one enumeration of what exists here; nothing else in this
 repo re-lists them. Every entry is visible to both harnesses via the
 whole-folder symlinks described above.
 
+The stubs below are listed in the order the specialization pass works
+through them, since later ones depend on earlier answers.
+[`specialize-skills`](./specialize-skills/SKILL.md)'s "The stubs to
+specialize" is the one home for that order and for why each one sits where
+it does; read it there, and keep this list's order matching it when a skill
+is added.
+
 - [`product-tech-stack`](./product-tech-stack/SKILL.md) — the required
   technology stack when building a product for a non-technical end-user.
   Finished and fully opinionated; nothing in it needs specializing.
@@ -100,6 +107,12 @@ whole-folder symlinks described above.
   (refine → critique → resolve-critique → implement → review), what each
   stage owns, and why the reviewing session must not be the implementing
   one.
+- [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* Whether
+  this deployment inherits an existing CI/CD pipeline or builds the deploy
+  path itself, how a merged change reaches the running product across
+  however many environments it has, how it's rolled back, whether the data
+  is backed up and whether a restore has ever been verified, how the agent
+  knows it's healthy, and what it may fix unattended.
 - [`private-networking`](./private-networking/SKILL.md) — *stub.* How
   something this agent builds for the owner alone — an internal dashboard,
   a preview environment, an admin tool — becomes privately reachable over a
@@ -108,12 +121,6 @@ whole-folder symlinks described above.
   sidecar-container pattern for exposing one containerized service, the
   owner/agent split on keys and membership, and the deferred case where
   nothing internal exists yet.
-- [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md) — *stub.* Whether
-  this deployment inherits an existing CI/CD pipeline or builds the deploy
-  path itself, how a merged change reaches the running product across
-  however many environments it has, how it's rolled back, whether the data
-  is backed up and whether a restore has ever been verified, how the agent
-  knows it's healthy, and what it may fix unattended.
 - [`internal-dashboard`](./internal-dashboard/SKILL.md) — *stub.* Building
   an internal operations dashboard: whether one is worth building at all,
   the standalone-project shape that keeps it out of the product's repo and
