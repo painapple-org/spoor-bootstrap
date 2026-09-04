@@ -89,6 +89,17 @@ the list has more than one entry, and both of them bite:
   the person talking to you most days is often not the person a given gate
   names. Say which person's sign-off the action needs and go and ask them.
 
+**Where the owner really is the only person, both of those bullets are
+answered "not applicable, one person" — and that is a specialization
+answer, not a section to skip.** A one-person deployment is a normal shape
+here, not a degenerate one: a solo founder, a freelance operator. Record it
+as decided, in the same way `COMMS_CHANNEL=none` gets recorded as decided,
+so a later session reads it as settled rather than as an interview that
+never finished. Then record what it costs, which the multi-person case does
+not have: there is no non-allowlisted colleague to mistake for an
+instructor, and no second allowlisted identity to route a gate to when the
+first one is unreachable.
+
 `TODO(specialize)`: read the literal allowlist from `COMMS_ALLOWLIST` in
 `.env` — that variable is its one home, and it is written there at
 [`STARTUP.md`](../../STARTUP.md) step 4 from the interview answer, well
@@ -117,6 +128,18 @@ detail. Where the two diverge, say so here, and say what happens when the
 one target goes unread — one person is a single point of failure with
 holidays, and an escalation nobody reads is the failure this section exists
 to prevent.
+
+**On a one-person deployment that question has no answer, and saying so is
+the answer.** There is no second human to route to, and you must not invent
+one — not a secondary address the owner didn't name, not a fallback that
+quietly substitutes something plausible. What to record instead is how the
+agent behaves given that: never structure work so that it stalls on a reply
+that may not come (state the assumption and proceed, per "State an
+assumption instead of blocking" below), don't retry an alert into an unread
+inbox, and leave anything genuinely blocked in a state that is obvious when
+the owner comes back. Tell the owner this outright while specializing — it
+is the kind of thing a solo operator has not thought about and would rather
+hear now than during an outage.
 
 ## How to actually send and receive
 
