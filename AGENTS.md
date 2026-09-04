@@ -153,6 +153,21 @@ assume:
    [`skills/comms-channel`](./skills/comms-channel/SKILL.md) gives, and it
    cannot be guessed later.
 
+   **"Just me" is a complete answer, and once it's given, stop pushing.**
+   Assuming more than one exists to stop a singular question shaping the
+   answer — it is not a claim that every deployment has several people. A
+   solo operator, one person with no colleague and no contractor, is a
+   normal shape for this setup, and pressing a truthful one-person answer a
+   second time reads as not listening. Accept it, then answer both
+   follow-ups above as "not applicable, one person" rather than leaving
+   them silently unasked, and don't let the next question imply a second
+   person either — the escalation destination in question 6 is that same
+   one person, and the whole of question 1's circling-back is a no-op.
+   Say plainly what the one-person case costs, because it is real and it
+   has no fix: there is nobody to escalate to when they are unreachable.
+   [`skills/comms-channel`](./skills/comms-channel/SKILL.md) is the home
+   for what to do about that.
+
    **Then go back to question 1 for every person this answer turned up
    beyond the one you already asked it about**, and ask each of their
    technical levels before moving on. Don't leave it to be inferred: you
