@@ -130,15 +130,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# origin must be a repo you can push to
+# origin must not still be upstream's URL
 # ---------------------------------------------------------------------------
 #
 # This checkout is not a one-shot installer that gets thrown away: the agent
 # keeps opening PRs against it for work items targeting its own tooling (see
 # skills/git-pr-conventions and skills/work-tracker). That only works if
-# `origin` is a fork or mirror the adopter controls. Cloning upstream
-# directly leaves `origin` unpushable, and the failure would otherwise stay
-# invisible until the agent's first push, long after setup.
+# `origin` is a repo the adopter controls — a private repo of their own by
+# default, or a fork if they opted into that tradeoff (README.md's "Path to a
+# running instance" owns that choice). Cloning upstream directly leaves
+# `origin` unpushable, and the failure would otherwise stay invisible until
+# the agent's first push, long after setup.
+#
+# What this check is: a comparison of origin's URL against upstream's path,
+# which is all this script can do here. It deliberately does not test write
+# access — `gh` is installed unauthenticated below and this script runs as
+# root under the documented `sudo` invocation, so any auth check here would
+# resolve against the wrong account's config. STARTUP.md step 5 is where
+# push and PR access to both repos gets verified for real, with a human
+# present to fix it. Don't read a pass here as "the remote is writable".
 #
 # Runs after the apt prerequisites above rather than with the other
 # pre-install checks: it shells out to git, and on an image minimal enough not
@@ -159,9 +169,9 @@ fi
 
 if [[ -n "$origin_url" ]]; then
 	if [[ "$origin_url" == *"painapple-org/spoor-bootstrap"* ]]; then
-		fail "origin still points at the upstream repo (${origin_url}), which you almost certainly cannot push to. Fork painapple-org/spoor-bootstrap on GitHub and clone your fork instead, or repoint this checkout with 'git remote set-url origin <your-repo-url>', then re-run this script. See the 'Path to a running instance' section in README.md."
+		fail "origin still points at the upstream repo (${origin_url}), which you almost certainly cannot push to. Create your own private repo, then repoint this checkout with 'git remote set-url origin <your-repo-url>' and re-run this script. A GitHub fork also works but is permanently public, and this checkout ends up holding real operational detail about your deployment — read the 'Path to a running instance' section in README.md for that tradeoff before choosing."
 	fi
-	log "origin is ${origin_url} (not the upstream repo)."
+	log "origin is ${origin_url} (not upstream's URL). This compared the URL only, not whether you can push to it — STARTUP.md step 5 verifies that."
 else
 	log "NOT VERIFIED: could not read an 'origin' remote for ${SCRIPT_DIR}, so the upstream-remote check above did not run (git said: ${git_origin_error:-no origin remote configured}). Check yourself that this checkout's origin is a repo you can push to before letting the agent open PRs against it."
 fi

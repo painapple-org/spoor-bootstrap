@@ -114,6 +114,20 @@ before choosing an isolation mechanism, and pass the repo explicitly to any
 PR/merge command run from a scratch clone, since the tool can't infer it
 from the directory.
 
+**Name the target repo explicitly on every PR/merge command against the
+bootstrap repo, too — not only from a scratch clone.** If this checkout is
+a *fork* of the upstream template, the CLI resolves the base repo to the
+fork's network parent, so an unqualified "open a PR" defaults to opening it
+against upstream: a public repo belonging to someone else, which cannot be
+merged from here and which publishes this deployment's own specifics in a
+public PR. That default is silent and it looks like success. So on every
+PR-open and merge command here, name this deployment's own repo (with the
+CLI this repo installs: `--repo <owner>/<repo>`, plus `--head
+<owner>:<branch>` where the command takes one), and confirm the URL the
+command printed names it before merging. Not a fork-only precaution: naming
+the repo costs nothing on a non-fork remote and removes the failure mode
+entirely.
+
 Also beware: a stray `cd` into another repo earlier in a session can
 silently redirect the next isolated spawn there. Know your working
 directory before spawning.
@@ -121,11 +135,29 @@ directory before spawning.
 **The bootstrap repo is not exempt from the loop above.** First boot writes
 real edits into it — the `Auth` section below, and every stub the
 specialization pass rewrites — and those ship through a branch and a PR
-against the fork `origin` points at, exactly like product work
+against whatever repo `origin` points at, exactly like product work
 ([`STARTUP.md`](../../STARTUP.md) steps 6 and 7). First boot is also the
 only time that may happen in the primary checkout, because a human is
 sitting there for it; every later re-run is unattended and takes the
 scratch-clone path above.
+
+**Know what those edits contain before pushing them anywhere.** This repo
+starts as a generic template and stops being one the moment it's
+specialized: the `Auth` section below records which account pushes
+authenticate as and at what permission level, the section after it lists
+this deployment's protected branches, and the tracker and comms-channel
+skills record a scope identifier, host specifics and the literal allowlist
+of identities permitted to instruct this agent. No credential is among
+them — those live in `.env`, which is gitignored, and none of this changes
+that — but together they are a precise description of one business's
+operational setup, and they are committed here. Where that ends up
+readable is entirely a property of `origin`:
+[`README.md`](../../README.md)'s "Path to a running instance" is the one
+home for that choice, and the short version is that a GitHub fork of a
+public template is permanently public while a repo you create yourself can
+be private. If a change would put a new class of
+specific into this repo, it's worth a sentence to the owner rather than a
+silent commit.
 
 ## Auth
 
@@ -151,7 +183,12 @@ for the reason step 6 gives.
 - Which account the pushes authenticate as, and its permission level.
   Note that authenticating to the hosting provider is not the same as
   having write access to the specific repo being pushed to — record that
-  the latter was actually verified, not just that a login succeeded.
+  the latter was actually verified, not just that a login succeeded, and
+  record it **per repo**: both the product repo and this bootstrap repo's
+  own `origin`, which are separate repos with separate permissions and are
+  both pushed to during first boot. Name what `origin` is here while
+  you're at it (a repo the owner created, or a fork of the upstream
+  template), since the section above turns on that answer.
 
   The agent's own account, provisioned by a human, is the end state worth
   getting to, for the RBAC-scoping reason

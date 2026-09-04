@@ -141,18 +141,56 @@ default; every file it quotes remains the home for its own content.
    derivative of either. Any provider works. Painapple's own instance runs
    on OVHcloud; that's not a requirement here, just one data point.
 
-2. **Fork `painapple-org/spoor-bootstrap` on GitHub, then clone your own
-   fork** onto that VPS (or wherever your harness will run). Don't clone
-   upstream directly: this checkout isn't a one-shot installer you throw
-   away, it's a repo the agent keeps maintaining afterwards — it opens PRs
-   against it for work items that target its own tooling, per
-   [`skills/git-pr-conventions`](./skills/git-pr-conventions/SKILL.md) and
-   [`skills/work-tracker`](./skills/work-tracker/SKILL.md) — and it can only
-   do that if `origin` is a repo you can push to. Any remote you control
-   works if you'd rather not fork: create an empty repo, clone this one, and
-   repoint `origin` at yours before going further.
+2. **Create your own new, private repo and put this checkout in it.** Clone
+   this repo onto that VPS (or wherever your harness will run), create an
+   empty private repo on your own account, and repoint `origin` at it
+   before going further:
 
-   Clone with `git`, not a "Download ZIP" — see
+   ```
+   git clone https://github.com/painapple-org/spoor-bootstrap.git
+   cd spoor-bootstrap
+   git remote set-url origin <the URL of your own new private repo>
+   git push -u origin HEAD
+   ```
+
+   Two separate reasons it has to be a remote you own, and not upstream:
+
+   - **The agent keeps maintaining this checkout.** It isn't a one-shot
+     installer you throw away — the agent opens PRs against it for work
+     items that target its own tooling, per
+     [`skills/git-pr-conventions`](./skills/git-pr-conventions/SKILL.md)
+     and [`skills/work-tracker`](./skills/work-tracker/SKILL.md), starting
+     with the first boot itself. That needs an `origin` you can push to.
+   - **Once specialized, this checkout holds real operational detail about
+     your business.** Filling in the skill stubs (item 5 below) writes down
+     things like which identities on your comms channel are allowed to
+     instruct the agent, which account its pushes authenticate as and at
+     what permission level, your tracker's scope and host specifics, and
+     which of your branches must never be force-pushed. None of that is a
+     credential — actual secrets live in `.env`, which is gitignored — but
+     all of it is identifying, operational detail about a specific
+     deployment, and it gets committed here.
+
+   Pulling later template updates doesn't need a fork: a private copy can
+   add upstream as a second remote (`git remote add upstream <this repo's
+   URL>`) and fetch from it. What a fork adds on top is GitHub's own
+   compare/PR-across-the-network machinery, which matters mainly if you
+   intend to contribute changes back — see
+   [`CONTRIBUTING.md`](./CONTRIBUTING.md), and note that a fork made for
+   that purpose is best kept separate from the checkout your agent
+   specializes and operates from.
+
+   **Forking on GitHub is an opt-in alternative, with a real tradeoff.** A
+   fork gets you that machinery and a one-click setup. But **a fork of a
+   public repo cannot be made private** — GitHub permanently keeps it
+   public — so everything in the bullet above ends up publicly readable,
+   forever, along with the PRs that shipped it.
+   Fork only if you've read that sentence and are fine with it. If you fork
+   and later change your mind, a fork can't be converted: you have to
+   create a fresh private repo, push to it, and delete the fork — and
+   anything already pushed to the fork has to be treated as public.
+
+   Either way, clone with `git`, not a "Download ZIP" — see
    [`skills/README.md`](./skills/README.md) for what the harness skill
    symlinks are and the one thing that breaks them.
 
@@ -165,8 +203,12 @@ default; every file it quotes remains the home for its own content.
    if it isn't — and where there's no systemd to start it with (typical
    inside a container), it says so as an explicit NOT VERIFIED rather than
    claiming a check it couldn't run. It refuses to continue on two
-   things it can't fix for you: an `origin` still pointing at upstream, and
-   skill symlinks broken by a ZIP download. Re-running it is safe — every
+   things it can't fix for you: an `origin` whose URL is still literally
+   upstream's, and skill symlinks broken by a ZIP download. That origin
+   check is a URL comparison and nothing more — it cannot tell whether you
+   can actually *push* to whatever `origin` names, since `gh` isn't logged
+   in yet at that point; proving write access is
+   [`STARTUP.md`](./STARTUP.md) step 5's job. Re-running it is safe — every
    step is skipped if it's already done. It does not log `gh` in; that
    happens in the first-boot flow, item 5 of this list.
 
@@ -182,7 +224,9 @@ default; every file it quotes remains the home for its own content.
    [`STARTUP.md`](./STARTUP.md).** That's where the first-boot flow lives:
    the interview (whose questions are enumerated in
    [`AGENTS.md`](./AGENTS.md)), agreeing on an autonomy model, writing
-   `.env`, getting `gh` logged in and proving a push actually works (expect
+   `.env`, getting `gh` logged in and proving a push actually works — to
+   the product repo *and* to this checkout's own `origin`, since the
+   first-boot flow ships its own edits here through a PR too (expect
    to be walked through `gh auth login` here, with whichever GitHub account
    you want the agent pushing as for now — your own is fine to start),
    generating this deployment's own conventions doc (its path
@@ -235,7 +279,10 @@ same wording the agent itself reads.
 
 ## Contributing
 
-This repo is public and meant to be forked, diverged from, and contributed
-back to. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for what kinds of
-changes are welcome and the conventions to follow. MIT licensed — see
+This repo is public and meant to be copied, diverged from, and contributed
+back to. Contributing back is the one case where a GitHub fork is the right
+mechanism — a fork you send PRs from, not the checkout your own instance
+specializes itself in (item 2 above says why). See
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) for what kinds of changes are
+welcome and the conventions to follow. MIT licensed — see
 [`LICENSE`](./LICENSE).
