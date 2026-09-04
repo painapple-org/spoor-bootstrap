@@ -89,7 +89,8 @@ whole-folder symlinks described above.
   that contract maps onto GitHub Issues, Linear and Jira, to specialize
   from and then prune down to the one that applies.
 - [`git-pr-conventions`](./git-pr-conventions/SKILL.md) — *partial stub.*
-  The branch/commit/PR/self-merge shipping loop, plus the
+  The branch/commit/PR/self-merge shipping loop, the review-branch protocol
+  that replaces it on a remote with no PR mechanism, plus the
   worktree-isolation and shared-ref hazards of running unattended alongside
   a human.
 - [`comms-channel`](./comms-channel/SKILL.md) — *stub.* Talking to the

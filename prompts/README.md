@@ -97,8 +97,9 @@ assumes:
   in full, rather than a subset restated here), the exact
   stop-and-ask categories that are allowed to leave a PR open (by reference
   to [`AGENTS.md`](../AGENTS.md) and the conventions doc, not copied), and —
-  where this deployment's remote has no PR mechanism at all — the agreed
-  substitute recorded in `git-pr-conventions`' `Auth` section.
+  where this deployment's remote has no PR mechanism at all — the
+  review-branch protocol in `git-pr-conventions`, plus whatever deltas its
+  `Auth` section records on top of it.
 - **any proactive stage** (ideation, comment/message response, health check,
   self-audit) — same skeleton. Ideation additionally needs the pointer to
   where the business's own content and docs live, without which it can only

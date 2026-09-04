@@ -163,7 +163,8 @@ itself to operate**:
   acts. On the third shape — a plain git remote with no GitHub-style host
   behind it — there is no such API to call and nothing for `gh` to
   authenticate against, so it isn't a requirement there: plain `git` plus
-  the PR substitute that item settles are what that shape runs on.
+  the review-branch protocol that item points at are what that shape runs
+  on.
   `install.sh` installs the binary either way, since it asks no questions
   and so cannot know which shape you picked. It never logs it in:
   authenticating needs a decision (which account, which protocol) and an
@@ -278,17 +279,17 @@ default; every file it quotes remains the home for its own content.
    and your product repo. Nothing in the setup requires GitHub as such.
 
    What it costs is the pull request, which several things here assume
-   exists: a remote like that has no PR object, so "open a PR, merge it
-   yourself" has to become an agreed substitute that still leaves a
-   reviewable diff and a revert point, and that still advances the default
-   branch without the local fast-forward that races a concurrent deploy.
+   exists: a remote like that has no PR object. That is already answered
+   rather than left to you —
    [`skills/git-pr-conventions`](./skills/git-pr-conventions/SKILL.md)'s
-   `Auth` section is where that substitute gets recorded, and
-   [`STARTUP.md`](./STARTUP.md) step 5 is where the agent checks for a PR
-   mechanism and brings you the substitute to agree on before it ships
-   anything. Expect that conversation in your first hour rather than
-   being surprised by it — and note that on this shape the privacy tradeoff
-   in the fork paragraph above doesn't apply at all: it's your box.
+   "Shipping on a remote with no PR mechanism" section is a complete
+   git-only default for this shape (a named review branch, a diff you read
+   in a terminal, a merge commit that records the verdict), and
+   [`STARTUP.md`](./STARTUP.md) step 5 has the agent tell you it's using it
+   and then carry on rather than wait for you to approve it. What you
+   actually give up is the web review UI, not the reviewable diff or the
+   revert point. Note too that on this shape the privacy tradeoff in the
+   fork paragraph above doesn't apply at all: it's your box.
 
    Whichever of the three you pick, clone with `git`, not a "Download ZIP" — see
    [`skills/README.md`](./skills/README.md) for what the harness skill
@@ -327,7 +328,7 @@ default; every file it quotes remains the home for its own content.
    `.env`, getting `gh` logged in and proving a push actually works — to
    the product repo *and* to this checkout's own `origin`, since the
    first-boot flow ships its own edits here through a PR too, or through
-   the agreed substitute on a remote that has no PR mechanism (expect
+   the review-branch protocol on a remote that has no PRs (expect
    to be walked through `gh auth login` here, with whichever GitHub account
    you want the agent pushing as for now — your own is fine to start),
    generating this deployment's own conventions doc (its path

@@ -1,6 +1,6 @@
 ---
 name: git-pr-conventions
-description: How this agent instance ships code — branch, commit, push, PR, self-merge — plus the worktree-isolation and shared-ref hazards that come with running unattended alongside a human. Read before any git operation that mutates a branch or opens a PR. Ships as a stub for the host/auth-specific parts.
+description: How this agent instance ships code — branch, commit, push, PR, self-merge — including the review-branch protocol that replaces the PR on a plain git remote that has none, plus the worktree-isolation and shared-ref hazards that come with running unattended alongside a human. Read before any git operation that mutates a branch or opens a PR. Ships as a stub for the host/auth-specific parts.
 ---
 
 # git-pr-conventions
@@ -73,6 +73,11 @@ comments, or any other output. The process trailer in step 2 is a process
 marker, not attribution, and is the only thing of its kind that belongs
 there.
 
+Steps 4 and 5 assume the remote has a PR object to open and a server-side
+merge to trigger. On a plain git remote it doesn't — "Shipping on a remote
+with no PR mechanism" below is the default that replaces those two steps,
+and nothing else in the loop changes.
+
 ## Never mutate the primary checkout from an unattended run
 
 This is the single most expensive hazard in this setup, and it is not
@@ -108,6 +113,118 @@ Two consequences worth knowing before they bite:
   it.** If your run made real edits and then crashed, the worktree is left
   behind. Remove it as your last action whether the work succeeded or
   failed, and don't rely on any sweep to do it for you.
+
+## Shipping on a remote with no PR mechanism: the review-branch protocol
+
+This is the **default** on the third remote shape — a bare repo on a box
+the owner runs, or a self-hosted server whose API nobody has turned on (see
+[`README.md`](../../README.md)'s "Path to a running instance" for the three
+shapes). It is not a stub and not a question to bring the owner: it works
+with nothing but `git` on both ends, so it is available the moment a remote
+is reachable at all. Say you're using it, then use it. If the owner wants
+something different, that's a delta they record in the `Auth` section
+below — the absence of an answer there means this protocol is what runs.
+
+It does not apply to a remote that *has* a PR mechanism. There, use the
+shipping loop above unchanged: a real PR gives a review UI, CI checks and a
+server-side merge, all of which this protocol only approximates.
+
+**1. Push the work as a review branch instead of opening a PR.**
+`review/<slug>`, where `<slug>` is the same identifier the branch would
+otherwise have carried (this deployment's branch naming convention is in
+the conventions doc at `CONVENTIONS_DOC_PATH`). The `review/` prefix is the
+whole signal: a branch under it is a change asking to be reviewed, and its
+existence on the remote is the PR-open event. Nothing else marks it, so
+don't push work-in-progress there.
+
+**2. The reviewer inspects it with `git` alone.** From a scratch clone or a
+fetched worktree — never the primary checkout — against the default branch
+(its name is in the conventions doc):
+
+- `git fetch origin`
+- `git log --oneline <default>..origin/review/<slug>` — the commits, i.e.
+  the PR's commit tab.
+- `git diff --stat <default>...origin/review/<slug>` — which files, and how
+  much. **Three dots, not two**: three diffs against the merge base, which
+  is what a PR shows. Two dots diffs against the default branch's current
+  tip and so mixes in everything that landed there meanwhile, reading as
+  though this change reverted it.
+- `git diff <default>...origin/review/<slug>` — the diff itself.
+
+The reviewing session reads that diff on its own merits, exactly as it
+would read a PR, and it is a *different* session from the one that pushed
+the branch — that independence is the point of the pipeline stage split
+(see [`skills/work-pipeline`](../work-pipeline/SKILL.md)) and it survives
+the absence of a PR object untouched.
+
+**When the reviewer is the human owner, send the commands, not a summary.**
+Paste the four lines above with `<slug>` and the branch name already
+substituted, over this deployment's comms channel, so they can copy one
+line into a terminal. For a non-technical owner, lead with the `--stat`
+output inline and the one-line description of what changed, and offer the
+full `git diff` as the follow-up rather than pasting it unasked.
+
+**3. Run the tests before merging — that's what stands in for CI.** A
+remote with no PR API generally has no hosted CI runner either, so the
+"self-merge once CI is green" convention becomes "self-merge once this
+deployment's own test command passes in the scratch clone". Same gate, same
+verdict: a red run blocks the merge exactly as a red check would. What that
+command is belongs to the deployment, not here — the conventions doc at
+`CONVENTIONS_DOC_PATH` and
+[`skills/product-tech-stack`](../product-tech-stack/SKILL.md) own it. If
+there is no test suite yet, say so in the merge commit (step 4) rather than
+implying a check that didn't run.
+
+**4. Approval is recorded as the merge commit.** Merge in the scratch
+clone, always `--no-ff`:
+
+```
+git merge --no-ff origin/review/<slug>
+```
+
+`--no-ff` even when a fast-forward is possible. The merge commit *is* the
+approval record and the revert point — the two things the PR was actually
+buying — and without it a fast-forwarded review branch leaves no single
+commit to `git revert -m 1`. Its body carries the verdict: what was
+reviewed, that the tests passed (or that there are none yet), and the same
+process trailer every other commit here carries. `git log --merges` then
+reads back as the review history. Don't add a sibling approvals file or a
+`reviews/` directory in the tree: that's a second home for a fact git
+already owns, and it drifts.
+
+**Rejection is not recorded in git at all**, because nothing gets merged.
+It goes in the work item, which is the one home for work-item state (see
+[`skills/work-tracker`](../work-tracker/SKILL.md)). Then either fix it
+forward with more commits on the same review branch and re-review, or drop
+the branch per step 6. A review branch that was never merged and then
+deleted is a rejected change, and the tracker says why.
+
+**5. Advance the default branch by pushing from the scratch clone.** The
+hazard section above forbids fast-forwarding the *shared* default ref, and
+there is no server-side merge here to avoid it with. A scratch clone is the
+way out: unlike a worktree, a clone has its own refs and its own config
+entirely, so checking out and merging the default branch there touches
+nothing the primary checkout or a concurrent deploy can see. Merge there,
+then `git push origin <default>`. The primary checkout picks the change up
+on its next fetch, never mid-operation.
+
+**A rejected push here is the concurrency check working, not an error.** If
+something else advanced the default branch while you were reviewing, git
+refuses the push as non-fast-forward — the same condition GitHub calls
+"this branch is out of date". Fetch, re-merge onto the new tip, re-run the
+tests, push again. **Never force-push to resolve it**; that's on the
+stop-and-ask list in [`AGENTS.md`](../../AGENTS.md) and it would silently
+drop whatever landed.
+
+**6. Delete the review branch on the remote only.**
+`git push origin --delete review/<slug>` — a remote-ref delete, never a
+local ref delete, per the hazard section above. The merge commit from step
+4 is the durable record; the branch was only ever the request.
+
+**What triggers a deploy from that push** is
+[`skills/deploy-and-monitor`](../deploy-and-monitor/SKILL.md)'s subject,
+not this file's. Worth knowing that a bare repo's own `post-receive` hook
+is a real option on this shape, since there's no hosted CI to do it.
 
 ## Which repo are you even in?
 
@@ -223,13 +340,13 @@ for the reason step 6 gives.
   *that* path too. One credential often serves both, and recording that it
   did is the point — the next session shouldn't have to re-derive whether
   the push working implies the merge will.
-- **Whether this remote has a PR mechanism at all.** The loop above assumes
-  one. A plain git remote — a bare repo on a box, a self-hosted host with
-  no API in use — has no PR object, so "open a PR, merge it yourself" has
-  to become something concrete and reviewable instead. Say what it became,
-  and say how the default branch gets advanced without the local
-  fast-forward the hazard above warns against, since a server-side merge is
-  exactly what was avoiding it.
+- **Whether this remote has a PR mechanism at all.** The shipping loop
+  assumes one. A plain git remote — a bare repo on a box, a self-hosted
+  host with no API in use — has no PR object, and "Shipping on a remote
+  with no PR mechanism" above is what runs instead. Record which of the two
+  applies here, and on the no-PR shape record only the *deltas* the owner
+  asked for on top of that protocol: it is the default in full, so there is
+  nothing to write down when they simply accepted it.
 
 ## Protected branches and irreversible git operations
 

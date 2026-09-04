@@ -295,8 +295,9 @@ rather than assuming:
   hosting account on any provider, or a remote the owner already
   controls. A bare repo on a box they own is a legitimate answer, and
   [`README.md`](./README.md)'s "Path to a running instance" is the home
-  for what that costs (no PR mechanism, so the shipping loop needs an
-  agreed substitute). Don't write this item as "a second account on
+  for what that costs (no PR mechanism, so the shipping loop runs
+  `git-pr-conventions`' review-branch protocol instead). Don't write this
+  item as "a second account on
   provider X" when there is no first one — it reads as an upgrade the
   owner can defer, when it's actually the thing everything else is
   waiting on.
@@ -311,7 +312,8 @@ rather than assuming:
   though nothing existed contradicts the three changes this flow just
   shipped through it. What is genuinely still open is the part they chose
   to live without: a remote with an API behind it, which is what would
-  retire the PR substitute and make an agent-owned account with its own
+  retire the review-branch protocol and make an agent-owned account with
+  its own
   scoped permissions possible at all. Put *that* on the list, with what it
   would buy, and say the current remote works today.
 
