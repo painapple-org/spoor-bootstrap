@@ -5,16 +5,22 @@ once, end to end, against a business that doesn't exist, so a prospective
 adopter can see what the first hour actually looks like before committing a
 VPS to it.
 
-It is the **second** worked example here, and the two cover deliberately
+It is the **second** worked example here, and the three cover deliberately
 different shapes.
 [`example-walkthrough.md`](./example-walkthrough.md) is the one to read if
 your situation is a *team with things already in place*: a
 non-technical owner, an inherited live codebase with paying customers, an
 existing GitHub repo with issues in it, and a chat workspace everyone
-already lives in. This file is the opposite corner: **one technical person
-starting from nothing** — no product repo, no work tracker, no chat
-platform, and no git hosting account of any kind. Both are honest runs of
-the same interview; almost every answer differs. The side-by-side is at
+already lives in.
+[`example-walkthrough-existing-process.md`](./example-walkthrough-existing-process.md)
+goes one step further along the same axis: a team whose engineering process
+is alive and enforced — a protected `main` the agent cannot merge to, CI it
+has to satisfy, conventions in a `CONTRIBUTING.md` it defers to, and years
+of tracker issues that must not become its inbox. This file is the opposite
+corner from both: **one technical person starting from nothing** — no
+product repo, no work tracker, no chat platform, and no git hosting account
+of any kind. All three are honest runs of the same interview; almost every
+answer differs. The side-by-side is at
 [Why this example and not the roastery](#why-this-example-and-not-the-roastery).
 
 **This is illustrative, not authoritative.** Nothing here is a spec, a
@@ -1125,13 +1131,16 @@ agent.
 
 ## Why this example and not the roastery
 
-The other worked example here,
-[`example-walkthrough.md`](./example-walkthrough.md), runs the same
-interview against a five-person business with an inherited live codebase,
-and its own closing section compares that deployment against the reference
-one this repo was extracted from. Reading the three columns together is the
-point: nothing in the interview has a default, and honest runs of it
-produce genuinely different deployments.
+The other worked examples here run the same interview against very
+different businesses, and each one's closing section holds its own
+comparison: [`example-walkthrough.md`](./example-walkthrough.md) is a
+five-person business with an inherited live codebase, compared there against
+the reference deployment this repo was extracted from, and
+[`example-walkthrough-existing-process.md`](./example-walkthrough-existing-process.md)
+is a four-engineer team with a protected `main` and its own CI, whose table
+runs all three of these side by side. Reading the columns together is the
+point: nothing in the interview has a default, and honest runs of it produce
+genuinely different deployments.
 
 | Interview answer | Peilmerk (this file) | Northlight ([the roastery](./example-walkthrough.md)) |
 |---|---|---|

@@ -14,13 +14,20 @@ config schema, and each `SKILL.md` owns its own content. The transcript
 below is a plausible reconstruction, not a recording: a real interview
 wanders more, and a real agent asks worse questions than these.
 
-**There is a second worked example, and it covers a different shape.**
+**There are two other worked examples, and they cover different shapes.**
 [`example-walkthrough-solo.md`](./example-walkthrough-solo.md) runs the same
 interview for one technical person starting from nothing — no product repo,
 no work tracker, no chat platform, and no git hosting account of any kind,
-so the pull request itself has to be replaced by an agreed substitute. Read
-that one instead if your situation is closer to it than to the business
-below; neither is a default.
+so the pull request itself has to be replaced by an agreed substitute.
+[`example-walkthrough-existing-process.md`](./example-walkthrough-existing-process.md)
+runs it for a team with a working engineering process already in place — a
+protected `main` the agent cannot merge to, CI it has to satisfy,
+conventions in a `CONTRIBUTING.md` it defers to instead of writing its own,
+and years of tracker issues that must not become its inbox. That one is the
+near neighbour of this file and differs in the way that matters: an
+*unmaintained* inherited codebase has no process to join, so the
+conventions below are the agent's to propose. Read whichever is closest to
+your situation; none of the three is a default.
 
 The business was picked specifically so its answers *differ* from the
 reference deployment this repo was extracted from — a different owner
@@ -885,8 +892,13 @@ Northlight has paying customers and an owner who cannot read a diff, so the
 safety net can't be "revert it afterwards" alone. The reference deployment
 has neither, so it can be.
 
-A third column for the same table — a solo technical operator with no
-product, no tracker and no git hosting account — is in
-[`example-walkthrough-solo.md`](./example-walkthrough-solo.md)'s own
-closing section, which compares that deployment against this one row by
-row.
+Two more columns for the same table exist elsewhere, each in the closing
+section of the file it belongs to. A solo technical operator with no
+product, no tracker and no git hosting account is in
+[`example-walkthrough-solo.md`](./example-walkthrough-solo.md), which
+compares that deployment against this one row by row. A four-engineer team
+with a protected `main`, its own CI and its own written conventions is in
+[`example-walkthrough-existing-process.md`](./example-walkthrough-existing-process.md),
+whose table runs all three side by side — that is the one to read if you
+want the comparison in full, since it is the only one with every column in
+it.
