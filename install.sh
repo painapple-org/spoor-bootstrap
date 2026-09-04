@@ -24,6 +24,20 @@ set -euo pipefail
 log() { printf '\n\033[1;32m==>\033[0m %s\n' "$1"; }
 fail() { printf '\n\033[1;31mERROR:\033[0m %s\n' "$1" >&2; exit 1; }
 
+# Records what an upstream installer script actually contained before it gets
+# executed as root. This is an audit trail and nothing more: there is no pinned
+# checksum to compare against, so nothing here can refuse a script — see
+# README.md's "Before you run install.sh" for exactly what that pattern does
+# and does not protect against.
+log_downloaded_sha256() {
+	local label="$1" path="$2"
+	if command -v sha256sum >/dev/null 2>&1; then
+		log "sha256 of the ${label} installer just downloaded: $(sha256sum "$path" | cut -d' ' -f1) (recorded, not verified against anything)"
+	else
+		log "NOT VERIFIED: sha256sum is not on PATH, so no record was made of what the ${label} installer contained before it ran."
+	fi
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ---------------------------------------------------------------------------
@@ -184,10 +198,16 @@ fi
 if command -v docker >/dev/null 2>&1; then
 	log "docker already installed ($(docker --version)); skipping."
 else
+	# Downloaded to a file and then run as root, rather than piped into sh.
+	# README.md's "Before you run install.sh" is the one home for what that
+	# buys (a truncated transfer cannot half-execute) and what it does not
+	# (nothing here verifies the payload), including the caveat that this is
+	# Docker's convenience script rather than its production install path.
 	log "Installing docker via get.docker.com..."
 	get_docker="$(mktemp)"
 	curl -fsSL https://get.docker.com -o "$get_docker" \
 		|| fail "Failed to download the docker install script."
+	log_downloaded_sha256 "docker" "$get_docker"
 	$SUDO sh "$get_docker" || fail "docker install script exited non-zero."
 	rm -f "$get_docker"
 	command -v docker >/dev/null 2>&1 || fail "docker install ran but 'docker' is still not on PATH."
@@ -216,7 +236,7 @@ if [[ -n "$docker_group_user" ]]; then
 	else
 		$SUDO usermod -aG docker "$docker_group_user" \
 			|| fail "Could not add ${docker_group_user} to the docker group. Fix that (or add them manually with 'usermod -aG docker ${docker_group_user}') and re-run this script — without it, every docker command from that account needs sudo."
-		log "Added ${docker_group_user} to the docker group (log out/in for it to take effect)."
+		log "Added ${docker_group_user} to the docker group (log out/in for it to take effect). Note what that grants: socket access to the docker daemon is root-equivalent access to this host. README.md's 'Before you run install.sh' is the one home for why, and for what to do instead if that is not acceptable here."
 	fi
 fi
 
@@ -257,12 +277,14 @@ else
 	# have arrived and it starts executing them, so a transfer that dies
 	# partway can run a truncated script before curl's own failure is
 	# observable at all. Downloading first makes a partial fetch a failed
-	# download and nothing more.
+	# download and nothing more — and nothing else. It does not verify the
+	# payload; README.md owns that distinction.
 	UV_INSTALL_DIR="/usr/local/bin"
 	log "Installing uv into ${UV_INSTALL_DIR}..."
 	get_uv="$(mktemp)"
 	curl -LsSf https://astral.sh/uv/install.sh -o "$get_uv" \
 		|| fail "Failed to download the uv install script."
+	log_downloaded_sha256 "uv" "$get_uv"
 	$SUDO env UV_INSTALL_DIR="$UV_INSTALL_DIR" INSTALLER_NO_MODIFY_PATH=1 sh "$get_uv" \
 		|| fail "uv install script failed."
 	rm -f "$get_uv"
