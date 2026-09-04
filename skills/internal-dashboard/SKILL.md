@@ -25,10 +25,13 @@ everywhere (the container shape, the no-published-port compose file, the
 provenance and failure-reporting helpers, the verification script) are
 already written and already verified there.
 
-What it gives you on the first run, with no configuration: three pages
-reading live disk usage, the host's running containers off the runtime API,
-and `git log` across whatever checkouts are mounted in. Real readings, so
-you are editing something that works rather than filling in placeholders.
+What it gives you on the first run, with no configuration: a handful of
+pages, each reading something genuinely live off the host — the filesystem,
+the container runtime, git history. Real readings, so you are editing
+something that works rather than filling in placeholders. Its entrypoint is
+the one home for which pages those are; go and look rather than working
+from a list copied into here, since replacing them is the first thing you
+are meant to do.
 
 That directory's own README is the home for how to drive it — what each
 file is, the ordered specialization steps, how to run it locally. **This
@@ -224,7 +227,7 @@ page showing a number with no source and no failure path is the one that
 eventually costs the whole surface its credibility, and it looks identical
 to a good one until then.
 
-Its three starter pages are also each a worked example of one of these
+Its starter pages are also each a worked example of one of these
 failure modes surviving contact with a container, which is why they read
 live state rather than a fixture: an absence told apart from a failure, one
 unreadable input not blanking a whole page, a panel that names its own

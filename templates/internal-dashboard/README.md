@@ -5,9 +5,9 @@ deployment's real paths, rename the pages to this deployment's real questions,
 and it is an internal ops dashboard — reachable only over a private mesh, with
 every number on it measured rather than made up.
 
-It is a **starting point, not a product**. Three pages ship with it, all of
-them reading genuinely live state, so a fresh copy shows something true on the
-first run instead of placeholder panels. They are there to be replaced.
+It is a **starting point, not a product**. The pages that ship with it all
+read genuinely live state, so a fresh copy shows something true on the first
+run instead of placeholder panels. They are there to be replaced.
 
 [`skills/internal-dashboard/SKILL.md`](../../skills/internal-dashboard/SKILL.md)
 is the home for *whether to build one at all*, what makes a page worth having,
@@ -30,12 +30,13 @@ first; this file is only how to drive the scaffold.
 | `verify.sh` | Proves it serves. Build, health, app shell, then every page headlessly. |
 | `exercise_pages.py` | The per-page headless check `verify.sh` step 4 runs. Not in the runtime image. |
 
-Two dependencies, `streamlit` and `pandas`. Everything else — the container
-runtime API over its unix socket, disk usage, git history — is stdlib, so
-there is very little to keep patched and very little to read before changing
-it.
+The dependency list is deliberately tiny and lives in
+[`pyproject.toml`](./pyproject.toml) — read it there. Everything else this app
+does — the container runtime API over its unix socket, disk usage, git history
+— is stdlib, so there is very little to keep patched and very little to read
+before changing it.
 
-## The three starter pages
+## The starter pages
 
 Each one is a real measurement, and each one is a worked example of a
 different failure mode you will hit when you write your own:
