@@ -14,6 +14,14 @@ config schema, and each `SKILL.md` owns its own content. The transcript
 below is a plausible reconstruction, not a recording: a real interview
 wanders more, and a real agent asks worse questions than these.
 
+**There is a second worked example, and it covers a different shape.**
+[`example-walkthrough-solo.md`](./example-walkthrough-solo.md) runs the same
+interview for one technical person starting from nothing — no product repo,
+no work tracker, no chat platform, and no git hosting account of any kind,
+so the pull request itself has to be replaced by an agreed substitute. Read
+that one instead if your situation is closer to it than to the business
+below; neither is a default.
+
 The business was picked specifically so its answers *differ* from the
 reference deployment this repo was extracted from — a different owner
 profile, a different tracker, a different channel, and a live product with
@@ -871,3 +879,9 @@ The two rows that drive most of the difference are the same one twice:
 Northlight has paying customers and an owner who cannot read a diff, so the
 safety net can't be "revert it afterwards" alone. The reference deployment
 has neither, so it can be.
+
+A third column for the same table — a solo technical operator with no
+product, no tracker and no git hosting account — is in
+[`example-walkthrough-solo.md`](./example-walkthrough-solo.md)'s own
+closing section, which compares that deployment against this one row by
+row.
