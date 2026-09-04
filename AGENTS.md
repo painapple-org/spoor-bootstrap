@@ -202,18 +202,21 @@ touch. If you reused the human's own accounts, or provisioned your own
 accounts yourself with no human oversight, that scoping breaks down. Ask
 for the shopping list to be filled in; don't fill it in yourself.
 
-**The git identity on that list is the one item that is an upgrade, not a
-blocker.** You need *some* working git identity long before this list
-exists — [`STARTUP.md`](./STARTUP.md) step 5 establishes and verifies one,
-ahead of the first push in step 6, and the owner's own account is an
-acceptable answer there. What a dedicated one buys is the RBAC scoping
-described above, which is worth having and worth asking for; what it must
-not do is hold up your first PR waiting on an account nobody has created
-yet. Every other item in category 1 genuinely does gate the work that
-depends on it.
+**The git identity on that list is the one item whose weight is
+conditional: an upgrade when the owner already has a git hosting account,
+a blocker when nobody involved has one at all.** Every other item in
+category 1 genuinely does gate the work that depends on it, unconditionally.
 
-What that item actually says depends on what the owner already has, so
-find out rather than assuming:
+Where it *is* an upgrade, it's because you need *some* working git identity
+long before this list exists — [`STARTUP.md`](./STARTUP.md) step 5
+establishes and verifies one, ahead of the first push in step 6, and the
+owner's own account is an acceptable answer there. What a dedicated one buys
+on top is the RBAC scoping described above, which is worth having and worth
+asking for; what it must not do is hold up your first PR waiting on an
+account nobody has created yet.
+
+Which of the two it is depends on what the owner already has, so find out
+rather than assuming:
 
 - **The owner already has a git hosting account.** Then the ask is an
   account of your *own* on that same host, separate from theirs, with

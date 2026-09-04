@@ -186,8 +186,10 @@ for the reason step 6 gives.
   record it **per repo**: both the product repo and this bootstrap repo's
   own `origin`, which are separate repos with separate permissions and are
   both pushed to during first boot. Name what `origin` is here while
-  you're at it (a repo the owner created, or a fork of the upstream
-  template), since the section above turns on that answer.
+  you're at it (a repo the owner created, a fork of the upstream template,
+  or a plain git remote with no hosting provider behind it — a bare repo on
+  a box they own, a self-hosted server with no API in use), since the
+  section above turns on that answer.
 
   The agent's own account, provisioned by a human, is the end state worth
   getting to, for the RBAC-scoping reason

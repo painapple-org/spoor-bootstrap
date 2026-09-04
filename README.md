@@ -146,18 +146,19 @@ default; every file it quotes remains the home for its own content.
    derivative of either. Any provider works. Painapple's own instance runs
    on OVHcloud; that's not a requirement here, just one data point.
 
-2. **Create your own new, private repo and put this checkout in it.** Clone
-   this repo onto that VPS (or wherever your harness will run), create an
-   empty private repo on your own account, and repoint `origin` at it
-   before going further. Create that empty repo in the GitHub web UI: `gh`
-   isn't on the box until item 3, so the one-command version
+2. **Put this checkout on a git remote you control, and pick which shape
+   that remote takes.** There are three supported shapes, all covered in
+   this item: a new private repo of your own (the recommended default), a
+   GitHub fork, or a plain git remote with no GitHub-style host behind it
+   at all. They differ in what they cost you, not in whether they work.
+   Read to the end of this item before setting `origin`.
+
+   For the default: clone this repo onto that VPS (or wherever your harness
+   will run), create an empty private repo on your own account, and repoint
+   `origin` at it before going further. Create that empty repo in the GitHub
+   web UI: `gh` isn't on the box until item 3, so the one-command version
    (`gh repo create --private --source=. --remote=origin --push`) isn't
    available to you yet at this point.
-
-   This is the default and the recommended shape, but not the only
-   supported one: forking on GitHub, and a plain git remote with no
-   GitHub-style host behind it at all, are both covered further down this
-   item. Read to the end of it before setting `origin`.
 
    ```
    git clone https://github.com/painapple-org/spoor-bootstrap.git
@@ -265,8 +266,11 @@ default; every file it quotes remains the home for its own content.
    generating this deployment's own conventions doc (its path
    recorded once in `CONVENTIONS_DOC_PATH` in `.env`, which is what every
    skill resolves it from), and specializing the skill stubs in
-   [`skills/`](./skills/README.md) against your actual answers. It ends by
-   handing you a self-provisioning shopping list.
+   [`skills/`](./skills/README.md) against your actual answers. That last
+   part is also where [`prompts/`](./prompts/README.md) stops being empty:
+   deciding which pipeline stages your deployment runs and writing one
+   substantial prompt file per stage kept is the largest single deliverable
+   of the pass. It ends by handing you a self-provisioning shopping list.
 
 6. **Work through that shopping list**, paste the resulting secrets into
    `.env` yourself, and have the agent re-run the specialization step for

@@ -85,10 +85,13 @@ assumes:
   starting, the check for an existing skill covering the work, the "what
   does this make obsolete, and delete it in the same pass" step, the test
   command for this product, the commit/push/PR loop by reference to
-  `git-pr-conventions`, the tracker state it moves the item to, and **the
-  hard rule that it does not merge its own PR.**
-- **review** — needs the independence rule, that it may fix clear problems
-  directly on the branch, the strong bias toward merging, the exact
+  `git-pr-conventions`, the tracker state it moves the item to, and the
+  hard rules `work-pipeline`'s own `implement` entry states about what this
+  stage does and doesn't do — by reference to that entry, in full, not
+  paraphrased into a subset here.
+- **review** — needs the independence rule, everything `work-pipeline`'s
+  own `review` entry says this stage is licensed to do (again by reference,
+  in full, rather than a subset restated here), the exact
   stop-and-ask categories that are allowed to leave a PR open (by reference
   to [`AGENTS.md`](../AGENTS.md) and the conventions doc, not copied), and —
   where this deployment's remote has no PR mechanism at all — the agreed

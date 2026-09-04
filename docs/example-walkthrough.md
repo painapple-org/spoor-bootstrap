@@ -667,13 +667,43 @@ of the bootstrap repo covering the whole pass — every stub the pass rewrote
 and the adapter deletions together. The one marker that survived comes back
 as its own scoped PR later, once item 3 on the shopping list below exists.
 
+### The other half of the pass: which stages exist at all
+
+`work-tracker` is one file. The part of the same pass with the most writing
+in it was `work-pipeline`, because specializing that one means deciding
+which stages this deployment actually runs and then writing a prompt file
+per stage kept, in [`../prompts/`](../prompts/README.md).
+
+The stage set Priya agreed to: `refine`, `critique`, `implement`, `review`,
+and no proactive stage yet. **`resolve-critique` was deliberately dropped**,
+and that is recorded as a choice rather than left as a silent shortcut,
+which is what
+[`../skills/work-pipeline/SKILL.md`](../skills/work-pipeline/SKILL.md)
+requires of any change to its stage list. The reason: the two live sign-off
+rules in her conventions doc already put her in the loop before merge on
+everything she cares about, and on a queue of a dozen inherited bug reports
+a separate stage whose whole job is answering critique comments was judged
+overhead she'd feel and never read. If the queue ever gets items big enough
+that critique produces real disagreement, adding the stage back is one file.
+
+`refine` and `implement` got written in that first sitting; `critique` and
+`review` didn't — which is what puts those two on the shopping list in the
+next section, under its third category rather than as accounts to register.
+
 ---
 
 ## 6. What was still blocked at the end
 
 The first boot ends with a shopping list, not a finished agent. Per
-[`../AGENTS.md`](../AGENTS.md)'s self-provisioning section, every item on it
-is Priya's to create — the agent does not register itself for anything.
+[`../AGENTS.md`](../AGENTS.md)'s self-provisioning section, that list is
+"everything standing between this deployment and a working one that a human
+has to resolve", in three categories — so it is wider than a signup sheet.
+Items 1-4 below are its first category, identities to provision: those are
+Priya's to create and the agent does not register itself for any of them.
+Items 5-6 are its third, work the agent identified and could not finish;
+nothing is Priya's to create there, and their blockers are named per item.
+Nothing landed in the second category on this run — every open decision in
+the interview got answered in words.
 
 1. **An email address for the agent** on the roastery's mail domain.
    Blocks `AGENT_EMAIL_ADDRESS`.
@@ -688,6 +718,17 @@ is Priya's to create — the agent does not register itself for anything.
 4. **The wholesale handbook**, either exported into the repo as markdown or
    shared with the account from item 1. Without it, any proactive work
    proposal about pricing or lead times would be guesswork.
+5. **The `critique` stage prompt**, still to write in
+   [`../prompts/`](../prompts/README.md). Waiting on nothing, just
+   unfinished — the stage set is agreed and the file has no open question in
+   it, the first sitting simply ran out. Until it exists that stage has
+   nothing to be invoked with, so a refined item goes straight to
+   `implement` without a second pass over it.
+6. **The `review` stage prompt**, same directory, same blocker: waiting on
+   nothing, just unfinished. This one is the more expensive of the two to
+   leave open: `work-pipeline` splits who implements from who merges, so
+   until `review` exists every PR the pipeline opens sits waiting for Priya
+   or a live session rather than for a stage.
 
 And the judgment calls the agent made rather than being told, surfaced so
 Priya could correct them cheaply:
@@ -700,12 +741,10 @@ Priya could correct them cheaply:
   she files issues from the web UI.
 
 None of that is a finished deployment. Wiring up the Slack listener,
-finishing the per-stage pipeline prompts (the pass agreed the stage set and
-wrote `refine` and `implement`; `critique` and `review` were handed back as
-outstanding work, in [`../prompts/`](../prompts/README.md) where that
-directory says they go), and getting a deploy to actually run are all
-follow-on work — this repo's own README is explicit that it gets you to a
-documented starting point, not to a working agent.
+finishing the two per-stage pipeline prompts at items 5 and 6 above, and
+getting a deploy to actually run are all follow-on work — this repo's own
+README is explicit that it gets you to a documented starting point, not to
+a working agent.
 
 ---
 
