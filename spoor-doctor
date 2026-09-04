@@ -32,6 +32,15 @@
 #     The consistency of `skills/` against its indexes belongs to
 #     `.github/ci/check-skills-consistency.py`, so this script *runs* that
 #     script instead of reimplementing any of its rules.
+#
+#     One deliberate exception, narrowed rather than hidden: the relative-link
+#     check. CI's link job owns links and covers them better, but it is a
+#     GitHub Actions job, and the remote shape README steers an owner with no
+#     git hosting account toward has no runner to run it on — so on the one
+#     shape where specialization's own file deletions can silently break a
+#     doc, that job never runs at all. This script therefore resolves
+#     relative links itself, and only those: no external URLs, no network, no
+#     fragments. The check's own docstring is the home for that reasoning.
 #   - **It does not judge content.** Whether a specialized skill says
 #     something true about this deployment is a reading job for a human or an
 #     agent. This script only answers questions with a mechanical answer.
@@ -968,6 +977,68 @@ def check_skills_consistency(repo_root):
 			+ "\n".join(output.splitlines()[:12]),
 		)
 
+def check_doc_links(repo_root):
+	"""Relative links in this deployment's own docs, after specialization deleted things.
+
+	CI's link job covers this upstream, and covers it better — it resolves
+	external URLs too. What it does not cover is a live deployment: it is a
+	GitHub Actions job, and the remote shape README steers an owner with no
+	git hosting account toward has no hosted runner to run it on. That is
+	exactly the shape where this matters most, because specialization
+	*deletes files by instruction* — the adapters for the trackers this
+	deployment didn't choose, the scaffold pages that answered nobody's
+	question here — and every one of those deletions has link sites
+	elsewhere that have to be dealt with in the same pass. A missed one
+	leaves a doc pointing at a file that is gone, which reads as a working
+	reference right up until a session follows it and finds nothing.
+
+	Relative links only, and no network: an external URL going 404 is not
+	this deployment being broken, and a health check that needs the internet
+	to say whether the docs are intact is one that stops working exactly
+	when everything else does."""
+	code, output = run(["git", "ls-files", "*.md"], cwd=repo_root)
+	if code != 0:
+		record(
+			"doc-links",
+			SKIP,
+			"git could not list tracked markdown here, so there is no file set to check links across.",
+		)
+		return
+
+	# `[text](./path)` and `[text](../path)` — a rooted or bare target is not
+	# a relative link into this checkout and is left alone, along with the
+	# fragment on the end of one.
+	link_pattern = re.compile(r"\]\((\.[^)#\s]*)(?:#[^)\s]*)?\)")
+	files = [line for line in output.split("\n") if line.strip()]
+	broken = []
+	checked = 0
+	for name in files:
+		path = repo_root / name
+		if not path.is_file():
+			continue
+		for match in link_pattern.finditer(path.read_text(encoding="utf-8", errors="replace")):
+			checked += 1
+			target = match.group(1)
+			if not (path.parent / target).exists():
+				broken.append(f"{name} -> {target}")
+
+	if broken:
+		shown = "; ".join(broken[:8])
+		more = f" (and {len(broken) - 8} more)" if len(broken) > 8 else ""
+		record(
+			"doc-links",
+			FAIL,
+			f"{len(broken)} relative link(s) in tracked docs point at a file that does not exist: "
+			f"{shown}{more}. A specialization pass that deleted the target is the usual cause, and "
+			"the fix is the link site rather than putting the file back.",
+		)
+	else:
+		record(
+			"doc-links",
+			PASS,
+			f"{checked} relative link(s) across {len(files)} tracked doc(s) all resolve.",
+		)
+
 def check_harness_symlinks(repo_root):
 	"""Every harness skill directory still resolves into skills/."""
 	problems = []
@@ -1070,6 +1141,7 @@ def main():
 	check_stage_prompts(repo_root)
 	check_skills_specialization(repo_root, env)
 	check_skills_consistency(repo_root)
+	check_doc_links(repo_root)
 	check_harness_symlinks(repo_root)
 	check_host_tooling()
 
