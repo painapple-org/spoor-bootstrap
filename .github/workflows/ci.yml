@@ -177,6 +177,27 @@ jobs:
       - name: Prove spoor-doctor catches a broken deployment
         run: .github/ci/test-doctor.py
 
+  # The job above proves each of the doctor's checks catches its own failure.
+  # It says nothing about the layer that decides whether a human is told:
+  # `spoor-doctor-watch` is what a schedule invokes, and its two failure modes
+  # both look fine from the outside — staying quiet when something just broke,
+  # or re-alerting every run of an already-known break until the channel gets
+  # filtered. So this job drives the watcher through a deployment's whole life
+  # (healthy, broken, still broken, fixed) against a stub doctor it controls,
+  # and then against the real one in the checkout. What each case covers lives
+  # in that script's own header.
+  doctor-watch-self-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      # Stdlib-only python3, preinstalled on the runner image. Every doctor run
+      # it makes is --offline or against its own stub, so this needs no network
+      # and no credentials.
+      - name: Prove spoor-doctor-watch alerts on a change and only on a change
+        run: .github/ci/test-doctor-watch.py
+
   # `spoor-profile` claims a written business profile produces the same artifacts
   # a live first-boot interview produces. Nothing else in CI could notice if that
   # stopped being true: the generator would keep exiting 0 and writing a

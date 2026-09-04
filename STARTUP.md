@@ -773,6 +773,10 @@ Every one of those follow-on changes — a secret pasted in, a tracker swapped,
 a scoped step 7 re-run, a mesh joined — moves something it checks, and none
 of them announce it when they go wrong. Re-run it after each, and schedule it
 alongside whatever else this host runs on a timer; a health check nobody runs
-is the same as not having one. README.md's "Checking a live deployment" owns
-what it covers and how to invoke it, and *when* it runs is host scheduling,
-which this repo deliberately leaves to you per AGENTS.md's note on that.
+is the same as not having one. What a schedule invokes is
+`./spoor-doctor-watch`, which runs the doctor and messages you when its
+verdict changes rather than on every run — `./spoor-doctor-watch
+--schedule-line` prints the line to paste for this checkout. README.md's
+"Checking a live deployment" owns what both of them cover and how to invoke
+them, and *when* they run is host scheduling, which this repo deliberately
+leaves to you per AGENTS.md's note on that.

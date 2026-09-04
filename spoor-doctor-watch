@@ -1,0 +1,441 @@
+#!/usr/bin/env python3
+#
+# spoor-doctor-watch — run `./spoor-doctor` unattended, on whatever schedule
+# this host offers, and tell a human when its verdict *changes*.
+#
+# `./spoor-doctor` answers "is this deployment in a state it can be trusted
+# in?" on demand. That is only half of what the states it looks for need,
+# because every one of them is invisible from the outside and none of them
+# announces itself: a `.env` that drifted to mode 0644, a tracker token that
+# stopped being accepted, an `origin` repointed by a stray command, a skill
+# re-stubbed by a scoped specialization re-run. A diagnostic nobody runs is
+# the same as not having one — STARTUP.md's closing note on scheduling it is
+# the home for that point — and this script is what a schedule invokes.
+#
+# What it adds to a bare `./spoor-doctor --json` in a cron line, all of which
+# is the difference between a signal and noise:
+#
+#   - **It diffs against the previous run.** A check that just started
+#     failing is news. The same check failing for the ninth hour running is
+#     not, and a message that arrives every hour regardless gets filtered —
+#     at which point the real one is filtered too. So: once per distinct
+#     failure, and once on recovery.
+#   - **It treats a stopped-being-checked check as unknown, not as fixed.**
+#     A FAIL that becomes a SKIP, or disappears from the report entirely, is
+#     the absence of an answer. Reading it as a recovery would announce good
+#     news for a check that is no longer being made.
+#   - **It fails loudly when it could not get a verdict at all.** A doctor
+#     that exited 2, or printed something this script cannot parse, is
+#     reported as an unknown rather than being treated as "no news".
+#   - **It leaves a beat behind.** A watcher that has silently stopped
+#     running produces no failures whatsoever, which looks exactly like a
+#     healthy deployment. `last-run.json` in the state directory, plus an
+#     optional heartbeat ping, are what let something else notice the
+#     silence; skills/synthetic-monitoring/SKILL.md's "Scheduling, and who
+#     notices when the check stops" is the one home for that argument.
+#
+# It writes nothing outside its own state directory, and it never sees a
+# secret's value: `./spoor-doctor --json` reports variable names only, which
+# is what makes its report safe to hand to a message.
+#
+# Configuration, both read from the environment the schedule sets rather than
+# from `.env` — `.env.example` is the one home for that file's key set and it
+# is deliberately closed, and these two belong to an invocation rather than
+# to the deployment. `--schedule-line` prints a line with both in place:
+#
+#   DOCTOR_ALERT_COMMAND   the command that delivers a message on this
+#                          deployment's comms channel. Same contract as the
+#                          synthetic check runner's own alert command —
+#                          templates/synthetic-check/example_alert_command.sh
+#                          is the shape and the worked example. Where the
+#                          alert *goes*, and who may be told what, is
+#                          skills/comms-channel/SKILL.md's and is not
+#                          restated or second-guessed here.
+#   DOCTOR_HEARTBEAT_URL   optional. A URL to GET after a run that produced a
+#                          verdict, for a watcher that alarms on silence.
+#
+# Exit status: 0 when nothing FAILed, 1 when something did, 2 when this
+# script could not do its job — no verdict from the doctor, or an alert that
+# could not be delivered. That third code is deliberately distinct from 1:
+# it means the answer is unknown rather than bad, and a schedule that treats
+# the two alike reintroduces the silence this whole script is against.
+
+import argparse
+import fcntl
+import json
+import os
+import shlex
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+PASS = "PASS"
+WARN = "WARN"
+FAIL = "FAIL"
+SKIP = "SKIP"
+
+# The doctor's own network timeout is per-call and it makes several calls, so
+# this is generous on purpose: killing a run that was merely slow produces an
+# unknown, and an unknown alerts.
+DOCTOR_TIMEOUT_SECONDS = 900
+
+HEARTBEAT_TIMEOUT_SECONDS = 10
+
+DEFAULT_STATE_DIRNAME = ".spoor-doctor-state"
+
+def now():
+	return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+# --- running the doctor -----------------------------------------------------
+
+class NoVerdict(Exception):
+	"""The doctor did not produce a report this script can read.
+
+	Its own failure modes are already covered by its exit codes and its
+	report; this is for the layer above that — the script missing, an exit 2,
+	output that is not the JSON document it promises. Every one of them means
+	the deployment's health is *unknown*, and the one thing that must not
+	happen is for it to pass as healthy."""
+
+def run_doctor(repo_root, offline):
+	"""`./spoor-doctor --json`, parsed. Raises NoVerdict rather than guessing.
+
+	Invoked through this interpreter rather than as a bare executable so a
+	checkout whose file modes were flattened by a non-git copy still runs —
+	the same reason the doctor's own self-test invokes it that way."""
+	doctor = repo_root / "spoor-doctor"
+	if not doctor.is_file():
+		raise NoVerdict(f"{doctor} does not exist, so there is nothing to run")
+
+	command = [sys.executable, str(doctor), "--json", "--repo-root", str(repo_root)]
+	if offline:
+		command.append("--offline")
+	try:
+		completed = subprocess.run(
+			command,
+			capture_output=True,
+			text=True,
+			timeout=DOCTOR_TIMEOUT_SECONDS,
+			check=False,
+		)
+	except subprocess.TimeoutExpired:
+		raise NoVerdict(f"spoor-doctor did not finish within {DOCTOR_TIMEOUT_SECONDS}s") from None
+
+	if completed.returncode not in (0, 1):
+		detail = (completed.stderr or completed.stdout or "no output").strip().splitlines()
+		raise NoVerdict(
+			f"spoor-doctor exited {completed.returncode}, which is its own "
+			f"\"could not run at all\" code: {detail[-1][:300] if detail else 'no output'}"
+		)
+	try:
+		report = json.loads(completed.stdout)
+	except ValueError as error:
+		raise NoVerdict(f"spoor-doctor's --json output would not parse: {error}") from None
+	if not isinstance(report, dict) or not isinstance(report.get("checks"), list):
+		raise NoVerdict("spoor-doctor's --json output carries no `checks` list")
+
+	statuses = {}
+	messages = {}
+	for check in report["checks"]:
+		if not isinstance(check, dict) or "id" not in check or "status" not in check:
+			raise NoVerdict(f"a check in spoor-doctor's --json output has no id/status: {check!r}")
+		statuses[check["id"]] = check["status"]
+		messages[check["id"]] = check.get("message", "")
+	if not statuses:
+		raise NoVerdict("spoor-doctor reported no checks at all")
+	return statuses, messages, report.get("counts", {})
+
+# --- state ------------------------------------------------------------------
+
+def read_state(state_dir):
+	path = state_dir / "checks.json"
+	if not path.is_file():
+		return {"statuses": {}, "unknown": ""}
+	try:
+		state = json.loads(path.read_text(encoding="utf-8"))
+	except ValueError as error:
+		# Not fatal, and not silently ignored either: a corrupt state file
+		# means this run has nothing to diff against, so it is the first run
+		# again. Saying so is what keeps the resulting burst of "new" failures
+		# from reading as a deployment that just broke.
+		print(f"WARNING: {path} would not parse ({error}); treating this as a first run.", file=sys.stderr)
+		return {"statuses": {}, "unknown": ""}
+	return {"statuses": state.get("statuses", {}), "unknown": state.get("unknown", "")}
+
+def write_state(state_dir, statuses, unknown):
+	(state_dir / "checks.json").write_text(
+		json.dumps({"at": now(), "statuses": statuses, "unknown": unknown}, indent=2, sort_keys=True) + "\n",
+		encoding="utf-8",
+	)
+
+# --- what counts as news ----------------------------------------------------
+
+def diff(previous, current):
+	"""The news in this run, as four disjoint lists of check ids.
+
+	`previous` is the last *recorded* verdict rather than the last run, which
+	is the distinction that makes suppression correct across a run whose alert
+	could not be delivered: nothing is recorded then, so the same news is
+	still news next time.
+
+	A WARN is not in any list on purpose. The doctor's own exit code treats a
+	warning as not-a-failure, and this script does not get to promote it to
+	one — a check that went PASS to WARN is in the report every run and is
+	visible to anyone who reads it, which is the right weight for something
+	that is not yet wrong."""
+	was_failing = {check for check, status in previous.items() if status == FAIL}
+
+	new_failures = sorted(
+		check for check, status in current.items()
+		if status == FAIL and check not in was_failing
+	)
+	still_failing = sorted(
+		check for check, status in current.items()
+		if status == FAIL and check in was_failing
+	)
+	recovered = sorted(check for check in was_failing if current.get(check) in (PASS, WARN))
+	# A failing check that is now skipped, or gone from the report entirely,
+	# has not been fixed — it has stopped being answered. Announcing it as a
+	# recovery would be the one lie this script is least able to afford.
+	unanswered = sorted(
+		check for check in was_failing
+		if check not in current or current[check] == SKIP
+	)
+	return new_failures, still_failing, recovered, unanswered
+
+def render(repo_root, counts, statuses, messages, news):
+	new_failures, still_failing, recovered, unanswered = news
+	summary = ", ".join(
+		f"{counts.get(status, '?')} {label}"
+		for status, label in ((PASS, "passed"), (WARN, "warning(s)"), (FAIL, "failure(s)"), (SKIP, "skipped"))
+	)
+	lines = [f"spoor-doctor-watch — {repo_root}", f"{now()} · {summary}", ""]
+
+	# The message body is carried for the two kinds of news that need acting
+	# on, and not for the other two: a recovery's old message is stale by
+	# definition, and a still-failing check's message went out with the alert
+	# that first reported it.
+	for check in new_failures:
+		lines.append(f"NEW FAILURE  {check}")
+		for line in messages.get(check, "").splitlines():
+			lines.append(f"        {line}")
+	for check in unanswered:
+		lines.append(f"NO LONGER ANSWERED (was failing)  {check} — now {statuses.get(check, 'absent from the report')}")
+		for line in messages.get(check, "").splitlines():
+			lines.append(f"        {line}")
+	for check in recovered:
+		lines.append(f"RECOVERED  {check} — now {statuses.get(check)}")
+	for check in still_failing:
+		lines.append(f"STILL FAILING (already reported)  {check}")
+
+	if not any(news):
+		lines.append("No change since the last recorded run.")
+	lines.append("")
+	lines.append("Full detail: ./spoor-doctor in this checkout. It is read-only and safe to re-run.")
+	return "\n".join(lines)
+
+# --- telling a human --------------------------------------------------------
+
+class AlertUndelivered(Exception):
+	"""The alert command could not be run, or refused.
+
+	An alert that failed to send is an outage of the alerting path, and the
+	only honest thing left is for the run to fail loudly rather than exit
+	having told nobody."""
+
+def notify(text, kind):
+	"""Hand the report to whatever this deployment alerts through.
+
+	A command rather than an integration, for the reason the whole repo is
+	organized around: the destination has exactly one home and it is not this
+	file. `kind` is the first argument so a recovery can be worded
+	differently from a failure without this script knowing how either reads."""
+	command = os.environ.get("DOCTOR_ALERT_COMMAND", "").strip()
+	if not command:
+		# Loud, and on stderr where a cron mail and a log both keep it. Not an
+		# error: a deployment may legitimately be watching the exit code from
+		# its scheduler instead. What it is not is a delivered alert, so it
+		# must not read like one.
+		print(
+			f"WARNING: DOCTOR_ALERT_COMMAND is unset, so this '{kind}' alert reached nobody:\n{text}",
+			file=sys.stderr,
+		)
+		return
+	try:
+		completed = subprocess.run(shlex.split(command) + [kind], input=text, text=True, check=False)
+	except OSError as error:
+		raise AlertUndelivered(f"{command}: {error}") from None
+	if completed.returncode != 0:
+		raise AlertUndelivered(f"{shlex.split(command)[0]} exited {completed.returncode}")
+
+def heartbeat(state_dir, ok, unknown):
+	"""Record that a run happened, and tell an external watcher it did.
+
+	This answers "who notices when the watcher itself stops running?", and it
+	is not rhetorical: a removed cron line, a host reboot, a checkout moved
+	out from under the schedule. Every one of them silences this script
+	completely without producing a single alert.
+
+	It beats on any run that produced a verdict, including one that found
+	failures — unlike a synthetic check's heartbeat, which beats only on a
+	clean run. The difference is that failures here are already reported once
+	each by the alerting above, so the only thing left for a silence watcher
+	to add is whether this script ran at all, and folding a known failure
+	into that signal would alarm twice for one problem. A run with no verdict
+	does not beat: there is nothing to have proved."""
+	(state_dir / "last-run.json").write_text(
+		json.dumps({"at": now(), "ok": ok, "unknown": unknown}, indent=2, sort_keys=True) + "\n",
+		encoding="utf-8",
+	)
+	url = os.environ.get("DOCTOR_HEARTBEAT_URL", "").strip()
+	if not url or unknown:
+		return
+	try:
+		with urllib.request.urlopen(url, timeout=HEARTBEAT_TIMEOUT_SECONDS) as response:
+			response.read()
+	except (urllib.error.URLError, TimeoutError, OSError) as error:
+		print(f"WARNING: heartbeat ping to {url} failed: {error}", file=sys.stderr)
+
+# --- the schedule -----------------------------------------------------------
+
+def schedule_line(repo_root, state_dir, offline):
+	"""A crontab line for this checkout, with real paths in it.
+
+	Printed rather than installed. How this host triggers anything is a
+	per-deployment decision this repo deliberately does not standardize —
+	AGENTS.md's closing note on scheduling is the home for that, and a
+	systemd `--user` timer or a harness scheduler running the same command is
+	as correct as cron. What this prints is the command and the environment it
+	needs, which is the part that is genuinely this file's to state."""
+	command = f"{Path(sys.argv[0]).resolve()} --repo-root {repo_root} --state-dir {state_dir}"
+	if offline:
+		command += " --offline"
+	return "\n".join([
+		"# spoor-doctor-watch — hourly health check of this deployment, alerting on a change",
+		"# in the verdict. The cadence is yours: it is how long this deployment is willing to",
+		"# be silently broken. Set DOCTOR_HEARTBEAT_URL too if something watches for silence.",
+		"DOCTOR_ALERT_COMMAND=/path/to/your/alert-command",
+		f"17 * * * * {command} >> {state_dir / 'watch.log'} 2>&1",
+	])
+
+# --- driver -----------------------------------------------------------------
+
+def main():
+	parser = argparse.ArgumentParser(
+		description=(
+			"Run ./spoor-doctor unattended and alert when its verdict changes: once per "
+			"distinct failure, once on recovery, and never twice for the same known break."
+		),
+	)
+	parser.add_argument(
+		"--repo-root",
+		default=str(Path(__file__).resolve().parent),
+		help="the spoor-bootstrap checkout to check (default: this script's own directory)",
+	)
+	parser.add_argument(
+		"--state-dir",
+		default=None,
+		help=f"where the previous verdict is remembered (default: <repo-root>/{DEFAULT_STATE_DIRNAME})",
+	)
+	parser.add_argument(
+		"--offline",
+		action="store_true",
+		help="pass --offline to spoor-doctor, skipping every check that contacts a network",
+	)
+	parser.add_argument(
+		"--schedule-line",
+		action="store_true",
+		help="print a crontab line for this checkout and exit, installing nothing",
+	)
+	arguments = parser.parse_args()
+
+	repo_root = Path(arguments.repo_root).resolve()
+	state_dir = Path(arguments.state_dir).resolve() if arguments.state_dir else repo_root / DEFAULT_STATE_DIRNAME
+
+	if arguments.schedule_line:
+		print(schedule_line(repo_root, state_dir, arguments.offline))
+		return 0
+
+	if not repo_root.is_dir():
+		print(f"spoor-doctor-watch: {repo_root} is not a directory", file=sys.stderr)
+		return 2
+	state_dir.mkdir(parents=True, exist_ok=True)
+
+	# A run that overlaps its predecessor would diff against a verdict that is
+	# still being written, and could alert twice for one change. The lock is
+	# held for the whole run and released with the process, so a killed run
+	# does not wedge the schedule.
+	lock = open(state_dir / "lock", "w", encoding="utf-8")
+	try:
+		fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+	except OSError:
+		print(
+			"spoor-doctor-watch: a previous run is still going, so this one is skipped. "
+			"That run reports its own result.",
+			file=sys.stderr,
+		)
+		return 0
+
+	previous = read_state(state_dir)
+
+	try:
+		statuses, messages, counts = run_doctor(repo_root, arguments.offline)
+	except NoVerdict as problem:
+		# The recorded statuses survive an unknown untouched: they are what the
+		# next real verdict has to be diffed against, and clearing them would
+		# make every already-known failure read as new the moment the doctor
+		# runs again.
+		signature = str(problem)
+		text = (
+			f"spoor-doctor-watch — {repo_root}\n{now()}\n\n"
+			f"NO VERDICT: {signature}\n\n"
+			"This deployment's health is unknown, which is not the same as fine. "
+			"Run ./spoor-doctor in this checkout by hand."
+		)
+		print(text, file=sys.stderr)
+		if previous.get("unknown") != signature:
+			notify(text, "unknown")
+		write_state(state_dir, previous["statuses"], signature)
+		heartbeat(state_dir, ok=False, unknown=signature)
+		return 2
+
+	news = diff(previous["statuses"], statuses)
+	new_failures, _still_failing, recovered, unanswered = news
+	report = render(repo_root, counts, statuses, messages, news)
+	print(report)
+
+	# One message per run, its kind set by the most serious news in it, and the
+	# body naming every change either way. Splitting one run's news across
+	# several messages would make a single event arrive as a burst.
+	kind = None
+	if new_failures:
+		kind = "failure"
+	elif unanswered:
+		kind = "unknown"
+	elif recovered:
+		kind = "recovery"
+	if kind:
+		notify(report, kind)
+
+	# Recorded only after the alert is away. An alert that failed to send
+	# raises out of here with nothing written, so the next run still sees this
+	# run's news as news — the alternative is one delivery failure suppressing
+	# a real break forever.
+	write_state(state_dir, statuses, "")
+	ok = not any(status == FAIL for status in statuses.values())
+	heartbeat(state_dir, ok=ok, unknown="")
+	return 0 if ok else 1
+
+if __name__ == "__main__":
+	try:
+		sys.exit(main())
+	except AlertUndelivered as problem:
+		print(f"spoor-doctor-watch: ALERT DELIVERY FAILED: {problem}", file=sys.stderr)
+		print(
+			"Nothing was recorded for this run, so the next one reports the same news again.",
+			file=sys.stderr,
+		)
+		sys.exit(2)
