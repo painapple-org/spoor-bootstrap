@@ -395,6 +395,25 @@ building any product code until all of it is done.
      that nothing is exposed on it yet — which stays true until the tool
      actually answers, and is not the same statement as "no mesh". Don't
      record a settled deferral this conversation has already contradicted.
+   - **whether the product charges anyone**, from the interview's
+     charging question. `skills/billing-and-payments/SKILL.md` is the one
+     home for the mechanism — the owner/agent split, the provider account,
+     what the agent may and may not do with real money — and this doc is
+     the home for *this* deployment's answer, which has no `.env` slot and
+     no other destination. **"Nothing is sold yet, so no provider and no
+     integration" is the expected answer today and a complete one** —
+     record it as decided, not as an open question, and don't design an
+     integration for a product nobody is charging for.
+
+     **Where the answer is yes, record more than the yes**: what is sold, who
+     the named human is that executes a refund or a dispute response given
+     the agent may not, and that the provider account is theirs to create.
+     Everything downstream of that account is genuinely unanswerable until it
+     exists, so it stays marked in that SKILL and joins the shopping list
+     rather than being guessed at here. Do not record a settled "nothing is
+     sold" this conversation has already contradicted, the same way the
+     internal-tooling bullet above says not to.
+
    - **where the business's own content and docs live**, from the second
      half of the interview's repo question — a wiki, a drive folder, a docs
      directory in the product repo, a CMS. That answer has no `.env` slot
@@ -588,6 +607,21 @@ building any product code until all of it is done.
    probe skipped because the secret isn't provisioned yet), and where it is,
    say which shopping-list item it is waiting on rather than presenting it
    as a problem. Don't fix a finding by editing the check.
+
+   **One FAIL is expected here and is not yours to fix: the required-value
+   check, on exactly the secrets step 4 told you to leave blank.** Step 4
+   mandates leaving them empty for me to paste in myself, and
+   `.env.example` declares them required because a deployment that never
+   gets them really is broken — so the two are both right and a correct
+   first boot always ends on this one. Don't fill a field to make it go
+   green, don't relax its `# doctor:` spec, and don't present it to me as
+   something that went wrong. Name the fields, say each one is the
+   shopping-list item it is, and say plainly that this check is what turns
+   green when I paste them in — which makes it the confirmation that the
+   last step actually worked, rather than noise. Anything else in that same
+   FAIL — a field with a real answer available that you left empty, a
+   placeholder you never replaced — *is* yours, and is the reason to read
+   the field list rather than the check name.
 
    Then tell me to run it again myself once I've pasted the secrets in,
    since that's the point where the skipped probes become real ones.

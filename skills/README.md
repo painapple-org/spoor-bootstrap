@@ -116,8 +116,9 @@ is added.
   genuinely new skill here for a capability none of the others reach:
   the cheaper answers to try first, the seam test that decides whether it
   is a new file or a section of an existing one, the file shape CI
-  enforces, the stub-versus-finished decision, and the three wiring edits
-  a new skill isn't finished without. Finished; it carries no markers.
+  enforces, the stub-versus-finished decision, when the answer is a
+  runnable template rather than more prose, and the wiring edits a new
+  skill isn't finished without. Finished; it carries no markers.
   Owns *bringing a file into existence*;
   [`specialize-skills`](./specialize-skills/SKILL.md) owns *answering the
   markers in one that already exists*.

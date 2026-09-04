@@ -897,12 +897,22 @@ def check_skills_specialization(repo_root, env):
 
 	status_heading = re.compile(r"^#{1,6}\s*Status:\s*(.+?)\s*$", re.MULTILINE)
 	stubs = []
+	# The heading's own text, not just its presence. A specialization pass
+	# routinely leaves a file *partly* answered - its central question decided,
+	# its remaining markers blocked on something only the owner can provision -
+	# and that file is no longer generic template text. Reporting it as though
+	# it were sends the owner to re-read a file that already holds this
+	# deployment's real decisions, and buries the genuinely untouched ones
+	# among them.
+	described = []
 	total = 0
 	for skill_file in sorted(skills_dir.glob("*/SKILL.md")):
 		total += 1
 		match = status_heading.search(skill_file.read_text(encoding="utf-8"))
 		if match:
 			stubs.append(skill_file.parent.name)
+			summary = match.group(1).split("—")[0].split("-")[0].strip().lower()
+			described.append(f"{skill_file.parent.name} ({summary})" if summary else skill_file.parent.name)
 
 	if not stubs:
 		record("skills-specialization", PASS, f"none of the {total} skills still calls itself a stub.")
@@ -929,8 +939,10 @@ def check_skills_specialization(repo_root, env):
 	record(
 		"skills-specialization",
 		WARN,
-		f"{len(stubs)} of {total} skills still call themselves stubs: {', '.join(stubs)}. Each one is "
-		"generic template text until specialized, so read it before relying on it.",
+		f"{len(stubs)} of {total} skills still carry a Status heading: {', '.join(described)}. Each one "
+		"says so about itself, so read it before relying on it — a partial one holds real answers "
+		"alongside its unanswered markers, and STARTUP.md step 9 is the home for which of these are "
+		"the expected end state at first boot.",
 	)
 
 def check_skills_consistency(repo_root):

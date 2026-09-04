@@ -18,7 +18,13 @@ WORKDIR /app
 # point. Generate one in your own copy with `uv lock`, commit it, and change
 # this to `uv sync --frozen --no-dev` - which is the form you want from then
 # on, so a rebuild can't silently pick up a different dependency tree.
-COPY pyproject.toml ./
+#
+# The glob on uv.lock is what makes both of those states buildable from the
+# same line: it matches nothing in the template and the lockfile in a
+# specialized copy, while pyproject.toml keeps the COPY itself satisfied. A
+# bare `COPY pyproject.toml ./` builds here and then fails the moment the
+# instruction above is followed, because --frozen has no lockfile to read.
+COPY pyproject.toml uv.lock* ./
 RUN uv sync --no-dev
 
 COPY .streamlit ./.streamlit
