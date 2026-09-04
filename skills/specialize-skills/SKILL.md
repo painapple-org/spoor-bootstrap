@@ -108,6 +108,18 @@ For each `TODO(specialize)` marker:
    That heading is the file's own honest self-report; leaving it on a
    finished file trains readers to ignore it.
 
+Then, once every file in the pass is done, one bookkeeping step that isn't
+per-file: **update the "Current skills" list in
+[`skills/README.md`](../README.md)**. That list is the one enumeration of
+what exists under `skills/`, and it labels each stub *stub* or *partial
+stub* — labels that are false the moment a pass removes the markers behind
+them. Drop the label from every skill this pass finished, and correct any
+entry whose description no longer matches the file: the `work-tracker`
+entry in particular describes `adapters/` as holding notes for three
+trackers, which stops being true as soon as you follow
+[`adapters/README.md`](../work-tracker/adapters/README.md)'s instruction to
+delete the ones this deployment didn't use.
+
 Then, once the pass itself is done: **ship it through a branch and a PR**,
 per [`skills/git-pr-conventions`](../git-pr-conventions/SKILL.md). These are
 tracked files in this repo, and specialization sitting uncommitted in one
