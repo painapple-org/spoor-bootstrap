@@ -132,9 +132,9 @@ Don't hand-bump a pinned action version in
 [`.github/dependabot.yml`](./.github/dependabot.yml) already opens one,
 batched, on a schedule that file owns. It is also the one place that records
 what is and isn't tracked and why, including the deliberate decision not to
-track [`templates/`](./templates/README.md)'s own dependency files; read it there
-rather than trusting a summary here. Bumping an action version as part of a
-change that actually needs the new version is normal and welcome.
+track [`templates/`](./templates/README.md)'s own dependency files; read it
+there rather than trusting a summary here. Bumping an action version as part
+of a change that actually needs the new version is normal and welcome.
 
 Two things sit outside that file, because they're repo settings rather than
 config: Dependabot alerts and Dependabot security updates are both enabled,
