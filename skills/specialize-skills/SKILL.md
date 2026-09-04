@@ -115,8 +115,8 @@ Work through them in order; later ones depend on earlier answers:
    day one does joins the shopping list.
 7. [`skills/internal-dashboard`](../internal-dashboard/SKILL.md) — whether
    this deployment wants an internal operations dashboard at all, and if
-   so, the stack it's built in and the pages it has. It comes last because
-   it depends on both answers before it: its page list is drawn from the
+   so, the stack it's built in and the pages it has. It comes after the two
+   items before it because it depends on both: its page list is drawn from the
    health signals item 5 establishes, and it is reached over whatever item
    6 recorded. Take the "no" answer as seriously here as there — that file
    opens by saying not to build one speculatively, so "not wanted, the
