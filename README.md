@@ -27,7 +27,8 @@ Four things, and nothing more:
 - **[`STARTUP.md`](./STARTUP.md)** — the prompt you paste into your agentic
   harness for the first run. The agent interviews you, writes `.env`,
   generates this deployment's own conventions doc, fills in the skill
-  files, and hands you a list of accounts to create.
+  files, and hands you a shopping list — identities to provision, open
+  decisions, and work it couldn't finish.
 - **[`skills/`](./skills/README.md)** — harness-agnostic instructions the
   agent operates from, with [`AGENTS.md`](./AGENTS.md) as the entrypoint
   that ties them together.
@@ -260,7 +261,8 @@ default; every file it quotes remains the home for its own content.
    [`AGENTS.md`](./AGENTS.md)), agreeing on an autonomy model, writing
    `.env`, getting `gh` logged in and proving a push actually works — to
    the product repo *and* to this checkout's own `origin`, since the
-   first-boot flow ships its own edits here through a PR too (expect
+   first-boot flow ships its own edits here through a PR too, or through
+   the agreed substitute on a remote that has no PR mechanism (expect
    to be walked through `gh auth login` here, with whichever GitHub account
    you want the agent pushing as for now — your own is fine to start),
    generating this deployment's own conventions doc (its path

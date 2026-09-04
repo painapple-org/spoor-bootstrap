@@ -676,11 +676,11 @@ per stage kept, in [`../prompts/`](../prompts/README.md).
 
 The stage set Priya agreed to: `refine`, `critique`, `implement`, `review`,
 and no proactive stage yet. **`resolve-critique` was deliberately dropped**,
-and that is recorded as a choice rather than left as a silent shortcut,
-which is what
+and that is recorded as a choice rather than left as a silent shortcut —
 [`../skills/work-pipeline/SKILL.md`](../skills/work-pipeline/SKILL.md)
-requires of any change to its stage list. The reason: the two live sign-off
-rules in her conventions doc already put her in the loop before merge on
+explicitly allows collapsing or dropping stages like this, as a real choice
+rather than a shortcut. The reason: the two live sign-off rules in her
+conventions doc already put her in the loop before merge on
 everything she cares about, and on a queue of a dozen inherited bug reports
 a separate stage whose whole job is answering critique comments was judged
 overhead she'd feel and never read. If the queue ever gets items big enough

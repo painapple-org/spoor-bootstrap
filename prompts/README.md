@@ -86,7 +86,7 @@ assumes:
   does this make obsolete, and delete it in the same pass" step, the test
   command for this product, the commit/push/PR loop by reference to
   `git-pr-conventions`, the tracker state it moves the item to, and the
-  hard rules `work-pipeline`'s own `implement` entry states about what this
+  hard rule `work-pipeline`'s own `implement` entry states about what this
   stage does and doesn't do — by reference to that entry, in full, not
   paraphrased into a subset here.
 - **review** — needs the independence rule, everything `work-pipeline`'s

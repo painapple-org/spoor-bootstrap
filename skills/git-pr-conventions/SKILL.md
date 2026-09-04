@@ -155,8 +155,11 @@ readable is entirely a property of `origin`:
 [`README.md`](../../README.md)'s "Path to a running instance" is the one
 home for that choice, and the short version is that a GitHub fork of a
 public template is permanently public while a repo you create yourself can
-be private. If a change would put a new class of specific into this repo,
-it's worth a sentence to the owner rather than a silent commit.
+be private — and that on a plain git remote (a bare repo on a box the owner
+runs, a self-hosted server with no API in use) the tradeoff doesn't arise at
+all, since it's their own box. If a change would put a new class of specific
+into this repo, it's worth a sentence to the owner rather than a silent
+commit.
 
 ## Auth
 
