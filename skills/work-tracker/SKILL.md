@@ -117,10 +117,9 @@ and, where one command can settle it, against the real instance.
 `TODO(specialize)` — fill in, for the chosen tracker:
 
 - **Access mechanism**: an MCP server, an official SDK, a CLI, or raw HTTP.
-  Prefer something that already exists over writing a client (see the
-  "reach for something that exists" principle in the deployment conventions
-  doc at `CONVENTIONS_DOC_PATH` in `.env`). Name the concrete
-  package/server, not a category.
+  Prefer something that already exists — a maintained server, SDK or CLI —
+  over writing a client of your own, even if it carries more than this
+  contract needs. Name the concrete package/server, not a category.
 - **The identity the agent acts as.** The agent must act as its *own*
   tracker account, not the owner's — that's what makes the tracker's own
   permissions able to scope it, and it's what makes "assigned to a human"

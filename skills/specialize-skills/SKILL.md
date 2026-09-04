@@ -49,7 +49,8 @@ Work through them in order; later ones depend on earlier answers:
 
 1. [`skills/work-tracker`](../work-tracker/SKILL.md) — the chosen tracker's
    access mechanism, the state-name mapping, the label names, the agent's
-   own account, the scope identifier. Read
+   own account, the scope identifier, and where a second auth value comes
+   from if that tracker's auth needs one (or that it's token-only). Read
    [`skills/work-tracker/adapters`](../work-tracker/adapters/README.md)
    first if the chosen tracker is one it covers, and follow its instruction
    to delete the per-tracker adapter files this deployment didn't use once

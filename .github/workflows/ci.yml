@@ -86,13 +86,27 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Ask git for the file list rather than globbing the filesystem, the same
+      # way the shellcheck job does: tracked files are what a clone actually
+      # gets, and a stray untracked .md in a working directory isn't this job's
+      # business. It also drops .claude/skills and .opencode/skills for free —
+      # each is tracked as a single symlink to skills/, not as a second copy of
+      # every SKILL.md, so globbing through them would re-check each file at a
+      # fake path where its own relative links resolve to nothing. That the
+      # symlinks point where they should is the symlinks job's assertion.
+      - name: Collect tracked markdown files
+        id: markdown
+        run: |
+          mapfile -t files < <(git ls-files '*.md')
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No .md files tracked in git — nothing to check." >&2
+            exit 1
+          fi
+          printf 'Checking: %s\n' "${files[@]}"
+          printf 'files=%s\n' "${files[*]}" >> "$GITHUB_OUTPUT"
+
       # Catches dead relative links between docs (the common regression when a
       # file moves or a skill is renamed) as well as dead external URLs.
-      #
-      # .claude/skills and .opencode/skills are symlinks to skills/, so globbing
-      # them too would re-check every SKILL.md at a fake path where its own
-      # ../.. relative links resolve to nothing. Exclude them; the symlinks
-      # -> ../skills relationship itself is what the symlinks job verifies.
       - name: Check markdown links
         uses: lycheeverse/lychee-action@v2
         with:
@@ -101,9 +115,7 @@ jobs:
             --include-fragments
             --max-retries 3
             --accept 200,206,429
-            --exclude-path .claude
-            --exclude-path .opencode
-            './**/*.md'
+            ${{ steps.markdown.outputs.files }}
           fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
