@@ -122,10 +122,33 @@ Work through them in order; later ones depend on earlier answers:
    opens by saying not to build one speculatively, so "not wanted, the
    comms channel is enough" finishes this item legitimately and leaves its
    remaining markers moot.
-8. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
+8. [`skills/billing-and-payments`](../billing-and-payments/SKILL.md) —
+   **whether this deployment's product charges anyone at all**, which that
+   file makes its first question because every other answer in it is moot
+   until it's yes. "Nothing is sold yet" is the expected first-boot answer
+   and a real one; record it as decided in the conventions doc, per that
+   file's own instruction, rather than leaving it unasked. Where it *is*
+   yes: the provider and whose account it is, what is actually sold, the
+   environment-variable names holding the test and live keys and the
+   webhook signing secret, where entitlement is stored and read in the
+   product's code, who handles tax and invoicing, and which named human
+   executes a refund or a dispute response — since the agent may not. It
+   comes last of the stubs because it depends on items 3 and 5: a billing
+   alert goes to the destination item 3 establishes, and a payment
+   credential is an ordinary secret under item 5's own secrets section. The
+   tax half is a legal question rather than an engineering one, so an
+   unanswered one belongs on the shopping list and never in a hedge.
+9. [`skills/product-tech-stack`](../product-tech-stack/SKILL.md) — nothing
    to specialize. It is already a finished, deliberately non-negotiable
    requirement. Do not edit it to suit a preference; if it applies, follow
    it.
+10. [`skills/skill-authoring`](../skill-authoring/SKILL.md) — nothing to
+    specialize either, and nothing to fill in: it is generic by
+    construction, since how to write a skill doesn't vary by deployment.
+    It is in this list because this pass is the commonest place its subject
+    comes up — see "Adding a skill that isn't a stub here" below, which is
+    the one home for that instruction. Read it there rather than treating
+    this item as a step of its own.
 
 ## How to specialize one file
 
@@ -201,10 +224,15 @@ home for why and how.
 ## Adding a skill that isn't a stub here
 
 Specialization will surface capabilities this template has no stub for,
-because they're specific to this product. Write those as new skills under
-`skills/` following [`skills/README.md`](../README.md) — instructions only,
-no scheduling mechanics, no harness-specific syntax — and add them to that
-file's "Current skills" list.
+because they're specific to this product — a compliance regime with real
+operational steps, an on-call rotation, an analytics pipeline. Authoring
+one is its own job with its own rules, and
+[`skills/skill-authoring`](../skill-authoring/SKILL.md) is the one home for
+them: whether a new file is even the right artifact, what it has to own to
+earn its own seam, and the wiring it isn't finished without. Follow it
+rather than deriving the shape from the stubs you have just been reading —
+this pass answers markers in files that exist, and that is a different job
+from bringing one into existence.
 
 The same applies during ordinary operation: when a work item turns out to
 involve a non-obvious technique, pitfall or workaround that would genuinely

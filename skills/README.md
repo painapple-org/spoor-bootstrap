@@ -53,9 +53,14 @@ something else needs to point at it. Don't copy its content elsewhere —
 everything that needs it should link to this file, per this repo's own
 "every fact has exactly one home" convention.
 
-That's the whole step — a new subdirectory here is picked up by both
-harnesses immediately, per "How harnesses discover these" above. Add it to
-the "Current skills" list below.
+That's the whole mechanical step — a new subdirectory here is picked up by
+both harnesses immediately, per "How harnesses discover these" above. Add
+it to the "Current skills" list below.
+
+Deciding whether a new file is the right artifact in the first place, and
+what has to be true of its content, is a bigger question than the wiring
+is, and [`skill-authoring`](./skill-authoring/SKILL.md) is the one home for
+it — read it before creating the directory, not after.
 
 ## Stubs, and why they say so out loud
 
@@ -88,6 +93,15 @@ is added.
   that turns the stubs below into this deployment's real instructions,
   using the first-boot interview answers. Finished too — it's the pass
   itself, so it carries no markers of its own.
+- [`skill-authoring`](./skill-authoring/SKILL.md) — how to author a
+  genuinely new skill here for a capability none of the others reach:
+  the cheaper answers to try first, the seam test that decides whether it
+  is a new file or a section of an existing one, the file shape CI
+  enforces, the stub-versus-finished decision, and the three wiring edits
+  a new skill isn't finished without. Finished; it carries no markers.
+  Owns *bringing a file into existence*;
+  [`specialize-skills`](./specialize-skills/SKILL.md) owns *answering the
+  markers in one that already exists*.
 - [`work-tracker`](./work-tracker/SKILL.md) — *stub.* Reading and writing
   work items in whichever tracker the owner chose: the tracker-agnostic
   operation contract, the pipeline state machine, and the label vocabulary
@@ -131,3 +145,13 @@ is added.
   [`private-networking`](./private-networking/SKILL.md)'s, and the signals
   it displays are
   [`deploy-and-monitor`](./deploy-and-monitor/SKILL.md)'s.
+- [`billing-and-payments`](./billing-and-payments/SKILL.md) — *stub.*
+  Working on a product that takes money from its users: where the line
+  falls between building a payment integration (ordinary reversible work)
+  and moving real money (owner-only), the owner/agent split on the
+  provider account and its live keys, the provider-is-the-source-of-truth
+  rule for entitlement, the webhook and money-representation constraints
+  that are wrong by default, what has to be reported rather than retried,
+  and why tax is a legal question rather than an engineering one. Authored
+  through [`skill-authoring`](./skill-authoring/SKILL.md) as that skill's
+  worked example, and an ordinary skill here in every other respect.
