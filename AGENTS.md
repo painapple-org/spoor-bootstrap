@@ -286,6 +286,20 @@ rather than assuming:
   owner can defer, when it's actually the thing everything else is
   waiting on.
 
+  **Be precise about what is still open in this case, though, because by
+  the time you hand this list over some of it is already resolved.** A
+  remote for the bootstrap checkout is a *precondition* of the setup, not
+  an outcome of it: `README.md`'s item 2 requires one before `install.sh`
+  runs, and `install.sh` refuses to continue without it. So an owner who
+  reached this list at all already has somewhere to push — most likely the
+  bare-repo answer above — and writing "you need a git remote" here as
+  though nothing existed contradicts the three changes this flow just
+  shipped through it. What is genuinely still open is the part they chose
+  to live without: a remote with an API behind it, which is what would
+  retire the PR substitute and make an agent-owned account with its own
+  scoped permissions possible at all. Put *that* on the list, with what it
+  would buy, and say the current remote works today.
+
 ## Where the rest of the instructions live
 
 - [`skills/`](./skills/README.md) — portable, harness-agnostic skill

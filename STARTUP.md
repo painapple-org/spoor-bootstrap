@@ -174,15 +174,28 @@ building any product code until all of it is done.
       yet — and the command above needs a working tree. If it isn't one,
       make it one before running the check: clone the remote to that path
       for an existing repo, or for a brand-new one (a valid answer to the
-      interview's repo question) create the repo on my hosting account,
-      then clone it to that path.
+      interview's repo question) create the repo first and then clone it to
+      that path. How you create it depends on the remote shape from (b),
+      and the plain-remote case is not a variant of the other two:
+
+      - **On a GitHub-shaped remote**, create the repo on my hosting
+        account.
+      - **On the plain-remote shape**, there is no hosting account to
+        create it on — that's the whole point of that shape — so create a
+        bare repo on the box instead (`git init --bare` at a path I name,
+        which becomes the product repo's `origin`), the same way this
+        checkout's own `origin` was made. Don't read the bullet above as
+        the only option and report the absence of a hosting account as a
+        blocker: this is the shape README steers someone with no git
+        hosting account at all toward, so it is exactly the shape a
+        from-zero setup lands on.
 
       Either way the repo has to end up with a remote you can reach — a
       local `git init` with no remote will fail this check rather than pass
       it — and it has to exist at all, since step 6 has nowhere to land
       otherwise. If you can't get there, say so rather than skipping the
-      check. Creating the *repo* on my hosting account is fine to do for me
-      if I ask you to and you have the access — it's creating an *account*
+      check. Creating the *repo* is fine to do for me if I ask you to and
+      you have the access, on either shape — it's creating an *account*
       that's mine alone, per (b).
 
       **Then do the same for this bootstrap checkout's own `origin`**, not
@@ -348,6 +361,15 @@ building any product code until all of it is done.
    establishes the convention, so it shouldn't be the one exception to it.
    Show me the PR link (or, on the substitute, whatever it produces in its
    place).
+
+   **On a product repo you created empty in step 5(d) there is no default
+   branch to branch off yet**, and that is not a reason to fall back to
+   committing on it directly. An empty repo has no commits and therefore no
+   branch of any kind, so this doc *is* the commit that creates the first
+   one: make the branch, put the doc on it, push it, and let the merge (or
+   the substitute) be what creates the default branch. `git-pr-conventions`'
+   shipping loop is the home for that case and for the push-refspec detail
+   it turns on.
 
    **Then ship step 5(e)'s edit too — same loop, different repo.** That
    auth answer went into a tracked file in this bootstrap checkout, whose
