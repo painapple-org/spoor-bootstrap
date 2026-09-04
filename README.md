@@ -109,8 +109,8 @@ itself to operate**, and `install.sh` sets all three up:
   GitHub API; `gh` is how it authenticates and acts. `install.sh` installs
   the binary only and never logs it in: authenticating it needs a
   decision (which account, which protocol) and an interactive prompt, both
-  of which belong to the first-boot flow. [`STARTUP.md`](./STARTUP.md)
-  step 5 is where a working git identity gets established and verified,
+  of which belong to the first-boot flow. [`STARTUP.md`](./STARTUP.md)'s
+  own step 5 is where a working git identity gets established and verified,
   before anything tries to push.
 
 This is the agent's own host tooling, not a statement about what the
@@ -131,8 +131,8 @@ choice this repo asks you to make, not something it assumes for you.
 **See a worked example first, if you'd rather read than run:**
 [`docs/example-walkthrough.md`](./docs/example-walkthrough.md) takes one
 fictional small business — a five-person coffee roastery with an inherited,
-half-maintained wholesale ordering portal — through the whole of step 5
-below: the interview with plausible answers, the autonomy negotiation, the
+half-maintained wholesale ordering portal — through the whole of item 5 in
+the list below: the interview with plausible answers, the autonomy negotiation, the
 resulting `.env`, an excerpt of the conventions doc it produces, and one
 skill stub shown before and after specialization. It's illustrative, not a
 default; every file it quotes remains the home for its own content.
@@ -160,12 +160,15 @@ default; every file it quotes remains the home for its own content.
    [Before you run `install.sh`](#before-you-run-installsh) above for what
    it does to the box. It installs Docker, uv and `gh` (skipping any already
    present), plus the apt packages needed to fetch them at all (`curl`, a CA
-   bundle, `git`) on an image minimal enough not to have them, and checks
-   that the docker daemon actually came up. It refuses to continue on two
+   bundle, `git`) on an image minimal enough not to have them. It then
+   checks the docker daemon is actually reachable, starting it via systemd
+   if it isn't — and where there's no systemd to start it with (typical
+   inside a container), it says so as an explicit NOT VERIFIED rather than
+   claiming a check it couldn't run. It refuses to continue on two
    things it can't fix for you: an `origin` still pointing at upstream, and
    skill symlinks broken by a ZIP download. Re-running it is safe — every
    step is skipped if it's already done. It does not log `gh` in; that
-   happens in the first-boot flow, step 5 below.
+   happens in the first-boot flow, item 5 of this list.
 
 4. **Pick and install an agentic harness.** Claude Code, OpenCode, Codex
    CLI, or something else — this repo doesn't prefer one.
@@ -209,7 +212,8 @@ reasoning for that is stated once, in
 [`skills/specialize-skills`](./skills/specialize-skills/SKILL.md)'s "Why
 the stubs exist in this shape".
 
-Filling them in is step 5 above, driven by that same SKILL, and it runs off
+Filling them in is item 5 of "Path to a running instance" above, driven by
+that same SKILL, and it runs off
 the interview answers rather than asking you to edit markdown by hand.
 Expect to re-run it, one file at a time, as you work through the shopping
 list below and more of the markers become answerable. See

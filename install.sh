@@ -3,8 +3,9 @@
 # install.sh — pure OS-level bootstrap for a spoor-bootstrap instance:
 # sanity-checks the skill symlinks, installs the three hard requirements
 # (docker, uv, gh cli) plus the handful of apt packages they need to be
-# fetchable at all, and verifies the docker daemon actually came up. Nothing
-# else.
+# fetchable at all, and checks the docker daemon is reachable — starting it
+# where the box has systemd, and saying NOT VERIFIED where it has none.
+# Nothing else.
 #
 # Scope, deliberately narrow: this script is purely mechanical OS/dependency
 # setup. It asks no questions and writes no config — the first-boot
@@ -239,11 +240,21 @@ else
 	# is only on PATH for interactive login shells anyway — which a cron job
 	# or a systemd unit is not. INSTALLER_NO_MODIFY_PATH keeps it from
 	# editing shell profiles it doesn't need to touch.
+	#
+	# Downloaded to a file and then run, rather than piped into sh, for the
+	# same reason as the docker installer above: a pipe hands sh whatever bytes
+	# have arrived and it starts executing them, so a transfer that dies
+	# partway can run a truncated script before curl's own failure is
+	# observable at all. Downloading first makes a partial fetch a failed
+	# download and nothing more.
 	UV_INSTALL_DIR="/usr/local/bin"
 	log "Installing uv into ${UV_INSTALL_DIR}..."
-	curl -LsSf https://astral.sh/uv/install.sh \
-		| $SUDO env UV_INSTALL_DIR="$UV_INSTALL_DIR" INSTALLER_NO_MODIFY_PATH=1 sh \
+	get_uv="$(mktemp)"
+	curl -LsSf https://astral.sh/uv/install.sh -o "$get_uv" \
+		|| fail "Failed to download the uv install script."
+	$SUDO env UV_INSTALL_DIR="$UV_INSTALL_DIR" INSTALLER_NO_MODIFY_PATH=1 sh "$get_uv" \
 		|| fail "uv install script failed."
+	rm -f "$get_uv"
 	hash -r
 	command -v uv >/dev/null 2>&1 \
 		|| fail "uv install script ran but 'uv' is still not on PATH, despite being installed into ${UV_INSTALL_DIR}. Make sure ${UV_INSTALL_DIR} is on PATH, then re-run this script."

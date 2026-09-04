@@ -3,8 +3,8 @@
 # Runs install.sh for real, inside a throwaway fresh-Ubuntu container, and
 # asserts the outcome — so a change that breaks the bootstrap on a genuinely
 # bare box fails CI instead of merely shellcheck-ing clean. Driven by the
-# install-execution job in ../workflows/ci.yml, which mounts the checkout at
-# $SMOKE_SRC. Do not run this on a machine you care about: it installs
+# install-execution job in ../workflows/ci.yml, which mounts the checkout
+# read-only at /src. Do not run this on a machine you care about: it installs
 # docker, uv and gh system-wide and creates a passwordless-sudo account.
 #
 # One invocation per privilege shape install.sh supports:
@@ -44,7 +44,11 @@
 set -euo pipefail
 
 MODE="${1:?usage: install-smoke-test.sh <root|sudo-user>}"
-SRC="${SMOKE_SRC:-/src}"
+# Hardcoded, not configurable: this script is only ever invoked by the
+# install-execution job in ../workflows/ci.yml, and that job's own `docker run`
+# is what decides the mount path. A variable here could disagree with the
+# mount, which is worse than one literal path stated in both places.
+SRC="/src"
 WORK="/work"
 TEST_USER="smoketest"
 DOCKERD_LOG="/tmp/dockerd.log"
