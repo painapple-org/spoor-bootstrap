@@ -177,6 +177,28 @@ jobs:
       - name: Prove spoor-doctor catches a broken deployment
         run: .github/ci/test-doctor.py
 
+  # `spoor-profile` claims a written business profile produces the same artifacts
+  # a live first-boot interview produces. Nothing else in CI could notice if that
+  # stopped being true: the generator would keep exiting 0 and writing a
+  # plausible-looking `.env`. This job generates every profile under examples/
+  # into a real fixture deployment and runs `spoor-doctor` against the result,
+  # asserts the one profile that has a narrated counterpart reproduces that
+  # walkthrough's own `.env` key for key, and asserts an invalid profile is
+  # refused without writing anything. What each case covers lives in the test
+  # script's own header.
+  profile-generator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      # Stdlib-only python3 (tomllib included) and git, both preinstalled on the
+      # runner image. Every remote the fixture uses is a bare repo in a temp
+      # directory and the doctor runs --offline, so this needs no network and no
+      # credentials.
+      - name: Generate every example profile and doctor the result
+        run: .github/ci/test-profile.py
+
   symlinks:
     runs-on: ubuntu-latest
     steps:

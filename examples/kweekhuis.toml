@@ -1,0 +1,125 @@
+# Kweekhuis — a profile that answers the config and defers all of the
+# judgement.
+#
+# Shape it exercises, and the reason it is here: this is what a profile filled
+# in by an owner who has not yet had the autonomy conversation looks like.
+# `[autonomy]` and `[pipeline]` are absent entirely, `[product].stack_conflict`
+# is unanswered, and nobody has decided which private network the dashboard
+# they want is reached over. Every one of those lands in the generated
+# conventions doc as a `TODO(owner)` line naming what is missing and who
+# decides it — which is the whole point of the format having a `judgment` kind
+# at all. Running `./spoor-profile` against it is the demonstration that a
+# half-answered profile produces an honest artifact rather than a plausible
+# invented one.
+#
+# It also exercises the remote shape README steers an owner with no git hosting
+# account toward: a bare repo on the box, created during first boot, with no
+# hosting account and therefore no PR mechanism at all. Note what that means
+# for two fields below — `primary_repo_remote` and `default_branch` are both
+# absent, because there is no hosting slug and the repo has no commits yet.
+
+[profile]
+schema_version = 1
+business = "Kweekhuis"
+summary = """
+A two-person subscription service in Utrecht renting out climate-controlled
+plant cabinets: the cabinet arrives, the customer picks what to grow, and a
+monthly subscription covers the seed pods, the nutrient refills and a swap-out
+if a cabinet fails. 60 subscribers, all consumers, all billed monthly. There is
+no software yet at all — subscriptions live in a spreadsheet and the refill
+schedule lives in one of the owners' heads.
+"""
+
+[product]
+end_user_type = "non-technical"
+repo_path = "/home/spoor/kweekhuis"
+repo_state = "new"
+conventions_doc_path = "AGENTS.md"
+context_location = """
+Nothing written down anywhere. The subscription spreadsheet is the closest
+thing, and the pricing and swap-out policy are in Marijke's head.
+"""
+domain = "kweekhuis.nl"
+# stack_conflict is unanswered on purpose: END_USER_TYPE is non-technical, so
+# the mandated stack applies, and there is no existing repo for it to conflict
+# with — but nobody has confirmed that reading, so it stays a TODO(owner)
+# rather than a conclusion this file draws on the owner's behalf.
+
+[[people]]
+name = "Marijke de Wit"
+role = "co-owner, customers and subscriptions"
+tech_level = "non-technical"
+may_instruct = true
+channel_identity = "418820314"
+
+[[people]]
+name = "Joost Bakhuis"
+role = "co-owner, builds and services the cabinets"
+tech_level = "non-technical"
+may_instruct = true
+channel_identity = "623104778"
+
+[tracker]
+name = "plain-markdown"
+scope = "docs/work/ in the product repo"
+already_in_use = false
+api_key_source = """
+No credential exists: the tracker is markdown files in the product repo, not a
+service. This is a field that does not apply here, not one nobody got to.
+"""
+# item_bar is unanswered: what is worth a tracked item depends on how these two
+# want to read their own board, and neither has an opinion yet.
+
+[comms]
+channel = "telegram"
+alert_target = "418820314"
+alert_target_note = """
+Marijke's own chat, not the shared group. Asked separately from the allowlist
+on purpose: an alert at 03:00 goes to the person who would actually act on it.
+"""
+agent_email = "spoor@kweekhuis.nl"
+token_source = """
+Bot token from BotFather. Blocked: the bot does not exist yet.
+"""
+
+[git]
+branch_naming = "spoor/<item-id>-<short-slug>"
+commit_trailer = "Spoor-Process: <stage>"
+tracker_comment_marker = "— spoor · <stage>"
+
+[internal_tooling]
+wanted = true
+what = """
+A dashboard, wanted from day one rather than eventually: which cabinets are due
+a refill this week, which subscriptions failed to bill, and what this agent has
+been doing.
+"""
+# private_network is unanswered, and this is exactly the case where the
+# generated doc must not record the usual "nothing internal exists yet, so
+# nothing is set up" — the answer above contradicts it. It stays a TODO(owner).
+
+[billing]
+charges = true
+what_is_sold = "A monthly cabinet subscription, per cabinet, billed by card."
+# refund_human is unanswered: a refund on a failed cabinet is a real thing that
+# will happen here, and naming the person who executes it is not inferable from
+# the two names above.
+
+# [autonomy] is absent entirely. AGENTS.md's default guardrails therefore stand
+# in full, and the generated conventions doc says so — with one TODO(owner) per
+# unanswered judgement call rather than a set of deltas nobody agreed to.
+
+# [pipeline] is absent entirely. Which stages this deployment runs is a
+# decision, and it has not been made.
+
+[[vocabulary]]
+term = "cabinet"
+means = "one physical unit at one customer's address. The billing unit, and the thing that fails."
+
+[[vocabulary]]
+term = "swap-out"
+means = "replacing a failed cabinet within 48 hours. Covered by the subscription, and the promise the whole product rests on."
+
+[[vocabulary]]
+term = "refill"
+means = "the monthly pod-and-nutrient shipment. Distinct from a swap-out, though both are scheduled from the same calendar."

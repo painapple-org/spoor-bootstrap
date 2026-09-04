@@ -1,0 +1,1112 @@
+#!/usr/bin/env python3
+#
+# spoor-profile — drive the first-boot flow from a written business profile
+# instead of a live interview.
+#
+# What it is for: the first-boot interview in AGENTS.md is a conversation, and
+# every artifact downstream of it — `.env`, this deployment's conventions doc —
+# is written by hand from what that conversation turned up. That is the right
+# shape for an owner who wants to be asked. It is the wrong shape twice over:
+# for an owner who would rather fill in a file than hold a back-and-forth, and
+# for anyone testing this repo's own onboarding flow, where every dry-run
+# otherwise costs a human or an agent hand-simulating a set of answers turn by
+# turn.
+#
+# So: a profile file holds the answers, and this script does the mechanical
+# half of turning them into artifacts. See docs/non-interactive-onboarding.md
+# for when to reach for this rather than the interview, and
+# profile.example.toml for the format and what each field means.
+#
+# Scope, deliberately narrow. The interview exists to capture business
+# judgement, and a generator that re-derived that judgement would be inventing
+# the very thing the conversation is for:
+#
+#   - **It only transcribes.** Every value it writes is one the profile
+#     already states, or one mechanically derived from several profile values
+#     by a rule this file spells out (there are two: `COMMS_ALLOWLIST` and
+#     `OWNER_TECH_LEVEL`). It never picks a stack, an autonomy delta, a
+#     pipeline stage set or a tracker convention.
+#   - **An unanswered judgement question stays visibly unanswered.** Fields
+#     the profile format marks `# judgment:` may be left out, and what lands
+#     in the conventions doc for a missing one is a `TODO(owner)` line naming
+#     what is absent and who has to decide it — never a plausible default.
+#     `--explain` lists them.
+#   - **It holds no secrets and writes none.** A profile file is a plain
+#     document that may well be committed or mailed around; the two secret
+#     `.env` fields are always written blank, exactly as STARTUP.md step 4
+#     requires of the interview.
+#   - **It re-derives no fact it does not own.** The `.env` schema, including
+#     which fields are required, is `.env.example`'s — read through
+#     `spoor-doctor`'s own parser rather than a second copy of it, so the two
+#     can never disagree about what the schema says.
+#   - **It touches nothing under skills/ or prompts/, and runs no git.** Those
+#     are the judgement half of the flow (STARTUP.md steps 5 and 7); this
+#     script reports them as outstanding rather than pretending to them.
+#
+# Exit status: 0 when every artifact the profile could produce was produced
+# (outstanding and deferred items are reported, and are not failures — they
+# are the boundary this script is honest about), 1 when the profile is invalid
+# or an artifact was refused, 2 when the script could not run at all.
+
+import argparse
+import json
+import os
+import stat
+import sys
+import tomllib
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+from pathlib import Path
+
+SCHEMA_VERSION = 1
+
+# The two `.env` fields that hold a credential. They are written blank whatever
+# a profile says, and a profile that names one at all is rejected rather than
+# quietly ignored: a secret typed into a document that gets mailed around is
+# leaked, and silently dropping it would leave the author believing otherwise.
+SECRET_ENV_KEYS = ("WORK_TRACKER_API_KEY", "COMMS_CHANNEL_TOKEN")
+
+TECH_LEVELS = ("technical", "non-technical")
+
+report = {"written": [], "unchanged": [], "deferred": [], "outstanding": [], "errors": []}
+
+def written(path, detail):
+	report["written"].append({"path": str(path), "detail": detail})
+
+def unchanged(path, detail):
+	report["unchanged"].append({"path": str(path), "detail": detail})
+
+def deferred(what, who_decides, pointer):
+	report["deferred"].append({"what": what, "who_decides": who_decides, "pointer": pointer})
+
+def outstanding(what, why):
+	report["outstanding"].append({"what": what, "why": why})
+
+def error(message):
+	report["errors"].append(message)
+
+# --- the .env schema, borrowed rather than restated -------------------------
+
+def load_doctor(repo_root):
+	"""`spoor-doctor`, imported as a module, for its `.env.example` parser.
+
+	`.env.example` is the one home for the schema and `spoor-doctor` is the one
+	home for reading its `# doctor:` annotations. Writing a second parser here
+	would give this script its own opinion of what the schema says, which is
+	the drift the whole repo is organized against — so it imports that one. The
+	file has no `.py` extension because it is a command; that is the only
+	reason this needs a loader rather than a plain import."""
+	doctor_path = repo_root / "spoor-doctor"
+	if not doctor_path.is_file():
+		return None
+	spec = spec_from_loader("spoor_doctor", SourceFileLoader("spoor_doctor", str(doctor_path)))
+	module = module_from_spec(spec)
+	spec.loader.exec_module(module)
+	return module
+
+# --- the profile format -----------------------------------------------------
+
+# One entry per field the format accepts: its table, its name, whether it has
+# to be answered, and — for a judgement field — who has to decide it and where
+# the reasoning for that decision lives. This table is the one home for the
+# format's field list; profile.example.toml is the one home for what each
+# field *means*, and `--explain` prints this side of it rather than having it
+# retyped into that file's prose.
+#
+# kind:
+#   "required"  a profile that omits it is invalid
+#   "optional"  legitimately absent (an answer that does not exist yet)
+#   "judgment"  legitimately absent, and its absence lands as a TODO(owner)
+FIELDS = [
+	# table, name, kind, who decides (judgment only), pointer (judgment only)
+	("profile", "schema_version", "required", None, None),
+	("profile", "business", "required", None, None),
+	("profile", "summary", "required", None, None),
+
+	("product", "end_user_type", "required", None, None),
+	("product", "repo_path", "required", None, None),
+	("product", "repo_state", "required", None, None),
+	("product", "primary_repo_remote", "optional", None, None),
+	("product", "default_branch", "optional", None, None),
+	("product", "conventions_doc_path", "required", None, None),
+	("product", "existing_conventions_file", "optional", None, None),
+	("product", "others_may_merge_default_branch", "optional", None, None),
+	("product", "merge_deploys_to_production", "optional", None, None),
+	("product", "deploy_pipeline", "optional", None, None),
+	("product", "context_location", "required", None, None),
+	("product", "domain", "optional", None, None),
+	("product", "stack", "judgment", "the owner and the agent, on the merits",
+		"skills/product-tech-stack/SKILL.md, which is mandatory for a non-technical end-user "
+		"and does not apply at all for a technical one"),
+	("product", "stack_rationale", "judgment", "the owner and the agent, on the merits",
+		"the same SKILL — a stack recorded without its reason cannot be revisited"),
+	("product", "stack_conflict", "judgment", "the owner",
+		"skills/product-tech-stack/SKILL.md's section on a product repo that already exists "
+		"in a different stack"),
+
+	("tracker", "name", "required", None, None),
+	("tracker", "base_url", "optional", None, None),
+	("tracker", "scope", "optional", None, None),
+	("tracker", "already_in_use", "optional", None, None),
+	("tracker", "api_key_source", "required", None, None),
+	("tracker", "item_bar", "judgment", "the owner",
+		"skills/work-tracker/SKILL.md — what is worth a tracked item is a call about how the "
+		"owner wants to read the board, not a property of the tracker"),
+
+	("comms", "channel", "required", None, None),
+	("comms", "endpoint", "optional", None, None),
+	("comms", "alert_target", "required", None, None),
+	("comms", "alert_target_note", "optional", None, None),
+	("comms", "agent_email", "optional", None, None),
+	("comms", "token_source", "required", None, None),
+
+	("git", "branch_naming", "required", None, None),
+	("git", "commit_trailer", "required", None, None),
+	("git", "tracker_comment_marker", "required", None, None),
+
+	("internal_tooling", "wanted", "required", None, None),
+	("internal_tooling", "what", "optional", None, None),
+	("internal_tooling", "private_network", "judgment", "the owner",
+		"skills/private-networking/SKILL.md — which mesh, and what the owner has to provision "
+		"for it, is theirs to choose"),
+
+	("billing", "charges", "required", None, None),
+	("billing", "what_is_sold", "optional", None, None),
+	("billing", "refund_human", "judgment", "the owner",
+		"skills/billing-and-payments/SKILL.md's owner/agent split — naming the human who "
+		"executes a refund or a dispute response is not something to infer"),
+	("billing", "provider", "optional", None, None),
+
+	("autonomy", "signoff_before_merge", "judgment", "the owner",
+		"AGENTS.md's default guardrails, which stand unchanged where this is unanswered"),
+	("autonomy", "tightened", "judgment", "the owner",
+		"STARTUP.md step 2 — a tightening nobody asked for is as wrong as a missing one"),
+	("autonomy", "loosened", "judgment", "the owner",
+		"STARTUP.md step 2 — a carve-out the owner did not name may not be assumed"),
+	("autonomy", "gate", "judgment", "the owner",
+		"STARTUP.md step 2 — when the agent may not ship at all depends on what breaks for "
+		"this business when it does"),
+	("autonomy", "unattended_on_deployment", "judgment", "the owner",
+		"skills/deploy-and-monitor/SKILL.md's monitoring section"),
+	("autonomy", "review_trigger", "judgment", "the owner",
+		"STARTUP.md step 2 — the event that reopens this conversation"),
+
+	("pipeline", "stages", "judgment", "the owner and the agent together",
+		"skills/work-pipeline/SKILL.md and prompts/README.md — the stage set is a decision, "
+		"and each stage kept needs a prompt file written for it, which is writing rather than "
+		"filling in a blank"),
+	("pipeline", "stages_declined", "judgment", "the owner and the agent together",
+		"the same two files — a stage deliberately not run is worth recording as decided"),
+	("pipeline", "undecided", "optional", None, None),
+]
+
+# What a missing judgement field is *called* in the `TODO(owner)` line that
+# stands in for it. Kept next to FIELDS rather than folded into it because it
+# is prose for a human reading the generated doc, not part of the format; the
+# consistency check under it fails loudly if a judgement field is ever added
+# without one, so the two cannot drift apart silently.
+JUDGMENT_LABELS = {
+	("product", "stack"): "the product's stack is unrecorded",
+	("product", "stack_rationale"): "the reason for the stack is unrecorded",
+	("product", "stack_conflict"): (
+		"whether the mandated stack conflicts with the stack this repo is already in"
+	),
+	("tracker", "item_bar"): "the bar for creating a tracked item is unrecorded",
+	("internal_tooling", "private_network"): (
+		"which private network anything internal is reached over"
+	),
+	("billing", "refund_human"): "who executes a refund or a dispute response",
+	("autonomy", "signoff_before_merge"): "whether every merge needs sign-off",
+	("autonomy", "tightened"): "what this deployment adds to the stop-and-ask list",
+	("autonomy", "loosened"): "which named carve-outs may run unattended",
+	("autonomy", "gate"): "when this agent may not ship at all",
+	("autonomy", "unattended_on_deployment"): (
+		"what may be done to the running deployment unattended, and what needs sign-off"
+	),
+	("autonomy", "review_trigger"): "what event reopens the autonomy conversation",
+	("pipeline", "stages"): "which pipeline stages this deployment runs",
+	("pipeline", "stages_declined"): "which pipeline stages were deliberately declined",
+}
+
+# Fields inside a `[[people]]` entry. Separate from FIELDS because people are a
+# list: interview questions 1 and 5 are both per-person, and question 5 has
+# three parts (who may instruct, who with channel access deliberately may not,
+# and which decisions belong to which of them) that no single field can hold.
+PERSON_FIELDS = [
+	("name", "required"),
+	("role", "required"),
+	("tech_level", "required"),
+	("may_instruct", "required"),
+	("channel_identity", "conditional"),
+	("excluded_because", "conditional"),
+	("signs_off", "optional"),
+	("may_release_gate", "optional"),
+]
+
+# Repeated tables and their allowed keys, checked so a typo fails loudly rather
+# than being dropped.
+LIST_TABLES = {
+	"people": [name for name, _ in PERSON_FIELDS],
+	"additional_repos": ["remote", "contains"],
+	"vocabulary": ["term", "means"],
+}
+
+def field_index():
+	return {(entry[0], entry[1]): entry for entry in FIELDS}
+
+def judgment_keys():
+	return [(table, name) for table, name, kind, *_ in FIELDS if kind == "judgment"]
+
+_unlabelled = [key for key in judgment_keys() if key not in JUDGMENT_LABELS]
+if _unlabelled:
+	raise SystemExit(
+		"spoor-profile: judgement field(s) with no JUDGMENT_LABELS entry: "
+		+ ", ".join(f"[{table}].{name}" for table, name in _unlabelled)
+		+ ". A TODO(owner) line that only names a config key tells the owner nothing."
+	)
+
+def validate(profile):
+	"""Every way a profile can be wrong, reported together rather than one at a
+	time — an owner filling this in wants the whole list, not a first error."""
+	problems = []
+	index = field_index()
+	known_tables = {table for table, *_ in FIELDS} | set(LIST_TABLES)
+
+	for table in profile:
+		if table not in known_tables:
+			problems.append(f"unknown table [{table}] — see profile.example.toml for the field list")
+
+	for table in LIST_TABLES:
+		value = profile.get(table)
+		if value is None:
+			continue
+		if not isinstance(value, list) or not all(isinstance(entry, dict) for entry in value):
+			problems.append(f"[[{table}]] must be a list of tables")
+			continue
+		for position, entry in enumerate(value, start=1):
+			for key in entry:
+				if key not in LIST_TABLES[table]:
+					problems.append(f"[[{table}]] #{position}: unknown key '{key}'")
+
+	for table, name, kind, *_ in FIELDS:
+		if table in LIST_TABLES:
+			continue
+		section = profile.get(table)
+		if section is not None and not isinstance(section, dict):
+			problems.append(f"[{table}] must be a table")
+			continue
+		value = (section or {}).get(name)
+		if kind == "required" and (value is None or value == ""):
+			problems.append(f"[{table}].{name} is required and is empty or absent")
+
+	for table, section in profile.items():
+		if table in LIST_TABLES or not isinstance(section, dict):
+			continue
+		for name in section:
+			if (table, name) not in index:
+				problems.append(f"unknown field [{table}].{name} — see profile.example.toml")
+
+	version = profile.get("profile", {}).get("schema_version")
+	if version is not None and version != SCHEMA_VERSION:
+		problems.append(
+			f"[profile].schema_version is {version!r}; this spoor-profile writes version {SCHEMA_VERSION}"
+		)
+
+	people = profile.get("people") or []
+	if not people:
+		problems.append("no [[people]] entries — interview question 5 has no answer without at least one")
+	for position, person in enumerate(people, start=1):
+		label = person.get("name") or f"#{position}"
+		for name, kind in PERSON_FIELDS:
+			if kind == "required" and not person.get(name) and person.get(name) is not False:
+				problems.append(f"[[people]] {label}: {name} is required")
+		if person.get("tech_level") not in TECH_LEVELS and person.get("tech_level"):
+			problems.append(
+				f"[[people]] {label}: tech_level is {person['tech_level']!r}, "
+				f"expected one of {', '.join(TECH_LEVELS)}"
+			)
+		if person.get("may_instruct") is True and not person.get("channel_identity"):
+			problems.append(
+				f"[[people]] {label}: may_instruct is true, so channel_identity is required — "
+				"the allowlist is verified identities, not display names"
+			)
+		if person.get("may_instruct") is False and not person.get("excluded_because"):
+			problems.append(
+				f"[[people]] {label}: may_instruct is false, so excluded_because is required — "
+				"a deliberate exclusion with no reason reads as an oversight"
+			)
+
+	if not [p for p in people if p.get("may_instruct")]:
+		problems.append(
+			"no person has may_instruct = true. That is a real answer only where the channel "
+			"cannot verify an identity at all; state it by setting [comms].channel = \"none\", "
+			"which is what .env.example's own COMMS_ALLOWLIST spec keys off."
+		)
+
+	for key in SECRET_ENV_KEYS:
+		for table, section in profile.items():
+			if isinstance(section, dict) and key in section:
+				problems.append(
+					f"[{table}].{key} names a secret. A profile file is a plain document; "
+					"secrets are pasted into .env by hand and never pass through here."
+				)
+
+	end_user = profile.get("product", {}).get("end_user_type")
+	if end_user and end_user not in TECH_LEVELS:
+		problems.append(
+			f"[product].end_user_type is {end_user!r}, expected one of {', '.join(TECH_LEVELS)}"
+		)
+
+	return problems
+
+# --- deriving the .env ------------------------------------------------------
+
+def allowlisted(profile):
+	return [person for person in profile.get("people", []) if person.get("may_instruct")]
+
+def derive_allowlist(profile):
+	"""COMMS_ALLOWLIST, in profile order.
+
+	Derivation rule: the `channel_identity` of every person with
+	`may_instruct = true`, and nobody else. .env.example is the home for why
+	this field is a list and why identities rather than display names go in
+	it."""
+	return ",".join(person["channel_identity"] for person in allowlisted(profile))
+
+def derive_owner_tech_level(profile):
+	"""OWNER_TECH_LEVEL, and the sentence explaining how it got that value.
+
+	Derivation rule: the least technical `tech_level` among the people who may
+	instruct. .env.example is the home for why the field rounds that way and
+	for what it is then used for; this is only the arithmetic. Where the
+	channel verifies nobody, the people list still answers it — a solo owner
+	with `may_instruct = false` is not a thing the interview produces, so the
+	fallback is every person in the profile."""
+	people = allowlisted(profile) or profile.get("people", [])
+	levels = [person.get("tech_level") for person in people]
+	if "non-technical" in levels:
+		who = [p["name"] for p in people if p.get("tech_level") == "non-technical"]
+		return "non-technical", (
+			f"Derived: rounded to the least technical of the {len(people)} person/people this field "
+			f"speaks to: {', '.join(who)}. The per-person register, which overrides this "
+			"whenever the recipient is known, is in the conventions doc."
+		)
+	return "technical", (
+		f"Derived: every one of the {len(people)} person/people this field speaks to answered technical, "
+		"so there is nothing to round. The per-person register is in the conventions doc."
+	)
+
+def env_values(profile, schema_keys):
+	"""(values, per-key note) for every key .env.example declares.
+
+	A key in the schema with no rule here is a hard error rather than an
+	omission: it means `.env.example` grew a field and this script was never
+	taught to fill it, and a silently-missing key is exactly the state
+	`spoor-doctor`'s `env-schema` check exists to catch after the fact."""
+	product = profile.get("product", {})
+	tracker = profile.get("tracker", {})
+	comms = profile.get("comms", {})
+	owner_level, owner_note = derive_owner_tech_level(profile)
+
+	values = {
+		"PRODUCT_REPO_PATH": (product.get("repo_path", ""), None),
+		"CONVENTIONS_DOC_PATH": (
+			product.get("conventions_doc_path", ""),
+			"Relative to PRODUCT_REPO_PATH." if not str(product.get("conventions_doc_path", "")).startswith("/") else None,
+		),
+		"WORK_TRACKER": (tracker.get("name", ""), None),
+		"WORK_TRACKER_API_KEY": ("", f"Secret, so left blank here. Comes from: {tracker.get('api_key_source', '')}"),
+		"WORK_TRACKER_BASE_URL": (tracker.get("base_url", ""), None),
+		"COMMS_CHANNEL": (comms.get("channel", ""), None),
+		"COMMS_CHANNEL_TOKEN": ("", f"Secret, so left blank here. Comes from: {comms.get('token_source', '')}"),
+		"COMMS_CHANNEL_ENDPOINT": (comms.get("endpoint", ""), None),
+		"COMMS_ALERT_TARGET": (comms.get("alert_target", ""), comms.get("alert_target_note")),
+		"COMMS_ALLOWLIST": (
+			derive_allowlist(profile),
+			"Derived: every person in the profile with may_instruct = true, in profile order. "
+			"Who each identity is, and who with channel access is deliberately not here, is in "
+			"the conventions doc.",
+		),
+		"AGENT_EMAIL_ADDRESS": (comms.get("agent_email", ""), None),
+		"OWNER_TECH_LEVEL": (owner_level, owner_note),
+		"END_USER_TYPE": (product.get("end_user_type", ""), None),
+	}
+
+	missing = [key for key in schema_keys if key not in values]
+	return values, missing
+
+def blank_reason(key, spec, values, doctor):
+	"""Why a blank field is blank, for a field this script left blank.
+
+	Every blank in a generated `.env` carries one: a blank with no note reads
+	as an oversight, and a later session cannot tell a field that does not
+	apply from one nobody got to. Where the reason is the schema's own
+	conditional, it is read off the `# doctor:` spec rather than restated."""
+	flat = {name: value for name, (value, _) in values.items()}
+	if key in SECRET_ENV_KEYS:
+		return None  # its note already says where the secret comes from
+	if spec is None:
+		return "No `# doctor:` spec on this field, so nothing here can say whether it may be blank."
+	required, why = doctor.spec_requires(spec, flat)
+	if required is False:
+		return f"Left blank, and `.env.example` agrees it may be: `# doctor: {spec}` — {why}."
+	if required is True:
+		return (
+			f"Left blank, and `.env.example` declares it `{spec}`. The profile had no answer, so "
+			"this is a real gap: either answer it in the profile and re-run, or it is a "
+			"shopping-list item to paste in by hand."
+		)
+	return f"Left blank; the `# doctor: {spec}` spec on this field could not be read."
+
+def render_env(profile, schema, values, doctor):
+	lines = [
+		"# .env — generated by ./spoor-profile from a written business profile.",
+		"#",
+		f"# Business: {profile['profile']['business']}",
+		"# Field list, and what each key means: .env.example, which is the schema.",
+		"# Every blank below carries the reason it is blank. Secrets are always blank",
+		"# here: they are pasted in by hand, per STARTUP.md step 4.",
+		"",
+	]
+	for key, spec in schema:
+		value, note = values[key]
+		value = "" if value is None else str(value)
+		comment = []
+		if note:
+			comment.append(note)
+		if not value:
+			reason = blank_reason(key, spec, values, doctor)
+			if reason:
+				comment.append(reason)
+		for paragraph in comment:
+			for line in wrap(paragraph, 72):
+				lines.append(f"# {line}")
+		lines.append(f"{key}={value}")
+		lines.append("")
+	return "\n".join(lines).rstrip() + "\n"
+
+def wrap(text, width):
+	words = str(text).split()
+	out, current = [], ""
+	for word in words:
+		candidate = f"{current} {word}".strip()
+		if len(candidate) > width and current:
+			out.append(current)
+			current = word
+		else:
+			current = candidate
+	if current:
+		out.append(current)
+	return out or [""]
+
+# --- the conventions doc ----------------------------------------------------
+
+def todo(what, who_decides, pointer):
+	deferred(what, who_decides, pointer)
+	body = (
+		f"**TODO(owner): {what}.** The profile left this unanswered, and `./spoor-profile` "
+		f"will not guess it — decided by {who_decides}. Read {pointer}, then write the "
+		"answer here."
+	)
+	return "\n".join(wrap(body, 86)) + "\n"
+
+def sentence(text):
+	"""A profile answer used mid-sentence, ending in exactly one full stop."""
+	text = str(text).strip()
+	return text if text.endswith((".", "!", "?")) else text + "."
+
+def section(title, body):
+	return f"## {title}\n\n{body.rstrip()}\n"
+
+def bullets(items):
+	return "\n".join(f"- {item}" for item in items)
+
+def judgment_or_todo(profile, table, name, renderer):
+	"""A judgement field's rendered answer, or the TODO that stands in for it."""
+	value = (profile.get(table) or {}).get(name)
+	_, _, _, who, pointer = field_index()[(table, name)]
+	if value in (None, "", [], {}):
+		return todo(JUDGMENT_LABELS[(table, name)], who, pointer)
+	return renderer(value)
+
+def render_conventions_doc(profile, repo_root):
+	product = profile["product"]
+	tracker = profile["tracker"]
+	comms = profile["comms"]
+	git = profile["git"]
+	business = profile["profile"]["business"]
+	people = profile.get("people", [])
+
+	parts = [
+		f"# {business} — conventions for this deployment's agent instance\n",
+		f"{profile['profile']['summary'].strip()}\n",
+		"This file is this deployment's own source of truth for everything below. It was\n"
+		"generated by `./spoor-profile` from a written business profile rather than written\n"
+		"during a live first-boot interview, so anything it records is an answer that profile\n"
+		"stated. Anything marked `TODO(owner)` is a judgement call the profile deliberately\n"
+		f"left open. The bootstrap checkout this deployment runs from is at `{repo_root}`;\n"
+		"its `AGENTS.md`, `STARTUP.md`, `.env.example` and `skills/` are the homes this file\n"
+		"points at rather than copies.\n",
+	]
+
+	# Autonomy — the whole of STARTUP.md step 2, and pure judgement.
+	autonomy = profile.get("autonomy") or {}
+	body = [
+		"AGENTS.md in the bootstrap checkout is the home for the default guardrail list, and\n"
+		"it is in force in full. Only the deltas below change it; everything not named here\n"
+		"stands exactly as that file has it.\n",
+	]
+	body.append(judgment_or_todo(
+		profile, "autonomy", "tightened",
+		lambda items: "**Tightened — needs the owner's explicit yes:**\n\n" + bullets(items) + "\n",
+	))
+	body.append(judgment_or_todo(
+		profile, "autonomy", "loosened",
+		lambda items: "**Loosened — may run unattended, reported afterwards:**\n\n" + bullets(items) + "\n",
+	))
+	body.append(judgment_or_todo(
+		profile, "autonomy", "gate",
+		lambda value: f"**When shipping is gated:** {value}\n",
+	))
+	body.append(judgment_or_todo(
+		profile, "autonomy", "signoff_before_merge",
+		lambda value: (
+			"**Sign-off before every merge:** "
+			+ ("required." if value is True else "not required; routine work self-merges.")
+			+ "\n"
+		),
+	))
+	body.append(judgment_or_todo(
+		profile, "autonomy", "review_trigger",
+		lambda value: f"**What reopens this section:** {value}\n",
+	))
+	parts.append(section("Autonomy and stop-and-ask: the deltas", "\n".join(body)))
+
+	# Git and PR conventions.
+	body = []
+	if product.get("existing_conventions_file"):
+		body.append(
+			f"This repo already had conventions and they own them: `{product['existing_conventions_file']}`\n"
+			"is the home for branch naming, commit format and review policy, and they apply to this\n"
+			"agent the same way they apply to a human on this team. Only the additions below are\n"
+			"this file's, because they answer questions no human on the team needed answered.\n"
+		)
+	body.append(bullets([
+		f"Default branch: `{product['default_branch']}`" if product.get("default_branch")
+		else "Default branch: not yet — the product repo has no commits, so the first shipped "
+		     "change is what creates it.",
+		f"Branch naming: `{git['branch_naming']}`",
+		f"Commit process trailer, in the body of every commit: `{git['commit_trailer']}`",
+		f"Work-item comment marker, ending every comment this agent writes: `{git['tracker_comment_marker']}`",
+	]))
+	if product.get("others_may_merge_default_branch") is not None:
+		body.append(
+			"\nMay anyone other than this agent merge to the default branch: "
+			f"{'yes' if product['others_may_merge_default_branch'] else 'no'}.\n"
+		)
+	if product.get("merge_deploys_to_production") is not None:
+		body.append(
+			"Does a merge to the default branch deploy to production by itself: "
+			f"{'yes — every routine merge is a production event' if product['merge_deploys_to_production'] else 'no'}.\n"
+		)
+	if product.get("deploy_pipeline"):
+		body.append(f"How the product reaches production today: {product['deploy_pipeline']}\n")
+	body.append(
+		"\nThe exact push invocation, the account it authenticates as, whether this agent may\n"
+		"merge its own PRs per repo, and whether this remote has a PR mechanism at all are not\n"
+		"here: `skills/git-pr-conventions/SKILL.md`'s `Auth` section is their one home, filled\n"
+		"in against a real push per STARTUP.md step 5.\n"
+	)
+	parts.append(section("Git and PR conventions", "\n".join(body)))
+
+	# The repos the product spans.
+	extra = profile.get("additional_repos") or []
+	body = [
+		f"`PRODUCT_REPO_PATH` is `{product['repo_path']}`"
+		+ (f", the clone of `{product['primary_repo_remote']}`" if product.get("primary_repo_remote") else "")
+		+ f". Repo state at first boot: {product['repo_state']}.\n",
+	]
+	if extra:
+		body.append(
+			"This product spans more than one repo. `PRODUCT_REPO_PATH` is singular and names the\n"
+			"primary one, so a skill saying \"the product repo\" means that one unless it names\n"
+			"another:\n\n" + bullets([f"`{r['remote']}` — {r['contains']}" for r in extra]) + "\n"
+		)
+	else:
+		body.append("This product is one repo.\n")
+	parts.append(section("The repos this product spans", "\n".join(body)))
+
+	# People: questions 1 and 5, the parts .env cannot hold.
+	rows = ["| Person | Role | Written to as | May instruct | Notes |", "|---|---|---|---|---|"]
+	for person in people:
+		notes = []
+		if not person.get("may_instruct"):
+			notes.append(f"deliberately not on the allowlist: {person['excluded_because']}")
+		if person.get("may_release_gate"):
+			notes.append("may release a sign-off gate without being able to initiate work")
+		if person.get("signs_off"):
+			notes.append(f"sign-off specifically theirs: {person['signs_off']}")
+		rows.append(
+			f"| {person['name']} | {person['role']} | {person['tech_level']} | "
+			f"{'yes' if person.get('may_instruct') else 'no'} | {'; '.join(notes) or '—'} |"
+		)
+	body = [
+		"`COMMS_ALLOWLIST` in `.env` is the literal list of identities permitted to instruct\n"
+		"this agent, and `OWNER_TECH_LEVEL` is the single default register. Neither can hold\n"
+		"what follows, which is why it is here: who each identity is, who with channel access\n"
+		"is deliberately excluded, which decisions belong to which specific person, and how\n"
+		"each of them wants to be written to. The per-person register overrides\n"
+		"`OWNER_TECH_LEVEL` whenever the recipient is known.\n",
+		"\n".join(rows) + "\n",
+	]
+	if len(allowlisted(profile)) == 1:
+		body.append(
+			"\nOne person may instruct this agent, and that has a cost with no fix: there is\n"
+			"nobody to escalate to when they are unreachable.\n"
+			"`skills/comms-channel/SKILL.md` is the home for what to do about that.\n"
+		)
+	parts.append(section("Who may instruct this agent, and how each of them is written to", "\n".join(body)))
+
+	# Stack.
+	if product.get("end_user_type") == "non-technical":
+		body = (
+			"`END_USER_TYPE` is `non-technical`, so `skills/product-tech-stack/SKILL.md` is the\n"
+			"one home for the stack and it is mandatory rather than a choice. Nothing is copied\n"
+			"out of it here.\n"
+		)
+		if (product.get("stack_conflict") or "").strip():
+			body += f"\nThis deployment's instance of the conflict that SKILL describes: {product['stack_conflict']}\n"
+		elif product.get("repo_state") == "existing":
+			body += "\n" + judgment_or_todo(
+				profile, "product", "stack_conflict", lambda value: f"{value}\n"
+			)
+	else:
+		body = (
+			"`END_USER_TYPE` is `technical`, so `skills/product-tech-stack/SKILL.md` does not\n"
+			"apply and the stack is a decision on the merits — which leaves it with no home but\n"
+			"this file.\n\n"
+		)
+		body += judgment_or_todo(profile, "product", "stack", lambda value: f"**Stack:** {value}\n")
+		body += "\n" + judgment_or_todo(
+			profile, "product", "stack_rationale", lambda value: f"**Why:** {value}\n"
+		)
+	parts.append(section("The product's stack", body))
+
+	# What is allowed unattended on the running deployment.
+	parts.append(section(
+		"On the running deployment: unattended versus sign-off",
+		judgment_or_todo(
+			profile, "autonomy", "unattended_on_deployment",
+			lambda items: (
+				"Concretely, on the deployment itself:\n\n"
+				+ (bullets(items) if isinstance(items, list) else str(items))
+				+ "\n\nThe monitoring section of `skills/deploy-and-monitor/SKILL.md` is the home for\n"
+				  "the general shape of this; the boundary above is this deployment's own.\n"
+			),
+		),
+	))
+
+	# Internal tooling and private reachability.
+	internal = profile.get("internal_tooling") or {}
+	if internal.get("wanted"):
+		body = (
+			f"Yes: {sentence(internal.get('what') or 'something internal was asked for but not described')}\n"
+			"`skills/private-networking/SKILL.md` is the home for how anything internal gets\n"
+			"reached without being published on the public internet.\n\n"
+		)
+		body += judgment_or_todo(
+			profile, "internal_tooling", "private_network",
+			lambda value: (
+				f"**The private network agreed:** {value}. Nothing is exposed on it yet, which\n"
+				"stays true until the first internal tool actually answers — not the same\n"
+				"statement as \"no mesh\".\n"
+			),
+		)
+	else:
+		body = (
+			"Nothing internal exists yet, so nothing is set up. This is settled, not open: no\n"
+			"network gets built for a tool that does not exist.\n"
+			"`skills/private-networking/SKILL.md` is where to look when the first internal tool\n"
+			"arrives.\n"
+		)
+	parts.append(section("Whether anything internal needs to be privately reachable", body))
+
+	# Billing.
+	billing = profile.get("billing") or {}
+	if billing.get("charges"):
+		body = (
+			f"Yes. What is sold: {sentence(billing.get('what_is_sold') or 'not described in the profile')}\n"
+			"`skills/billing-and-payments/SKILL.md` is the home for the mechanism and for the\n"
+			"owner/agent split; the provider account is the owner's to create, and everything\n"
+			"downstream of it stays marked in that file until it exists.\n\n"
+		)
+		if billing.get("provider"):
+			body += f"Provider: {billing['provider']}.\n\n"
+		body += judgment_or_todo(
+			profile, "billing", "refund_human",
+			lambda value: (
+				f"**Who executes a refund or a dispute response:** {value}. This agent may not,\n"
+				"per that SKILL's split.\n"
+			),
+		)
+	else:
+		body = (
+			"Nothing is sold yet, so there is no provider and no integration. This is settled,\n"
+			"not open. `skills/billing-and-payments/SKILL.md` is the home for the mechanism if\n"
+			"that changes.\n"
+		)
+	parts.append(section("Whether the product charges anyone", body))
+
+	# Business context, tracker bar, vocabulary, domain.
+	parts.append(section(
+		"Where the business's own content and docs live",
+		f"{product['context_location']}\n\nWithout this recorded, a proactive or refining pass has\n"
+		"nothing non-generic to ground a proposal in.\n",
+	))
+
+	body = [
+		f"Tracker: `{tracker['name']}`"
+		+ (f", scope `{tracker['scope']}`" if tracker.get("scope") else "")
+		+ (f", at {tracker['base_url']}" if tracker.get("base_url") else "")
+		+ ".\n",
+	]
+	if tracker.get("already_in_use") is not None:
+		body.append(
+			("This tracker is one the team already lives in with work in flight, so its existing\n"
+			 "conventions predate this agent and are not re-litigated.\n")
+			if tracker["already_in_use"] else
+			"This tracker is not one anybody was already using.\n"
+		)
+	body.append("\n" + judgment_or_todo(
+		profile, "tracker", "item_bar", lambda value: f"**The bar for creating a tracked item:** {value}\n"
+	))
+	body.append(
+		"\nThe state-name mapping, the label names and the access mechanism are not here:\n"
+		"`skills/work-tracker/SKILL.md` is their one home, filled in by the specialization pass.\n"
+	)
+	parts.append(section("The work tracker", "\n".join(body)))
+
+	vocabulary = profile.get("vocabulary") or []
+	if vocabulary:
+		parts.append(section(
+			"Product and team vocabulary",
+			"Words this business uses that a generic reading would get wrong:\n\n"
+			+ bullets([f"**{v['term']}** — {v['means']}" for v in vocabulary]) + "\n",
+		))
+	if product.get("domain"):
+		parts.append(section("Domain", f"`{product['domain']}`\n"))
+
+	return "\n".join(parts).rstrip() + "\n"
+
+# --- writing ----------------------------------------------------------------
+
+def write_env(repo_root, text, dry_run):
+	path = repo_root / ".env"
+	if path.exists():
+		mode = stat.S_IMODE(path.stat().st_mode)
+		if mode != 0o600 and not dry_run:
+			path.chmod(0o600)
+			unchanged(path, f"already existed — contents left untouched; mode narrowed from {mode:04o} to 0600")
+		else:
+			unchanged(path, f"already existed — contents left untouched (mode {mode:04o})")
+		outstanding(
+			f"{path} already existed, so nothing was written to it",
+			"An existing .env was written by something other than this run. Compare it against "
+			"the generated text (--dry-run prints it) and edit it by hand, per STARTUP.md step 4.",
+		)
+		return False
+	if dry_run:
+		written(path, "would be created, mode 0600")
+		return True
+	# Created 0600 rather than chmod'd afterwards: a file that starts out 0600
+	# is never briefly wrong. skills/deploy-and-monitor/SKILL.md's secrets
+	# section is the home for why that mode is a standing invariant.
+	handle = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+	with os.fdopen(handle, "w", encoding="utf-8") as stream:
+		stream.write(text)
+	written(path, "created, mode 0600")
+	return True
+
+def resolve_conventions_path(profile):
+	product = profile["product"]
+	doc = Path(product["conventions_doc_path"]).expanduser()
+	if doc.is_absolute():
+		return doc
+	return Path(product["repo_path"]).expanduser() / doc
+
+def write_conventions_doc(profile, text, dry_run):
+	path = resolve_conventions_path(profile)
+	if not path.parent.is_dir():
+		outstanding(
+			f"the conventions doc could not be written to {path}",
+			f"{path.parent} is not a directory on this box yet. PRODUCT_REPO_PATH is a path or a "
+			"clone target, so on a first boot it often is not one — STARTUP.md step 5(d) is where "
+			"it becomes one. Re-run this script once it exists.",
+		)
+		return False
+	if path.exists():
+		unchanged(path, "already existed — left untouched")
+		outstanding(
+			f"{path} already existed, so the conventions doc was not written",
+			"Either it is a doc from an earlier run (compare it with --dry-run's output), or the "
+			"profile named a file that belongs to the product repo. STARTUP.md step 6 wants a "
+			"clearly-named sibling in that second case.",
+		)
+		return False
+	if dry_run:
+		written(path, "would be created")
+		return True
+	path.write_text(text, encoding="utf-8")
+	written(path, "created")
+	return True
+
+# --- what this script deliberately does not do ------------------------------
+
+def record_outstanding_flow_steps(profile):
+	"""The parts of the first-boot flow this script cannot do, named rather than
+	left to be noticed. Every one of them is judgement, a credential, or a
+	network operation — the three things a document of answers cannot carry."""
+	outstanding(
+		"a working git identity, verified against a real push",
+		"STARTUP.md step 5. An interactive `gh auth login` and a `git push --dry-run` per repo, "
+		"plus reading this remote's live branch protection and recording all of it in "
+		"skills/git-pr-conventions/SKILL.md's Auth section. No profile can hold a credential or "
+		"contact a remote.",
+	)
+	outstanding(
+		"shipping both generated artifacts through a branch and a PR",
+		"STARTUP.md step 6. This script writes files into a working tree and runs no git at all.",
+	)
+	outstanding(
+		"the specialization pass over skills/",
+		"STARTUP.md step 7. Converting each TODO(specialize) marker into a real answer is writing, "
+		"not filling in a blank, and specialize-skills is explicit that inventing a plausible "
+		"specific is the failure it exists to prevent. This script touches nothing under skills/.",
+	)
+	stages = (profile.get("pipeline") or {}).get("stages") or []
+	outstanding(
+		"one stage prompt per pipeline stage kept"
+		+ (f" ({', '.join(stages)})" if stages else ""),
+		"STARTUP.md step 7 and prompts/README.md. A stage prompt is the most business-specific "
+		"text in the setup and a pre-written one is a confident wrong instruction obeyed on every "
+		"scheduled run. This script writes none.",
+	)
+	outstanding(
+		"the self-provisioning shopping list",
+		"STARTUP.md step 8, as AGENTS.md's own section defines it. The two secret .env fields above "
+		"are on it by construction; the rest depends on what this profile left blank.",
+	)
+	outstanding(
+		"running ./spoor-doctor and reading its output",
+		"STARTUP.md step 9. Do it after this script, and again once the secrets are pasted in. The "
+		"required-value FAIL on exactly the blank secrets is the expected end state, not a problem.",
+	)
+
+# --- reporting --------------------------------------------------------------
+
+def print_report(profile_path, repo_root, dry_run):
+	prefix = "would write" if dry_run else "wrote"
+	noun = "would be written" if dry_run else "written"
+	print(f"spoor-profile — {profile_path}\n")
+	print(f"repo root: {repo_root}\n")
+
+	if report["written"]:
+		print(f"{prefix.upper()}")
+		for item in report["written"]:
+			print(f"    {item['path']}  ({item['detail']})")
+		print()
+	if report["unchanged"]:
+		print("LEFT ALONE")
+		for item in report["unchanged"]:
+			print(f"    {item['path']}  ({item['detail']})")
+		print()
+	if report["deferred"]:
+		print("DEFERRED — judgement the profile left open, standing as TODO(owner) in the doc")
+		for item in report["deferred"]:
+			print(f"    {item['what']}")
+			print(f"        decided by: {item['who_decides']}")
+			for line in wrap(f"read: {item['pointer']}", 84):
+				print(f"        {line}")
+		print()
+	if report["outstanding"]:
+		print("STILL NEEDS A HUMAN OR AN AGENT — not something a profile can carry")
+		for item in report["outstanding"]:
+			print(f"    {item['what']}")
+			for line in wrap(item["why"], 84):
+				print(f"        {line}")
+		print()
+	if report["errors"]:
+		print("ERRORS")
+		for message in report["errors"]:
+			print(f"    {message}")
+		print()
+
+	print(
+		f"{len(report['written'])} artifact(s) {noun}, {len(report['deferred'])} judgement "
+		f"call(s) deferred, {len(report['outstanding'])} item(s) still need a human or an agent."
+	)
+
+def print_explanation():
+	print("spoor-profile — what each profile field is for\n")
+	print("Field meanings live in profile.example.toml. This is the other half: where each")
+	print("field lands, and which of them this script refuses to guess.\n")
+	print("Fields that must be answered:")
+	for table, name, kind, _, _ in FIELDS:
+		if kind == "required":
+			print(f"    [{table}].{name}")
+	print("\nFields that may legitimately be absent:")
+	for table, name, kind, _, _ in FIELDS:
+		if kind == "optional":
+			print(f"    [{table}].{name}")
+	print("\nJudgement calls — leave any of these out and the conventions doc gets a TODO(owner)")
+	print("naming it, never a guess:")
+	for table, name, kind, who, pointer in FIELDS:
+		if kind != "judgment":
+			continue
+		print(f"    [{table}].{name}")
+		print(f"        decided by: {who}")
+		for line in wrap(f"read: {pointer}", 84):
+			print(f"        {line}")
+	print("\nPer-person fields, because interview questions 1 and 5 are both per-person:")
+	for name, kind in PERSON_FIELDS:
+		print(f"    [[people]].{name} ({kind})")
+	print("\nThe two .env fields this script always writes blank, whatever a profile says:")
+	for key in SECRET_ENV_KEYS:
+		print(f"    {key}")
+	print("\nThe .env keys themselves, and which are required, are .env.example's — read there.")
+
+# --- driver -----------------------------------------------------------------
+
+def main():
+	parser = argparse.ArgumentParser(
+		description=(
+			"Generate a spoor-bootstrap deployment's .env and conventions doc from a written "
+			"business profile, instead of from a live first-boot interview."
+		),
+	)
+	parser.add_argument("profile", nargs="?", help="the profile file to read (TOML)")
+	parser.add_argument(
+		"--repo-root",
+		default=str(Path(__file__).resolve().parent),
+		help="the spoor-bootstrap checkout to write into (default: this script's own directory)",
+	)
+	parser.add_argument(
+		"--dry-run",
+		action="store_true",
+		help="validate and report, writing nothing; prints the generated files with --show",
+	)
+	parser.add_argument(
+		"--show",
+		action="store_true",
+		help="print the generated file contents as well as the report",
+	)
+	parser.add_argument(
+		"--explain",
+		action="store_true",
+		help="print the field list, what is required, and which fields are judgement calls",
+	)
+	parser.add_argument(
+		"--json",
+		action="store_true",
+		dest="as_json",
+		help="emit the report as JSON instead of text",
+	)
+	arguments = parser.parse_args()
+
+	if arguments.explain:
+		print_explanation()
+		return 0
+	if not arguments.profile:
+		parser.error("a profile file is required (or pass --explain)")
+
+	repo_root = Path(arguments.repo_root).resolve()
+	if not (repo_root / ".env.example").is_file():
+		print(
+			f"spoor-profile: {repo_root} does not look like a spoor-bootstrap checkout "
+			"(no .env.example). Pass --repo-root.",
+			file=sys.stderr,
+		)
+		return 2
+
+	doctor = load_doctor(repo_root)
+	if doctor is None:
+		print(
+			f"spoor-profile: {repo_root}/spoor-doctor is missing, and it owns the parser for "
+			".env.example's `# doctor:` annotations. Nothing here reimplements that.",
+			file=sys.stderr,
+		)
+		return 2
+
+	profile_path = Path(arguments.profile).expanduser()
+	if not profile_path.is_file():
+		print(f"spoor-profile: {profile_path} is not a file", file=sys.stderr)
+		return 2
+	try:
+		profile = tomllib.loads(profile_path.read_text(encoding="utf-8"))
+	except tomllib.TOMLDecodeError as failure:
+		print(f"spoor-profile: {profile_path} is not valid TOML: {failure}", file=sys.stderr)
+		return 2
+
+	problems = validate(profile)
+	if problems:
+		print(f"spoor-profile: {profile_path} is not a valid profile.\n", file=sys.stderr)
+		for problem in problems:
+			print(f"  - {problem}", file=sys.stderr)
+		print(
+			f"\n{len(problems)} problem(s). Nothing was written. `--explain` lists every field.",
+			file=sys.stderr,
+		)
+		return 1
+
+	schema = doctor.parse_schema((repo_root / ".env.example").read_text(encoding="utf-8"))
+	values, unmapped = env_values(profile, [key for key, _ in schema])
+	if unmapped:
+		print(
+			"spoor-profile: .env.example declares key(s) this script has no rule for: "
+			+ ", ".join(unmapped)
+			+ ".\nA generated .env missing a declared key fails spoor-doctor's env-schema check, so "
+			"this stops here rather than writing one. Add the mapping to env_values().",
+			file=sys.stderr,
+		)
+		return 1
+
+	bad = [
+		f"{key}={value!r}" for key, (value, _) in values.items()
+		if value and doctor.is_placeholder(str(value))
+	]
+	if bad:
+		print(
+			"spoor-profile: the profile produced value(s) spoor-doctor reads as placeholders "
+			"rather than answers: " + ", ".join(bad) + ".\nAnswer them for real in the profile, "
+			"or leave the field out — a plausible-looking non-answer is worse than a blank.",
+			file=sys.stderr,
+		)
+		return 1
+
+	env_text = render_env(profile, schema, values, doctor)
+	doc_text = render_conventions_doc(profile, repo_root)
+
+	write_env(repo_root, env_text, arguments.dry_run)
+	write_conventions_doc(profile, doc_text, arguments.dry_run)
+	record_outstanding_flow_steps(profile)
+
+	if arguments.as_json:
+		print(json.dumps({
+			"profile": str(profile_path),
+			"repo_root": str(repo_root),
+			"dry_run": arguments.dry_run,
+			"env": {key: value for key, (value, _) in values.items() if key not in SECRET_ENV_KEYS},
+			"report": report,
+		}, indent=2))
+		return 0
+
+	print_report(profile_path, repo_root, arguments.dry_run)
+	if arguments.show:
+		print("\n--- .env ---\n")
+		print(env_text)
+		print(f"\n--- {resolve_conventions_path(profile)} ---\n")
+		print(doc_text)
+	return 0
+
+if __name__ == "__main__":
+	sys.exit(main())

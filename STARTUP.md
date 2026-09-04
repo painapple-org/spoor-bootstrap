@@ -26,8 +26,11 @@ covers. Then come back here and do the following, in order. Don't start
 building any product code until all of it is done.
 
 1. Run the first-boot interview exactly as AGENTS.md's "The first-boot
-   interview" section lists it — that section is the complete set of
-   questions, so work from it rather than from any list here. Ask one at a
+   interview" section lists it — that section is the complete set of the
+   questions *about your business*, so work from it rather than from any
+   list here. Steps 2 and 3 below are the rest of the same conversation
+   and nothing else adds to it; that section's own closing note says so
+   from the other side. Ask one at a
    time, don't assume answers, and push back gently on a vague answer the
    way you would in any planning conversation — a one-word answer isn't
    enough to write a real .env or conventions doc from.
@@ -342,6 +345,18 @@ building any product code until all of it is done.
      fact that everything I didn't change still stands as written there.
      Don't copy that list in; point at AGENTS.md as its home and record the
      deltas.
+   - **who each identity on `COMMS_ALLOWLIST` actually is, and how each of
+     them wants to be written to**, from the interview's first and fifth
+     questions. Those two are per-person and `.env` is not: `COMMS_ALLOWLIST`
+     is a flat list of identities and `OWNER_TECH_LEVEL` is a single switch,
+     and both of those fields' own comments in `.env.example` point at *this*
+     doc for the rest. So this is the only home for who each identity
+     belongs to, who with channel access is deliberately not on the list and
+     why, which decisions belong to one specific person rather than to any
+     of them, and the per-person register that overrides `OWNER_TECH_LEVEL`
+     whenever the recipient is known. Nothing else records any of it, and a
+     future session reading only `.env` sees a list of opaque ids with no
+     people attached to them.
    - the git/PR conventions you'll operate under (branch, commit, push, PR,
      self-merge for routine work), including this deployment's branch
      naming convention and its default branch name.
@@ -674,6 +689,59 @@ file, each time one of those provisioning blockers clears and a
 `TODO(specialize)` marker becomes answerable; each of those re-runs ships as
 its own PR, from a scratch clone rather than the primary checkout, since by
 then nobody is sitting there watching.
+
+## Driving this flow from a written profile
+
+Everything above assumes a conversation. It doesn't have to be one: an owner
+who'd rather fill in a file than be interviewed, and anyone testing this flow
+against a shape rather than living it, can write the answers down in advance
+and have `./spoor-profile` produce the mechanical half.
+[`docs/non-interactive-onboarding.md`](./docs/non-interactive-onboarding.md)
+is the one home for what that path is, what it costs and where its boundary
+falls; [`profile.example.toml`](./profile.example.toml) is the format;
+[`examples/`](./examples/README.md) holds filled-in ones.
+
+Run it *before* pasting the prompt above, then paste this alongside it:
+
+```
+A business profile has already been run through ./spoor-profile in this
+checkout. Read its report, then read docs/non-interactive-onboarding.md so
+you know exactly which parts of the flow above it did and which it did not —
+that file is the one home for the boundary, so don't infer it from what
+happens to be on disk.
+
+The short version, which that file expands: steps 1 to 4 above and the
+writing half of step 6 are done. `.env` exists at mode 0600 with every
+answer the profile held, and the conventions doc exists at
+CONVENTIONS_DOC_PATH. Everything else is yours and is unchanged: step 5's git
+identity verified against a real push, step 6's *shipping* of both generated
+files through branches and PRs, step 7's specialization pass and its stage
+prompts, step 8's shopping list, step 9's ./spoor-doctor run.
+
+Three things to do differently, and nothing else:
+
+- **Read the generated conventions doc before you ship it, and treat every
+  `TODO(owner)` line in it as a real open question.** Those are the
+  judgement calls the profile deliberately left blank — an autonomy delta,
+  a stack decision, who executes a refund. The generator refuses to guess
+  them and so should you. Bring them to me as questions; where I answer one,
+  write the answer into the doc on the branch before it merges. Where I
+  don't, the marker ships as-is, and the item goes on step 8's list.
+- **Ask me about anything in step 2 or step 3 the profile didn't cover.** A
+  profile can hold those answers but nothing forces it to, so they are the
+  most likely thing to be missing. Don't skip the conversation on the
+  grounds that a file looked complete.
+- **Don't re-run the interview from the top.** The profile's answers are
+  answers; re-asking them reads as not having read them. Confirm anything
+  that looks wrong or internally inconsistent, and otherwise proceed.
+```
+
+The ordering is the same as the interview's for the same reason: nothing in
+it depends on something a later step promises to deliver. The profile only
+moves *where* the early answers come from, not when the later steps get to
+rely on them.
+
+---
 
 `./spoor-doctor` outlives first boot too, and step 9 is only its first run.
 Every one of those follow-on changes — a secret pasted in, a tracker swapped,

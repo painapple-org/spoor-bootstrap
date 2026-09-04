@@ -1,0 +1,425 @@
+### spoor-bootstrap profile.example.toml
+###
+### A *business profile*: the first-boot interview's answers, written down in
+### advance instead of collected in a conversation. Copy this file, fill it in,
+### and hand it to `./spoor-profile`, which turns it into the same artifacts a
+### live interview produces — this deployment's `.env` and its conventions doc.
+###
+### When to use one of these at all, and what it costs, is
+### docs/non-interactive-onboarding.md. Read that first; this file is the
+### format, not the argument for it.
+###
+### Three things this file is deliberately not:
+###
+###   - **Not the `.env` schema.** `.env.example` is the one home for the
+###     config keys, what each means, and which are required. A field here is
+###     an *interview answer*, and several of them (the autonomy deltas, the
+###     vocabulary, who signs off what) have no `.env` key at all, by that
+###     file's own instruction. Which field lands where is
+###     `spoor-profile`'s own mapping — run `./spoor-profile --explain` to
+###     print it rather than looking for it retyped below.
+###   - **Not the interview.** AGENTS.md's "The first-boot interview" section
+###     is the one home for the questions and for why each is asked. Each
+###     table below names the question it answers so the two can be read
+###     side by side; nothing here restates the reasoning.
+###   - **Not a place for a secret.** This file gets committed, mailed and
+###     diffed. Every credential is pasted straight into `.env` by hand, and
+###     `spoor-profile` rejects a profile that names one rather than quietly
+###     dropping it.
+###
+### Two conventions in the comments below:
+###
+###   required   `spoor-profile` refuses to run without it
+###   judgment   may be left out on purpose. The conventions doc then carries
+###              a `TODO(owner)` line naming what is missing and who decides
+###              it. That is the point: these are calls the interview exists
+###              to capture, and a generated guess is indistinguishable from
+###              a real answer right up until it is acted on. Leaving one
+###              blank is a supported outcome, not a half-finished profile.
+###
+### Anything not marked either way is optional: an answer that legitimately
+### does not exist yet (an email address still to be provisioned) or does not
+### apply (a tracker base URL where the tracker has one global host).
+
+
+[profile]
+
+# required. The version of this format the file is written against.
+schema_version = 1
+
+# required. The business, as it calls itself.
+business = "Example Coffee Roasters"
+
+# required. Two or three sentences: what the business does, what the software
+# does, and who runs it. This opens the conventions doc, and it is what a
+# future session reads first to know what it is operating.
+summary = """
+What this business does, what the software this deployment operates does for
+it, and who the people are. Written for a session that has no other context.
+"""
+
+
+# --- interview question 8: the product repo, and the business's own context ---
+#
+# One question in AGENTS.md, several answers here. That is a gap in the
+# question as written rather than a liberty taken by this format — see the
+# note under question 8 in AGENTS.md, which now enumerates its own parts.
+
+[product]
+
+# required. "technical" or "non-technical" — interview question 2. A
+# non-technical end-user makes the stack in skills/product-tech-stack/SKILL.md
+# mandatory rather than a choice, which changes what the `stack` fields below
+# mean.
+end_user_type = "non-technical"
+
+# required. Where the product repo lives on this box, or is to be cloned to.
+repo_path = "/home/spoor/example-orders"
+
+# required. "existing" (a repo with history, possibly a team in it), "new" (to
+# be created during first boot), or "none-yet" (no repo and no decision).
+repo_state = "existing"
+
+# The remote, where there is one. Absent on the shape with no git hosting
+# account at all, where `origin` is a bare repo on this box.
+primary_repo_remote = "example-coffee/example-orders"
+
+# The default branch's name. Leave it out for a repo created empty during
+# first boot: it has no commits, so it has no branch of any kind yet, and the
+# first shipped change is what creates one.
+default_branch = "main"
+
+# required. Where this deployment's conventions doc goes. Absolute, or
+# relative to `repo_path`. That repo's own CLAUDE.md or AGENTS.md where it has
+# neither; a clearly-named sibling where it already has one, so nothing gets
+# clobbered.
+conventions_doc_path = "AGENTS.md"
+
+# A file in the product repo that already owns the branch naming, commit
+# format and review policy — a CONTRIBUTING.md, a PR template. Where one
+# exists it stays the home for all of that and the generated conventions doc
+# points at it and records only the additions. Leave it out on a repo with no
+# settled process.
+existing_conventions_file = "CONTRIBUTING.md"
+
+# Question 8's follow-ups. Booleans, and worth answering explicitly: the
+# first-boot flow silently assumes an answer to each.
+others_may_merge_default_branch = false
+merge_deploys_to_production = false
+
+# How the product reaches production today. On a repo with a team in it this
+# is normally a pipeline they own and rely on, and duplicating or
+# re-triggering it can ship something for real.
+deploy_pipeline = "docker-compose on a single VPS, deployed by hand over ssh."
+
+# required. Where the business's own content and docs live — a wiki, a drive
+# folder, a docs directory, a CMS. "Nothing written down anywhere" is a real
+# answer and worth recording as one: without it a proactive pass has nothing
+# non-generic to ground a proposal in.
+context_location = "A Google Doc wholesale handbook, not currently readable from this box."
+
+# The product's domain, if it has one.
+domain = "example.coffee"
+
+# judgment. The stack, and why. Meaningful only where `end_user_type` is
+# "technical": skills/product-tech-stack/SKILL.md is mandatory for a
+# non-technical one and is the one home for the stack in that case, so
+# nothing gets copied out of it here. Where it is technical that SKILL does
+# not apply, the choice is on the merits, and this file is the only home the
+# decision has.
+# stack = ""
+# stack_rationale = ""
+
+# judgment. Where the mandated stack and a repo that already exists in a
+# different one conflict: which pieces match, which do not, and the reading
+# actually agreed with the owner. Do not fill this in with an agreement
+# nobody made — an unanswered conflict is a real finding.
+# stack_conflict = ""
+
+
+# --- interview questions 1 and 5: the people ---------------------------------
+#
+# A list, not a field, and this is the part of the format that most repays
+# reading before filling in. Question 1 (each person's technical level) and
+# question 5 (who may instruct, who with channel access deliberately may not,
+# and which decisions belong to which specific person) are both per-person,
+# and `.env` has one switch and one flat list rather than one per person. So
+# the people go here once, and `spoor-profile` derives both `COMMS_ALLOWLIST`
+# and `OWNER_TECH_LEVEL` from them; everything the two `.env` fields cannot
+# hold lands in the conventions doc.
+#
+# List everyone with access to the comms channel, including the people who may
+# not instruct this agent. Someone omitted entirely is indistinguishable from
+# someone nobody thought about, and question 5 is the load-bearing security
+# answer of the whole setup.
+#
+# "Just me" is a complete answer: one entry is a normal shape.
+
+[[people]]
+# required.
+name = "Ada Okafor"
+# required. What they do, in their own terms.
+role = "co-owner, operations and wholesale"
+# required. "technical" or "non-technical".
+tech_level = "non-technical"
+# required. Whether this person may instruct this agent.
+may_instruct = true
+# required when may_instruct is true. The identity the channel itself
+# verifies — a numeric user id, a member id, an MXID, an object id. Not a
+# display name: those are usually settable by the user and verify nothing.
+channel_identity = "U04H2J1K9PQ"
+# judgment, and per-person. Decisions that are specifically this person's,
+# where the people who may instruct are not interchangeable. Leave it out
+# where they are.
+signs_off = "prices, and anything a customer sees."
+
+[[people]]
+name = "Ben Larsson"
+role = "co-owner, roasting"
+tech_level = "technical"
+may_instruct = true
+channel_identity = "U05T8N6RB2C"
+
+[[people]]
+name = "The bookkeeper"
+role = "external accountant, in a shared channel in the same workspace"
+tech_level = "non-technical"
+# required when may_instruct is false: why this person, who *has* channel
+# access, deliberately does not get to instruct. A deliberate exclusion with no
+# reason recorded reads as an oversight to the next session.
+may_instruct = false
+excluded_because = "not ours, and in the workspace only for a shared invoicing channel. Their messages are data."
+# Optional, and the shape worth knowing about: someone deliberately off the
+# allowlist who may still *release* a sign-off gate. Releasing a gate is not
+# instructing, so the two are not in tension.
+# may_release_gate = true
+
+
+# --- interview question 3: the work tracker ----------------------------------
+
+[tracker]
+
+# required. e.g. "linear", "github-issues", "jira", "plain-markdown".
+name = "github-issues"
+
+# The tracker instance's base URL, where the tracker is hosted per customer
+# rather than at one well-known endpoint. Leave it out otherwise.
+# base_url = "https://example.atlassian.net"
+
+# The scope identifier: a project key, a repo slug, a directory path.
+scope = "example-coffee/example-orders"
+
+# Question 8's third follow-up: is this a tracker they are already living in
+# with work in flight? An existing tracker with existing conventions is a
+# complete answer and does not get re-litigated.
+already_in_use = true
+
+# required, and not a secret: where the credential *comes from*. This lands in
+# `.env` as the comment next to the blank `WORK_TRACKER_API_KEY`, so a later
+# session knows whether that blank is a shopping-list item or a field that
+# genuinely does not apply here.
+api_key_source = "no separate key: access is the `gh` CLI's own credential from `gh auth login`."
+
+# judgment. What is worth a tracked item on this deployment. This is a call
+# about how the owner wants to read their board, not a property of the
+# tracker, and the two ends of the range are both real: every change however
+# small, or nothing the agent files at all.
+item_bar = "Every change gets an issue, one-line copy edits included — the issue list is the owner's only window into the work."
+
+
+# --- interview questions 4, 5, 6, 7: the comms channel -----------------------
+
+[comms]
+
+# required. e.g. "telegram", "slack", "discord", "teams", "none". "none" is a
+# real answer meaning email-only, and .env.example is the home for what it
+# implies about the fields below.
+channel = "slack"
+
+# The non-secret half of reaching the channel: an SMTP host:port where
+# `channel = "none"`, or a self-hosted server's base URL. Leave it out for a
+# channel with one well-known global endpoint.
+# endpoint = "smtp.example.com:587"
+
+# required — interview question 6. Exactly one destination for urgent alerts.
+# Asked separately from the channel and from the allowlist on purpose: an
+# escalation needs one unambiguous target, and the right one is not always in
+# the allowlist's own shared room.
+alert_target = "C07PQ4M3TDS"
+
+# Why that target, where it is worth saying — that it is also the working
+# channel, that it was created specifically for alerts, who is in it.
+alert_target_note = "#tech, both the working channel and the escalation target — safe here only because every member of #tech is on the allowlist."
+
+# Interview question 7: this agent instance's own email address, if one exists
+# yet. Not a secret. Leave it out where it still has to be provisioned, which
+# puts it on the shopping list.
+# agent_email = "spoor@example.coffee"
+
+# required, and not a secret: where the channel credential comes from, for the
+# same reason as `api_key_source` above.
+token_source = "the Slack app's OAuth & Permissions page. Blocked: the app does not exist yet."
+
+
+# --- git conventions ---------------------------------------------------------
+#
+# The parts of the conventions doc that are conventions rather than judgement.
+# Where `existing_conventions_file` above names a file that already owns the
+# branch naming and commit format, these are the *additions* — the answers
+# that file does not have because no human on that team needed one.
+
+[git]
+
+# required. Including what an actor with no initials puts in a branch name,
+# which is the hole a team's own convention usually has.
+branch_naming = "spoor/<issue-number>-<short-slug>"
+
+# required. The literal trailer line in every commit body naming which
+# process produced the commit.
+commit_trailer = "Spoor-Process: <stage>"
+
+# required. The literal footer ending every work-item comment this agent
+# writes, so a later run can tell its own prior notes from a human's.
+tracker_comment_marker = "— spoor · <stage>"
+
+
+# --- interview question 9: anything built for the owner ----------------------
+
+[internal_tooling]
+
+# required. Whether the owner wants anything built for *them* rather than for
+# the product's users — a dashboard, a status page, a log viewer. "No, I read
+# the comms channel and that is enough" is the common answer and a complete
+# one; what must not happen is nobody asking.
+wanted = false
+
+# What, where `wanted` is true.
+# what = "A one-page dashboard showing this week's orders and any failed sends."
+
+# judgment. The private network anything internal is reached over. Where
+# `wanted` is false the generated doc records "nothing internal exists yet, so
+# nothing is set up" as settled, and this field is not consulted at all.
+# private_network = "Tailscale, on the owner's existing tailnet."
+
+
+# --- interview question 10: whether the product charges anyone ---------------
+
+[billing]
+
+# required. "Nothing is sold yet" is the common answer and a complete one, and
+# it needs to read as decided rather than unasked.
+charges = true
+
+# What is sold, where `charges` is true.
+what_is_sold = "Wholesale coffee on standing weekly orders, invoiced monthly."
+
+# The payment provider, where one is already chosen.
+# provider = "Stripe"
+
+# judgment. The named human who executes a refund or a dispute response, given
+# this agent may not. Not something to infer from the people list: it is a
+# specific delegation, and skills/billing-and-payments/SKILL.md's owner/agent
+# split is the home for why it has to be a person rather than a role.
+# refund_human = ""
+
+
+# --- STARTUP.md step 2: autonomy and stop-and-ask ---------------------------
+#
+# Every field in this table is judgement, and this is the table most worth
+# leaving blank rather than filling in speculatively. AGENTS.md's default
+# guardrail list is in force in full; only what is named here changes it, and
+# a tightening nobody asked for is as wrong as a missing one.
+#
+# A profile with this whole table absent is valid and useful — it generates a
+# `.env` and a conventions doc whose autonomy section is five explicit
+# TODO(owner) lines. That is the honest state of a deployment nobody has had
+# the autonomy conversation with yet.
+
+[autonomy]
+
+# judgment. Whether every merge needs the owner's sign-off, not just the
+# destructive operations the defaults already cover.
+signoff_before_merge = false
+
+# judgment. What this deployment adds to the stop-and-ask list. A list of
+# lines, each naming the class of change and, where it matters, what is
+# explicitly *out* of scope — a rule with no boundary is what leaves a future
+# session guessing.
+tightened = [
+	"Anything that changes how money is calculated or presented — prices, tiers, discounts, order totals, invoice content. No size exemption.",
+	"Anything that changes a customer-facing email: whether it sends, when, to whom, or what it says. Unrelated code near the mail code is out of scope.",
+]
+
+# judgment. Named carve-outs that may run unattended, and what gets reported
+# afterwards. Specific, and bounded: "fix what breaks" is not one of these.
+loosened = [
+	"Restart an unhealthy container, then say so in #tech unprompted. One retry; three restarts in a week means investigating the cause instead.",
+	"Re-run a failed nightly export. Same bound.",
+]
+
+# judgment. When this agent may not ship at all. A clock window, or a state
+# gate ("not while a run is in flight"), or neither.
+gate = "No deploys Monday 12:00 to Tuesday 12:00, or Wednesday 12:00 to Thursday 12:00, Europe/London — one per order cutoff. A fix for something broken inside a window becomes stop-and-ask."
+
+# judgment. What this agent may do to the running deployment unattended,
+# concretely, versus what needs sign-off.
+unattended_on_deployment = [
+	"Restart a container, roll back a bad deploy of its own, clear disk of its own artifacts.",
+	"Never: editing or deleting live order data, restoring a backup, or touching the database directly.",
+]
+
+# judgment. The event that reopens this whole section. An event is better than
+# a date: it fires when the thing it is about actually changes.
+review_trigger = "The first month where more than half of orders come through the portal rather than by phone."
+
+
+# --- STARTUP.md step 7: the pipeline stage set -------------------------------
+#
+# Judgement, and the one place worth being blunt about the boundary: deciding
+# the stage set is an answer a profile can carry, and *writing the prompt file
+# for each stage kept* is not. A stage prompt names this tracker's state
+# names, this deployment's labels and this product's test command; a generated
+# one would be a confident wrong instruction obeyed on every scheduled run.
+# `spoor-profile` writes none, and reports every stage listed here as
+# outstanding work.
+
+[pipeline]
+
+# judgment. The stages this deployment actually runs, reactive and proactive.
+stages = ["refine", "implement", "review"]
+
+# judgment. Stages deliberately not run. Worth recording: a dropped stage read
+# as an oversight gets re-proposed.
+stages_declined = ["critique", "resolve-critique", "ideation"]
+
+# Genuinely undecided, as opposed to declined. These belong on the
+# self-provisioning shopping list as open decisions with what they block.
+undecided = ["whether a proactive upkeep stage is wanted once the dependency set is current"]
+
+
+# --- STARTUP.md step 3: product and team vocabulary -------------------------
+#
+# Words this business uses that a generic reading gets wrong. Optional, and
+# the cheapest thing in this file to get value from: each one is a mistake a
+# future session now does not make.
+
+[[vocabulary]]
+term = "account"
+means = "a wholesale customer. Never a login — logins are users, and one account has several."
+
+[[vocabulary]]
+term = "standing order"
+means = "the recurring weekly order. Distinct from skipping a week, which does not change it."
+
+
+# --- every repo the product spans, where it is more than one -----------------
+#
+# `PRODUCT_REPO_PATH` is singular and names the primary repo — see its own
+# comment in `.env.example` for why that is a documented limitation rather
+# than an assumption. List the others here and the generated conventions doc
+# records them, along with the statement that a skill saying "the product
+# repo" means the primary one unless it names another.
+
+# [[additional_repos]]
+# remote = "example-coffee/example-labels"
+# contains = "the label-printer service. Deploys on its own, no shared code."

@@ -1,0 +1,161 @@
+# Northlight Coffee Roasters — the profile behind docs/example-walkthrough.md.
+#
+# This one exists to be checked rather than read: it is the same business, with
+# the same answers, as the narrated walkthrough in
+# docs/example-walkthrough.md, so the `.env` `./spoor-profile` writes from it
+# has to match the `.env` that walkthrough shows the interview producing, key
+# for key. .github/ci/test-profile.py asserts exactly that, reading the
+# expected values out of the walkthrough itself rather than from a copy — so
+# the two can never drift apart, and a change to either one that breaks the
+# equivalence fails CI.
+#
+# Shape it exercises: an existing but unmaintained product repo on GitHub, a
+# non-technical owner alongside a more technical co-owner, GitHub Issues as the
+# tracker, Slack, a deliberate exclusion on the channel, per-person sign-off,
+# a non-technical end-user (so the mandated stack applies and conflicts with
+# what the repo is already in), and a live product with paying customers.
+
+[profile]
+schema_version = 1
+business = "Northlight Coffee Roasters"
+summary = """
+A five-person speciality coffee roastery in Leeds. Most revenue is wholesale:
+41 accounts, mainly independent cafés plus a handful of office subscriptions.
+Roasting happens Tuesday and Thursday, and wholesale orders for each roast
+close at 18:00 the evening before. The software is `northlight-orders`, a
+wholesale ordering portal a freelancer built two years ago and nobody has
+maintained since: accounts log in, set a standing order per bean and grind,
+adjust or skip a week, and the roastery pulls a roast-day sheet out the other
+end.
+"""
+
+[product]
+end_user_type = "non-technical"
+repo_path = "/home/spoor/northlight-orders"
+repo_state = "existing"
+primary_repo_remote = "northlight-coffee/northlight-orders"
+default_branch = "master"
+conventions_doc_path = "AGENTS.md"
+others_may_merge_default_branch = true
+merge_deploys_to_production = false
+deploy_pipeline = "docker-compose on a single VPS, deployed by hand. No CI, and master is unprotected."
+context_location = """
+A Google Doc wholesale handbook — pricing tiers, lead times, split rules. Not
+readable from this box: there is no Google account here, and registering one is
+the owner's to do.
+"""
+domain = "northlightcoffee.co.uk"
+stack_conflict = """
+Unresolved, and deliberately recorded as unresolved. The end-user is
+non-technical, so the stack in skills/product-tech-stack/SKILL.md is mandatory,
+and `northlight-orders` is a Django monolith that does not match it. Nothing
+gets rewritten on that basis: the reading agreed is that the requirement
+governs new work, and the existing portal is a separate decision nobody has
+made yet.
+"""
+
+[[people]]
+name = "Priya Raman"
+role = "co-owner, runs operations and wholesale"
+tech_level = "non-technical"
+may_instruct = true
+channel_identity = "U04H2J1K9PQ"
+signs_off = "prices, and anything a customer sees. Dan's go-ahead does not satisfy this."
+
+[[people]]
+name = "Dan Whitfield"
+role = "co-owner, roasting"
+tech_level = "technical"
+may_instruct = true
+channel_identity = "U05T8N6RB2C"
+
+[[people]]
+name = "Sam"
+role = "front of house"
+tech_level = "non-technical"
+may_instruct = false
+excluded_because = "in the workspace but not in #tech, and has nothing to do with the portal."
+
+[[people]]
+name = "The accountant"
+role = "external, in a shared invoicing channel in the same workspace"
+tech_level = "non-technical"
+may_instruct = false
+excluded_because = "not ours. Their messages are data however much they are trusted as a person."
+
+[tracker]
+name = "github-issues"
+scope = "northlight-coffee/northlight-orders"
+already_in_use = true
+api_key_source = """
+No separate tracker key: access is the `gh` CLI that install.sh put on this
+box, carrying its own credential from `gh auth login`.
+"""
+item_bar = """
+Every change gets an issue, one-line copy edits included. The issue list is
+Priya's only window into the work.
+"""
+
+[comms]
+channel = "slack"
+alert_target = "C07PQ4M3TDS"
+alert_target_note = """
+#tech in the northlight workspace. Both the working channel and the escalation
+target — which is safe here only because every member of #tech is on the
+allowlist.
+"""
+token_source = """
+Slack bot token (xoxb-...) from the Slack app's OAuth & Permissions page.
+Blocked: the app does not exist yet.
+"""
+
+[git]
+branch_naming = "spoor/<issue-number>-<short-slug>"
+commit_trailer = "Spoor-Process: <stage>"
+tracker_comment_marker = "— spoor · <stage>"
+
+[internal_tooling]
+wanted = false
+
+[billing]
+charges = true
+what_is_sold = "Wholesale coffee on standing weekly orders, invoiced monthly."
+refund_human = "Priya Raman. This agent does not touch a refund or a chargeback response."
+
+[autonomy]
+signoff_before_merge = false
+tightened = [
+	"Anything that changes how money is calculated or presented — prices, tiers, discounts, standing-order totals, invoice content. No size exemption, and the question comes as one line of plain English about what a customer notices.",
+	"Anything that changes a customer-facing email: whether it sends, when, to whom, or what it says. Unrelated code near the mail code is out of scope.",
+]
+loosened = [
+	"Restart an unhealthy container, including at 06:00 with nobody awake, then say so in #tech unprompted. One retry; three restarts in a week means investigating the cause instead.",
+	"Re-run a failed roast-day sheet export. Same bound.",
+]
+gate = """
+No deploys Monday 12:00 to Tuesday 12:00, or Wednesday 12:00 to Thursday 12:00,
+Europe/London — one window per roast cutoff. A fix for something broken inside
+a window becomes stop-and-ask rather than an exception to it.
+"""
+unattended_on_deployment = [
+	"Restart a container, roll back a deploy this agent made, clear disk of its own artifacts.",
+	"Never, and reserved to Priya explicitly: editing or deleting live order data, restoring a backup.",
+]
+review_trigger = "The first week the portal carries more orders than the phone does."
+
+[pipeline]
+stages = ["refine", "critique", "implement", "review"]
+stages_declined = ["resolve-critique"]
+undecided = ["whether a proactive ideation stage is wanted at all"]
+
+[[vocabulary]]
+term = "account"
+means = "a wholesale customer. Never a login — logins are users, and one account has several."
+
+[[vocabulary]]
+term = "standing order"
+means = "the recurring weekly order. Distinct from skipping a week, which does not change it."
+
+[[vocabulary]]
+term = "the split"
+means = "dividing one roast batch across accounts. A spreadsheet thing, and not in the portal at all."
