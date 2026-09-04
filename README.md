@@ -218,7 +218,17 @@ your own situation, or all of them:
   defers to, and years of tracker issues that must not be swept into its
   inbox on the first run.
 
-Each takes its fictional business through the whole of item 5 in the list
+There is also one document here that is **not** a reconstruction:
+[`docs/live-fire-github-pages.md`](./docs/live-fire-github-pages.md)
+records an actual deploy of an actual toy product to an actual hosting
+platform, run to find out whether
+[`skills/deploy-and-monitor`](./skills/deploy-and-monitor/SKILL.md)'s
+guidance survives being followed rather than read. It found four things
+wrong with it, all since fixed, and it is the file to read if the question
+is how much of this repo has been tested against reality versus written
+carefully.
+
+Each of the three takes its fictional business through the whole of item 5 in the list
 below: the interview with plausible answers, the autonomy negotiation, the
 resulting `.env`, an excerpt of the conventions doc it produces, and one
 skill stub shown before and after specialization. They're illustrative, not

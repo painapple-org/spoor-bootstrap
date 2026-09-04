@@ -24,6 +24,16 @@ installer brings it along, but nothing here guarantees it either. Run
 `docker info` and `docker compose version` and check both before relying on
 them. Everything else here is open.
 
+Note what that assumption is *about*, because it is easy to carry one step
+too far. `install.sh` sets up the box this agent operates from, so Docker
+being present is a fact about **that** box and not about wherever the
+product is deployed. A managed platform — a static host, a PaaS that builds
+from a git push — routinely has no Docker, no shell, and no host to be on
+at all, and on one of those every white-box command in this file is
+unrunnable against the target rather than merely inconvenient. Settle which
+shape the target is before reading any procedure here as executable, per
+"What 'monitor' means when you don't have the host" below.
+
 ## First: does a deploy pipeline already exist?
 
 Answer this before reading any further, because the rest of this file reads
@@ -195,13 +205,30 @@ with no hosted CI. Two consequences:
   improvisation discovered during an outage. Record what it does *not*
   cover while you're at it: a code rollback does not roll back a migration,
   which is why an additive migration can be routine while a subtractive one
-  isn't.
+  isn't. Two things make the difference between a recorded procedure and a
+  tested one, and both belong in this answer:
+  - **Run it once, for real, against the real target, during
+    specialization** — deploy something trivial, roll it back, and record
+    what happened. "Tested" otherwise has no owner, and a rollback path
+    first exercised during an outage is an improvisation whatever the file
+    says. Record the measured time from issuing the rollback to the old
+    behavior being observably live, because that number is what an incident
+    gets judged against, and an unmeasured one gets guessed at under
+    pressure.
+  - **Assert that the rollback was actually initiated before waiting on
+    it.** A rollback that never started and a rollback still propagating
+    look identical from the outside: both show the bad version still live.
+    So a wait loop polling for the old behavior to return will happily
+    produce minutes of plausible output for a rollback whose first command
+    errored and did nothing — silence read as patience. Check the rollback's
+    own precondition first (the revert commit exists, the redeploy was
+    accepted, a new run appeared) and only then start waiting.
 - **How the data gets recovered, which is a different procedure.** See the
   backup section below. Conflating the two is how a bad hour becomes a bad
   week: rolling back a release is cheap and reversible, restoring a
   database is neither.
 
-Two things that are true regardless of mechanism:
+Four things that are true regardless of mechanism:
 
 - **A green CI run is not proof a deploy happened.** A deploy step can
   legitimately exit zero while reporting nothing to do. After merging
@@ -220,6 +247,32 @@ Two things that are true regardless of mechanism:
   reporting the first as though it were the second is the mistake this
   rule exists to prevent — "merged" is not one destination once there is
   more than one environment.
+- **"Is the latest run green?" reads the run before yours.** Asked in the
+  seconds after a push, a provider's latest-run or latest-build record is
+  still the previous one: yours has not been created yet, or has not left
+  its queued state. So the obvious post-merge check answers with the *prior*
+  deploy's success and reports your own as fine — a false green that arrives
+  exactly when someone is watching for it. Correlate on the revision you
+  actually shipped, using whatever the provider exposes for it (the run's
+  head SHA, the deployment's ref), rather than trusting whatever "latest"
+  returns; and where a poll is the only option, require the record's own
+  identity to have changed before reading its status at all.
+- **A status field that never reaches a terminal failure state alerts
+  nobody.** The rule above covers a deploy that reports success without
+  doing anything; this is its mirror, and it is the quieter of the two. A
+  provider's status can sit in a non-terminal value — `building`, `pending`,
+  `in_progress` — indefinitely on a build that has already definitively
+  failed, with its own error field left empty, so a monitor whose condition
+  is "status equals failed" never fires and a dashboard reading the same
+  field shows work still in progress. Two consequences for how the signal
+  gets built: alert on **elapsed time in a non-terminal state** against what
+  a normal deploy takes, not only on an explicit failure value; and prefer a
+  signal that is guaranteed to reach a terminal state over a
+  provider-specific status field that isn't, where the deployment has both.
+  The **absence of a new success** is the most reliable form of this and the
+  one to build on where nothing better exists — a deploy that should have
+  produced a fresh success record and didn't is a failure however the
+  provider chose to describe itself.
 
 ## Backups, and whether they actually restore
 
@@ -235,6 +288,18 @@ whether one exists or whether it works.
   rather than copying the numbers here. If the honest answer is that
   nothing is backed up, that is the single most important thing in this
   file and it belongs on the shopping list, not in a hedge.
+- **Whether the product holds any state of its own.** "Nothing is backed
+  up because there is nothing stateful to back up" is a real answer for a
+  stateless deploy — a static site, a service whose only durable data lives
+  in a managed third-party system — and it is a different answer from the
+  one in the bullet above, which is an unprotected product. Say which of
+  the two it is explicitly, because they read identically as "no backups"
+  and only one of them is a problem. Where it's genuinely the stateless
+  case, the load-bearing thing is what remains: the source repository is
+  then the only copy of the product, so whoever hosts it is the single
+  point of failure, and the managed system holding the real data has its
+  own retention and export story that is now this answer's substance
+  rather than a footnote.
 - **How a backup's success and failure are signalled.** A job that only
   logs locally is silent by nature: it fails the same way it succeeds. A
   heartbeat/push monitor that alarms on the *absence* of a signal is the
@@ -327,7 +392,16 @@ signals by what they actually require:
 - **Black-box, needs no access to the product host.** An HTTP request from
   this agent's own box against a health endpoint or a real user-facing URL,
   asserting on status and on something in the body rather than only on a
-  connection succeeding. The CI/CD provider's run and deployment history
+  connection succeeding. **When the question is whether a deploy landed,
+  that assertion has to name the revision, not just valid content**: a
+  platform that keeps serving the last good release through a failed build
+  answers 200 with an entirely correct body, so every check short of
+  "the thing I just shipped is present" passes while nothing shipped. Give
+  the product a marker that changes per release — a build identifier in the
+  response, a version field on the health endpoint — and assert on the value
+  expected for the revision under test. Without one, this check cannot
+  distinguish a successful deploy from a failed deploy of a healthy service,
+  which is most of what it would be asked. The CI/CD provider's run and deployment history
   over its API (`gh run list` and the deployments/environments endpoints on
   a GitHub-shaped remote, the equivalent elsewhere) — which is what makes
   watching an inherited pipeline possible without touching it. An external
